@@ -1,83 +1,98 @@
 # Nebula-Writer
 
-An AI-powered fiction writing assistant with persistent memory. The "System of Record" for fiction that stores every character, location, and plot point so your AI never forgets.
+<p align="center">
+  <img src="https://img.shields.io/badge/version-0.1.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/python-3.11+-green.svg" alt="Python">
+  <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
+</p>
+
+> AI-Powered Fiction Writing Assistant with Persistent Memory
+
+Nebula-Writer is a "System of Record" for fiction that stores every character, location, and plot point so your AI never forgets. It uses RAG (Retrieval-Augmented Generation) to provide accurate context to AI writing.
 
 ## Features
 
-- **The Codex** - SQLite database storing Characters, Locations, Items, Relationships, Events
-- **Chapter Management** - Write and organize your story into chapters
-- **Timeline** - Track plot events with significance levels
-- **Relationship Graph** - Visualize connections between entities
-- **Mermaid.js Export** - Generate relationship diagrams
-- **REST API** - Full CRUD operations
-- **Beautiful Web UI** - Vue.js + TailwindCSS interface
+- 📦 **The Codex** - SQLite database for Characters, Locations, Items, Relationships
+- 📖 **Chapter Management** - Write and organize story chapters
+- 🤖 **AI Writing** - Gemini-powered scene generation with context
+- 🔍 **Semantic Search** - ChromaDB-powered RAG memory
+- ✅ **Story Audit** - Detect contradictions in your story
+- 📊 **Visualization** - Mermaid.js relationship graphs
+- 🌐 **Web UI** - Beautiful Vue.js interface
+- 📝 **CLI & REPL** - Command-line and interactive writing
+- 📤 **Export** - Markdown, HTML, JSON formats
+- 🐳 **Docker** - Easy containerized deployment
 
 ## Quick Start
 
-### 1. Start the Backend
-
 ```bash
-cd backend
+# Clone and install
+git clone https://github.com/sagar0163/Nebula-Writer.git
+cd Nebula-Writer
 pip install -r requirements.txt
-python main.py
+
+# Run the server
+make run
+
+# Or use Docker
+make docker-build
+make docker-run
 ```
 
-The API will run on `http://localhost:8000`
-
-### 2. Open the UI
-
-Open `frontend/index.html` in your browser (or serve it):
-
+Set your Gemini API key:
 ```bash
-# Using Python
-cd frontend
-python -m http.server 8080
+export GEMINI_API_KEY=your_api_key_here
 ```
 
-Then visit `http://localhost:8080`
+## Usage
 
-## API Endpoints
+### Web UI
+Open `http://localhost:8000` in your browser.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/entities` | List all entities |
-| POST | `/api/entities` | Create entity |
-| GET | `/api/entities/{id}` | Get entity details |
-| PUT | `/api/entities/{id}` | Update entity |
-| DELETE | `/api/entities/{id}` | Delete entity |
-| GET | `/api/relationships` | List relationships |
-| POST | `/api/relationships` | Create relationship |
-| GET | `/api/chapters` | List chapters |
-| POST | `/api/chapters` | Create chapter |
-| PUT | `/api/chapters/{id}` | Update chapter |
-| GET | `/api/events` | List events |
-| POST | `/api/events` | Log event |
-| GET | `/api/stats` | Get statistics |
-| GET | `/api/search?q=query` | Search Codex |
-| GET | `/api/export/mermaid` | Get Mermaid diagram |
+### CLI
+```bash
+# Add entity
+python nebula-writer entity add "Ravi" --type character --desc "Detective"
+
+# List chapters
+python nebula-writer chapter list
+
+# Visualize
+python nebula-writer visualize
+```
+
+### REPL
+```bash
+python repl.py
+```
 
 ## Architecture
 
 ```
 nebula-writer/
-├── backend/
-│   ├── codex.py      # SQLite database manager
-│   ├── main.py       # FastAPI server
-│   └── requirements.txt
-├── frontend/
-│   └── index.html    # Vue.js UI
-├── data/
-│   └── codex.db      # SQLite database
-├── SPEC.md           # Technical specification
-└── README.md
+├── backend/          # FastAPI server
+│   ├── codex.py     # SQLite database
+│   ├── ai_writer.py # AI writing
+│   ├── memory.py    # ChromaDB RAG
+│   ├── audit.py     # Story audit
+│   └── ...
+├── frontend/         # Vue.js UI
+├── tests/           # Test suite
+└── repl.py          # Interactive REPL
 ```
 
 ## Tech Stack
 
-- **Backend**: FastAPI, Python, SQLite
+- **Backend**: FastAPI, Python 3.11+, SQLite
+- **AI**: Google Gemini API
+- **Memory**: ChromaDB
 - **Frontend**: Vue.js 3, TailwindCSS
-- **Database**: SQLite with custom schema
+- **DevOps**: Docker, Makefile
 
 ## License
 
-MIT
+MIT License - feel free to use!
+
+---
+
+<p align="center">Made with ☕ by Sagar</p>
