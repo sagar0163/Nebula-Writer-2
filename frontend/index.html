@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebula-Writer | AI Fiction Assistant</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        space: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a24', 600: '#24242e' },
+                        violet: { 400: '#8b5cf6', 500: '#7c3aed', 600: '#6d28d9' },
+                        cyan: { 400: '#06b6d4', 500: '#0891b2' }
+                    },
+                    fontFamily: { sans: ['Outfit', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: #0a0a0f; color: #f1f5f9; }
+        .glass { background: rgba(18, 18, 26, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(139, 92, 246, 0.1); }
+        .glow { box-shadow: 0 0 40px rgba(139, 92, 246, 0.15); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 8px 30px rgba(139, 92, 246, 0.1); }
+        .input-field { background: #1a1a24; border: 1px solid #24242e; transition: all 0.2s; }
+        .input-field:focus { border-color: #8b5cf6; outline: none; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); transition: all 0.2s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); }
+        .btn-secondary { background: #1a1a24; border: 1px solid #24242e; }
+        .btn-secondary:hover { border-color: #8b5cf6; }
+        .type-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .type-character { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .type-location { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+        .type-item { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="app" class="flex min-h-screen">
+        <aside class="w-64 bg-space-800 border-r border-space-600 flex flex-col">
+            <div class="p-6 border-b border-space-600">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <div><h1 class="font-semibold text-lg">Nebula</h1><p class="text-xs text-slate-400">Writer v1.0</p></div>
+                </div>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <button @click="currentView = 'dashboard'" :class="currentView === 'dashboard' ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all">Dashboard</button>
+                <button @click="currentView = 'entities'" :class="currentView === 'entities' ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all">Entities</button>
+                <button @click="currentView = 'relationships'" :class="currentView === 'relationships' ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all">Relationships</button>
+                <button @click="currentView = 'chapters'" :class="currentView === 'chapters' ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all">Chapters</button>
+                <button @click="currentView = 'events'" :class="currentView === 'events' ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all">Timeline</button>
+                <button @click="currentView = 'visualize'" :class="currentView === 'visualize' ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white'" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all">Visualize</button>
+            </nav>
+            <div class="p-4 border-t border-space-600">
+                <div class="text-xs text-slate-500 mb-2">CODEX STATS</div>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="bg-space-700 rounded-lg p-2"><div class="text-violet-400 font-semibold">{{ stats.total_entities || 0 }}</div><div class="text-slate-500 text-xs">Entities</div></div>
+                    <div class="bg-space-700 rounded-lg p-2"><div class="text-cyan-400 font-semibold">{{ stats.total_chapters || 0 }}</div><div class="text-slate-500 text-xs">Chapters</div></div>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="flex-1 overflow-auto">
+            <header class="sticky top-0 z-10 glass border-b border-space-600 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div><h2 class="text-xl font-semibold capitalize">{{ currentView }}</h2><p class="text-sm text-slate-400">The Codex</p></div>
+                    <button @click="showAddModal = true" class="btn-primary px-4 py-2 rounded-xl text-sm font-medium">+ Add</button>
+                </div>
+            </header>
+            
+            <div class="p-8">
+                <!-- Dashboard -->
+                <div v-if="currentView === 'dashboard'" class="space-y-6">
+                    <div class="glass glow rounded-2xl p-8"><h3 class="text-2xl font-semibold mb-2">Welcome to Nebula-Writer</h3><p class="text-slate-400">AI-powered fiction writing with persistent memory</p></div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="glass rounded-xl p-6"><div class="text-2xl font-semibold text-violet-400">{{ stats.entities_by_type?.character || 0 }}</div><div class="text-sm text-slate-400">Characters</div></div>
+                        <div class="glass rounded-xl p-6"><div class="text-2xl font-semibold text-cyan-400">{{ stats.entities_by_type?.location || 0 }}</div><div class="text-sm text-slate-400">Locations</div></div>
+                        <div class="glass rounded-xl p-6"><div class="text-2xl font-semibold text-emerald-400">{{ stats.total_relationships || 0 }}</div><div class="text-sm text-slate-400">Relationships</div></div>
+                        <div class="glass rounded-xl p-6"><div class="text-2xl font-semibold text-amber-400">{{ stats.total_words || 0 }}</div><div class="text-sm text-slate-400">Words</div></div>
+                    </div>
+                </div>
+                
+                <!-- Entities -->
+                <div v-if="currentView === 'entities'" class="space-y-6">
+                    <div class="flex gap-4 mb-6">
+                        <button @click="entityFilter = null" :class="!entityFilter ? 'bg-violet-500' : 'bg-space-700'" class="px-4 py-2 rounded-lg text-sm">All</button>
+                        <button @click="entityFilter = 'character'" :class="entityFilter === 'character' ? 'bg-violet-500' : 'bg-space-700'" class="px-4 py-2 rounded-lg text-sm">Characters</button>
+                        <button @click="entityFilter = 'location'" :class="entityFilter === 'location' ? 'bg-cyan-500' : 'bg-space-700'" class="px-4 py-2 rounded-lg text-sm">Locations</button>
+                        <button @click="entityFilter = 'item'" :class="entityFilter === 'item' ? 'bg-emerald-500' : 'bg-space-700'" class="px-4 py-2 rounded-lg text-sm">Items</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div v-for="entity in filteredEntities" :key="entity.id" class="glass rounded-xl p-5 card-hover">
+                            <span :class="'type-badge type-' + entity.type">{{ entity.type }}</span>
+                            <h4 class="font-semibold text-lg mt-2">{{ entity.name }}</h4>
+                            <p class="text-sm text-slate-400">{{ entity.description || 'No description' }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Relationships -->
+                <div v-if="currentView === 'relationships'" class="space-y-6">
+                    <div class="glass rounded-xl p-6">
+                        <div v-for="rel in relationships" :key="rel.id" class="bg-space-700 rounded-xl p-4 flex items-center justify-between mb-2">
+                            <div><span class="text-violet-400">{{ rel.from_name }}</span> → <span class="text-cyan-400">{{ rel.relationship_type }}</span> → <span>{{ rel.to_name }}</span></div>
+                            <span class="text-slate-500">{{ Math.round(rel.strength * 100) }}%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chapters -->
+                <div v-if="currentView === 'chapters'" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div v-for="chapter in chapters" :key="chapter.id" class="glass rounded-xl p-6 card-hover cursor-pointer" @click="viewChapter(chapter)">
+                            <span class="text-violet-400 font-mono text-sm">CHAPTER {{ chapter.number }}</span>
+                            <h4 class="font-semibold text-lg mt-2">{{ chapter.title || 'Untitled' }}</h4>
+                            <p class="text-sm text-slate-400">{{ chapter.word_count || 0 }} words</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Events -->
+                <div v-if="currentView === 'events'" class="space-y-6">
+                    <div class="glass rounded-xl p-6">
+                        <div v-for="event in events" :key="event.id" class="bg-space-700 rounded-xl p-4 mb-2">
+                            <div class="flex justify-between"><h4 class="font-semibold">{{ event.title }}</h4><span v-if="event.chapter" class="text-violet-400">Ch. {{ event.chapter }}</span></div>
+                            <p class="text-sm text-slate-400">{{ event.description }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Visualize -->
+                <div v-if="currentView === 'visualize'" class="space-y-6">
+                    <div class="glass rounded-xl p-6">
+                        <h4 class="font-semibold mb-4">Mermaid.js Graph</h4>
+                        <pre class="bg-space-900 rounded-xl p-4 text-sm font-mono text-slate-300 overflow-auto">{{ mermaidCode }}</pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal -->
+    <div v-if="showAddModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+        <div class="glass rounded-2xl p-8 w-full max-w-lg">
+            <div class="flex justify-between mb-6"><h3 class="text-xl font-semibold">{{ modalTitle }}</h3><button @click="closeModal" class="text-slate-400">✕</button></div>
+            
+            <!-- Entity -->
+            <form v-if="modalType === 'entity'" @submit.prevent="saveEntity" class="space-y-4">
+                <input v-model="form.name" placeholder="Name" class="input-field w-full px-4 py-2 rounded-xl" required>
+                <select v-model="form.entity_type" class="input-field w-full px-4 py-2 rounded-xl">
+                    <option value="character">Character</option><option value="location">Location</option><option value="item">Item</option>
+                </select>
+                <textarea v-model="form.description" placeholder="Description" class="input-field w-full px-4 py-2 rounded-xl"></textarea>
+                <input v-model="form.current_location" placeholder="Current Location" class="input-field w-full px-4 py-2 rounded-xl">
+                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+            </form>
+            
+            <!-- Relationship -->
+            <form v-if="modalType === 'relationship'" @submit.prevent="saveRelationship" class="space-y-4">
+                <select v-model="form.from_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
+                    <option v-for="e in entities" :value="e.id">{{ e.name }}</option>
+                </select>
+                <input v-model="form.relationship_type" placeholder="e.g. loves, works_with" class="input-field w-full px-4 py-2 rounded-xl" required>
+                <select v-model="form.to_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
+                    <option v-for="e in entities" :value="e.id">{{ e.name }}</option>
+                </select>
+                <input v-model="form.strength" type="range" min="0" max="1" step="0.1" class="w-full">
+                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+            </form>
+            
+            <!-- Chapter -->
+            <form v-if="modalType === 'chapter'" @submit.prevent="saveChapter" class="space-y-4">
+                <input v-model="form.number" type="number" placeholder="Chapter #" class="input-field w-full px-4 py-2 rounded-xl" required>
+                <input v-model="form.title" placeholder="Title" class="input-field w-full px-4 py-2 rounded-xl">
+                <textarea v-model="form.content" placeholder="Content..." class="input-field w-full px-4 py-2 rounded-xl" rows="6"></textarea>
+                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+            </form>
+            
+            <!-- Event -->
+            <form v-if="modalType === 'event'" @submit.prevent="saveEvent" class="space-y-4">
+                <input v-model="form.title" placeholder="Event Title" class="input-field w-full px-4 py-2 rounded-xl" required>
+                <textarea v-model="form.description" placeholder="Description" class="input-field w-full px-4 py-2 rounded-xl"></textarea>
+                <input v-model="form.chapter" type="number" placeholder="Chapter" class="input-field w-full px-4 py-2 rounded-xl">
+                <select v-model="form.significance" class="input-field w-full px-4 py-2 rounded-xl">
+                    <option value="normal">Normal</option><option value="major">Major</option><option value="pivotal">Pivotal</option>
+                </select>
+                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Chapter -->
+    <div v-if="showEditChapterModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+        <div class="glass rounded-2xl p-8 w-full max-w-3xl">
+            <div class="flex justify-between mb-6"><h3 class="text-xl font-semibold">Chapter {{ editingChapter.number }}</h3><button @click="closeEditChapter" class="text-slate-400">✕</button></div>
+            <input v-model="editingChapter.title" placeholder="Title" class="input-field w-full px-4 py-2 rounded-xl mb-4">
+            <textarea v-model="editingChapter.content" class="input-field w-full px-4 py-2 rounded-xl" rows="15"></textarea>
+            <div class="flex gap-4 mt-4">
+                <button @click="saveChapterChanges" class="btn-primary flex-1 py-3 rounded-xl">Save</button>
+                <button @click="closeEditChapter" class="btn-secondary flex-1 py-3 rounded-xl">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    currentView: 'dashboard',
+                    entities: [],
+                    relationships: [],
+                    chapters: [],
+                    events: [],
+                    stats: {},
+                    mermaidCode: 'graph TD\n    -- No relationships yet --',
+                    searchQuery: '',
+                    entityFilter: null,
+                    showAddModal: false,
+                    showEditChapterModal: false,
+                    modalType: 'entity',
+                    editingChapter: {},
+                    form: { name: '', entity_type: 'character', description: '', current_location: '', is_alive: true, from_entity_id: null, to_entity_id: null, relationship_type: '', strength: 0.5, number: 1, title: '', content: '', chapter: null, significance: 'normal' }
+                }
+            },
+            computed: {
+                filteredEntities() {
+                    if (!this.entityFilter) return this.entities;
+                    return this.entities.filter(e => e.type === this.entityFilter);
+                },
+                modalTitle() {
+                    const titles = { entity: 'Add Entity', relationship: 'Add Relationship', chapter: 'Add Chapter', event: 'Log Event' };
+                    return titles[this.modalType] || 'Add';
+                }
+            },
+            async mounted() {
+                await this.loadData();
+            },
+            methods: {
+                async loadData() {
+                    const base = 'http://localhost:8000/api';
+                    try {
+                        this.entities = await (await fetch(base + '/entities')).json();
+                        this.relationships = await (await fetch(base + '/relationships')).json();
+                        this.chapters = await (await fetch(base + '/chapters')).json();
+                        this.events = await (await fetch(base + '/events')).json();
+                        this.stats = await (await fetch(base + '/stats')).json();
+                        const mermaid = await (await fetch(base + '/export/mermaid')).json();
+                        this.mermaidCode = mermaid.mermaid;
+                    } catch(e) {
+                        console.log('API not running - using demo data');
+                        this.entities = [{id:1,name:'Ravi',type:'character',description:'Protagonist'},{id:2,name:'Priya',type:'character',description:'Love interest'},{id:3,name:'Mumbai',type:'location',description:'City'}];
+                        this.stats = { total_entities: 3, total_chapters: 0, total_relationships: 0, entities_by_type: {character:2, location:1} };
+                        this.mermaidCode = 'graph TD\n    Ravi -->|loves| Priya\n    Ravi -->|lives_in| Mumbai';
+                    }
+                },
+                closeModal() { this.showAddModal = false; this.form = { name: '', entity_type: 'character', description: '', current_location: '', is_alive: true, from_entity_id: null, to_entity_id: null, relationship_type: '', strength: 0.5, number: 1, title: '', content: '', chapter: null, significance: 'normal' }; },
+                async saveEntity() {
+                    await fetch('http://localhost:8000/api/entities', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
+                    this.closeModal(); await this.loadData();
+                },
+                async saveRelationship() {
+                    await fetch('http://localhost:8000/api/relationships', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
+                    this.closeModal(); await this.loadData();
+                },
+                async saveChapter() {
+                    await fetch('http://localhost:8000/api/chapters', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
+                    this.closeModal(); await this.loadData();
+                },
+                async saveEvent() {
+                    await fetch('http://localhost:8000/api/events', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
+                    this.closeModal(); await this.loadData();
+                },
+                viewChapter(ch) { this.editingChapter = {...ch}; this.showEditChapterModal = true; },
+                closeEditChapter() { this.showEditChapterModal = false; },
+                async saveChapterChanges() {
+                    await fetch(`http://localhost:8000/api/chapters/${this.editingChapter.id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ title: this.editingChapter.title, content: this.editingChapter.content }) });
+                    this.closeEditChapter(); await this.loadData();
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
