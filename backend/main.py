@@ -301,6 +301,108 @@ def export_json():
         "stats": db.get_stats()
     }
 
+# ============ AI WRITING ENDPOINTS ============
+
+class AIWriteRequest(BaseModel):
+    beat: str
+    word_count: int = 500
+    entity_ids: Optional[List[int]] = None
+    chapter: Optional[int] = None
+
+class AIRewriteRequest(BaseModel):
+    text: str
+    style: str = "noir"
+
+class AIDescribeRequest(BaseModel):
+    entity_name: str
+
+class AIShowNotTellRequest(BaseModel):
+    text: str
+
+@app.post("/api/ai/write")
+def ai_write_scene(req: AIWriteRequest):
+    """Write a scene using AI with Codex context"""
+    try:
+        from ai_writer import AIWriter
+        ai = AIWriter()
+        result = ai.write_scene(
+            db=db,
+            beat=req.beat,
+            word_count=req.word_count,
+            entity_ids=req.entity_ids,
+            chapter=req.chapter
+        )
+        return {"text": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/rewrite")
+def ai_rewrite(req: AIRewriteRequest):
+    """Rewrite text in a different style"""
+    try:
+        from ai_writer import AIWriter
+        ai = AIWriter()
+        result = ai.rewrite_style(req.text, req.style)
+        return {"text": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/describe")
+def ai_describe(req: AIDescribeRequest):
+    """Generate sensory description for an entity"""
+    try:
+        from ai_writer import AIWriter
+        ai = AIWriter()
+        result = ai.generate_description(req.entity_name, db)
+        return {"text": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/show-not-tell")
+def ai_show_not_tell(req: AIShowNotTellRequest):
+    """Convert telling to showing"""
+    try:
+        from ai_writer import AIWriter
+        ai = AIWriter()
+        result = ai.show_not_tell(req.text)
+        return {"text": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ AUDIT ENDPOINTS ============
+
+@app.get("/api/audit")
+def audit_story():
+    """Run full story audit"""
+    try:
+        from audit import StoryAuditor
+        auditor = StoryAuditor(db)
+        return auditor.audit_all_chapters()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ MEMORY ENDPOINTS ============
+
+@app.post("/api/memory/rebuild")
+def rebuild_memory():
+    """Rebuild vector memory index"""
+    try:
+        from memory import MemorySystem
+        mem = MemorySystem()
+        return mem.rebuild_index(db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/memory/search")
+def memory_search(q: str = Query(..., min_length=2)):
+    """Semantic search in memory"""
+    try:
+        from memory import MemorySystem
+        mem = MemorySystem()
+        return mem.get_relevant_context(q, db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============ HEALTH CHECK ============
 
 @app.get("/api/health")
