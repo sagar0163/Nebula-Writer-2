@@ -1,0 +1,113 @@
+"""
+Nebula-Writer CLI
+Command-line interface for fiction writing
+"""
+import argparse
+import sys
+from pathlib import Path
+
+# Add backend to path
+sys.path.insert(0, str(Path(__file__).parent / "backend"))
+
+from codex import CodexDatabase
+
+DB_PATH = Path(__file__).parent / "data" / "codex.db"
+
+def cmd_entity(args):
+    db = CodexDatabase(str(DB_PATH))
+    
+    if args.subcommand == "list":
+        entities = db.get_entities(args.type)
+        for e in entities:
+            print(f"  [{e['type']:10}] {e['name']}")
+            if e.get('description'):
+                print(f"               {e['description'][:60]}...")
+    
+    elif args.subcommand == "add":
+        db.add_entity(args.name, args.entity_type, args.description)
+        print(f"✅ Added: {args.name}")
+    
+    elif args.subcommand == "delete":
+        db.delete_entity(args.entity_id)
+        print(f"🗑️  Deleted entity {args.entity_id}")
+
+def cmd_chapter(args):
+    db = CodexDatabase(str(DB_PATH))
+    
+    if args.subcommand == "list":
+        chapters = db.get_chapters()
+        for c in chapters:
+            print(f"  Chapter {c['number']}: {c['title'] or 'Untitled'} ({c['word_count']} words)")
+    
+    elif args.subcommand == "create":
+        db.add_chapter(args.number, args.title)
+        print(f"✅ Created Chapter {args.number}")
+
+def cmd_visualize(args):
+    db = CodexDatabase(str(DB_PATH))
+    relationships = db.get_relationships()
+    
+    print("\n📊 Relationship Graph (Mermaid.js)")
+    print("```mermaid")
+    print("graph TD")
+    
+    entities = {e['id']: e['name'] for e in db.get_entities()}
+    
+    for rel in relationships:
+        from_name = entities.get(rel['from_entity_id'], '?').replace(" ", "_")
+        to_name = entities.get(rel['to_entity_id'], '?').replace(" ", "_")
+        print(f"    {from_name} -->|{rel['relationship_type']}| {to_name}")
+    
+    print("```")
+
+def main():
+    parser = argparse.ArgumentParser(prog="nebula-writer", description="AI Fiction Writing Assistant")
+    subparsers = parser.add_subparsers()
+    
+    # Entity commands
+    entity_parser = subparsers.add_parser("entity", help="Manage entities")
+    entity_sub = entity_parser.add_subparsers()
+    
+    list_ep = entity_sub.add_parser("list", help="List entities")
+    list_ep.add_argument("--type", choices=["character", "location", "item"])
+    list_ep.set_defaults(subcommand="list", func=cmd_entity)
+    
+    add_ep = entity_sub.add_parser("add", help="Add entity")
+    add_ep.add_argument("name")
+    add_ep.add_argument("--type", dest="entity_type", default="character")
+    add_ep.add_argument("--desc", dest="description", default=None)
+    add_ep.set_defaults(subcommand="add", func=cmd_entity)
+    
+    del_ep = entity_sub.add_parser("delete", help="Delete entity")
+    del_ep.add_argument("entity_id", type=int)
+    del_ep.set_defaults(subcommand="delete", func=cmd_entity)
+    
+    entity_parser.set_defaults(func=cmd_entity)
+    
+    # Chapter commands
+    chapter_parser = subparsers.add_parser("chapter", help="Manage chapters")
+    chapter_sub = chapter_parser.add_subparsers()
+    
+    list_cp = chapter_sub.add_parser("list", help="List chapters")
+    list_cp.set_defaults(subcommand="list", func=cmd_chapter)
+    
+    create_cp = chapter_sub.add_parser("create", help="Create chapter")
+    create_cp.add_argument("number", type=int)
+    create_cp.add_argument("--title", default=None)
+    create_cp.set_defaults(subcommand="create", func=cmd_chapter)
+    
+    chapter_parser.set_defaults(func=cmd_chapter)
+    
+    # Visualize
+    viz_parser = subparsers.add_parser("visualize", help="Visualize relationships")
+    viz_parser.set_defaults(func=cmd_visualize)
+    
+    args = parser.parse_args()
+    
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
