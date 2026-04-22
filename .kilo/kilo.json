@@ -1,0 +1,32 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp@0.0.38"
+      ]
+    }
+  },
+  "permission": {
+    "read": {
+      ".kilo/**": "deny",
+      "data/**": "deny",
+      "*": "allow"
+    },
+    "edit": {
+      ".kilo/**": "deny",
+      "data/**": "deny",
+      "*": "allow"
+    }
+  },
+  "watcher": {
+    "ignore": [
+      ".kilo/**",
+      "data/**"
+    ]
+  }
+}
+

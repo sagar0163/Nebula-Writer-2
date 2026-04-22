@@ -7,7 +7,7 @@ import json
 from typing import List, Dict, Optional
 from pathlib import Path
 
-# Try to import google.genai, install if not available
+# Try to import google.genai and huggingface_hub, install if not available
 try:
     from google import genai
 except ImportError:
@@ -15,18 +15,105 @@ except ImportError:
     subprocess.run(["pip", "install", "google-genai"], check=True)
     from google import genai
 
+try:
+    from huggingface_hub import InferenceClient
+except ImportError:
+    import subprocess
+    subprocess.run(["pip", "install", "huggingface-hub"], check=True)
+    from huggingface_hub import InferenceClient
+
 
 class AIWriter:
     """AI Writer that uses Codex context for accurate fiction writing"""
     
-    def __init__(self, api_key: str = None):
-        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        if not self.api_key:
-            raise ValueError("GEMINI_API_KEY not set")
+    def __init__(self, gemini_key: str = None, hf_token: str = None):
+        """
+        Initializes the multi-provider AI client.
         
-        self.client = genai.Client(api_key=self.api_key)
-        self.model = "gemini-2.0-flash"
+        Nebula-Writer prioritizes Hugging Face (Llama-3) for logic and creativity,
+        with a robust fallback to Google Gemini-2.0-Flash for speed and reliability.
+        
+        :param gemini_key: API key for Google Gemini (optional if in ENV).
+        :param hf_token: API key for Hugging Face Inference API (optional if in ENV).
+        """
+        self.gemini_key = gemini_key or os.environ.get("GEMINI_API_KEY")
+        self.hf_token = hf_token or os.environ.get("HUGGINGFACE_API_KEY")
+        
+        if not self.gemini_key and not self.hf_token:
+            raise ValueError("Neither GEMINI_API_KEY nor HUGGINGFACE_API_KEY set")
+        
+        # Initialize Gemini client
+        self.gemini_client = None
+        if self.gemini_key:
+            try:
+                self.gemini_client = genai.Client(api_key=self.gemini_key)
+            except Exception as e:
+                print(f"FAILED to initialize Gemini: {e}")
+        
+        # Initialize Hugging Face client
+        self.hf_client = None
+        # Using Llama-3.2-1B-Instruct as the primary lightweight model
+        self.hf_model = "meta-llama/Llama-3.2-1B-Instruct"
+        if self.hf_token:
+            try:
+                self.hf_client = InferenceClient(model=self.hf_model, token=self.hf_token)
+            except Exception as e:
+                print(f"FAILED to initialize Hugging Face: {e}")
     
+    def _generate(self, system_prompt: str, user_prompt: str, temperature: float = 0.8, max_tokens: int = 2000) -> str:
+        """
+        Internal generation engine with fallback logic.
+        
+        Attempts to generate content using Hugging Face (Llama-3). 
+        If the inference API fails or times out, it seamlessly falls back to Google Gemini.
+        
+        :param system_prompt: Instructions defining the AI's persona and constraints.
+        :param user_prompt: The specific request or context from the user.
+        :param temperature: Sampling temperature (0.0 for deterministic, 1.0 for creative).
+        :param max_tokens: Maximum length of the generated response.
+        :return: The generated text response.
+        """
+        
+        # Attempt generation with Hugging Face first
+        if self.hf_client:
+            try:
+                print(f"Generating with Hugging Face ({self.hf_model})...")
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
+                response = self.hf_client.chat_completion(
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                print(f"Hugging Face failed: {e}")
+                if not self.gemini_client:
+                    raise e
+                print("Falling back to Gemini...")
+        
+        # Fallback to Gemini
+        if self.gemini_client:
+            try:
+                print("Generating with Gemini (gemini-2.0-flash)...")
+                response = self.gemini_client.models.generate_content(
+                    model="gemini-2.0-flash",
+                    contents=user_prompt,
+                    config={
+                        "system_instruction": system_prompt,
+                        "temperature": temperature,
+                        "max_output_tokens": max_tokens,
+                    }
+                )
+                return response.text
+            except Exception as e:
+                print(f"Gemini failed: {e}")
+                raise e
+        
+        raise ValueError("No LLM providers available or both failed.")
+
     def _build_system_prompt(self, context: Dict) -> str:
         """Build system prompt with Codex context"""
         prompt = """You are Nebula-Writer, an AI fiction writing assistant. You write immersive, engaging prose.
@@ -63,23 +150,23 @@ Never contradict established facts from the Codex.
 """
         return prompt
     
-    def get_context(self, db, entity_ids: List[int] = None, chapter: int = None) -> Dict:
-        """Retrieve context from Codex"""
+    def get_context(self, db, entity_ids: List[int] = None, chapter: int = None, max_entities: int = 10, max_events: int = 5) -> Dict:
+        """Retrieve context from Codex with limits to prevent context overflow"""
         context = {"entities": [], "relationships": [], "recent_events": []}
         
-        # Get entities with attributes
-        entities = db.get_entities()
+        # Get entities with attributes (limited)
+        entities = db.get_entities()[:max_entities]
         for e in entities:
             if entity_ids and e['id'] not in entity_ids:
                 continue
-            e['attributes'] = db.get_attributes(e['id'])
+            e['attributes'] = db.get_attributes(e['id'])[:5]  # Limit attributes
             context["entities"].append(e)
         
-        # Get relationships
-        context["relationships"] = db.get_relationships()
+        # Get relationships (limited)
+        context["relationships"] = db.get_relationships()[:20]
         
-        # Get recent events
-        context["recent_events"] = db.get_events(chapter)
+        # Get recent events (limited)
+        context["recent_events"] = db.get_events(chapter)[:max_events]
         
         return context
     
@@ -96,17 +183,7 @@ Target length: ~{word_count} words.
 
 Write the scene now:"""
         
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=user_prompt,
-            config={
-                "system_instruction": system_prompt,
-                "temperature": 0.8,
-                "max_output_tokens": 2000,
-            }
-        )
-        
-        return response.text
+        return self._generate(system_prompt, user_prompt, temperature=0.8, max_tokens=2000)
     
     def rewrite_style(self, text: str, style: str) -> str:
         """Rewrite text in a different style"""
@@ -119,14 +196,9 @@ Write the scene now:"""
         }
         
         style_prompt = style_prompts.get(style.lower(), f"Rewrite in {style} style.")
+        system_prompt = "You are a versatile editor and writer. Rewrite the user's text exactly as requested."
         
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=f"{style_prompt}\n\nRewrite:\n{text}",
-            config={"temperature": 0.8}
-        )
-        
-        return response.text
+        return self._generate(system_prompt, f"{style_prompt}\n\nRewrite:\n{text}", temperature=0.8)
     
     def generate_description(self, entity_name: str, db) -> str:
         """Generate sensory description for an entity"""
@@ -141,36 +213,26 @@ Write the scene now:"""
         
         attrs = db.get_attributes(entity['id'])
         
-        prompt = f"""Generate a vivid sensory description for **{entity['name']}** ({entity['type']}).
+        system_prompt = "You are a descriptive writer focusing on sensory details."
+        user_prompt = f"""Generate a vivid sensory description for **{entity['name']}** ({entity['type']}).
 
 Details: {entity.get('description', 'N/A')}
 Attributes: {', '.join([f"{a['key']}: {a['value']}" for a in attrs])}
 
 Include smell, touch, sound, and sight. Make it immersive:"""
         
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config={"temperature": 0.7}
-        )
-        
-        return response.text
+        return self._generate(system_prompt, user_prompt, temperature=0.7)
     
     def show_not_tell(self, text: str) -> str:
         """Convert telling to showing"""
-        prompt = f"""Convert this telling prose to showing (physical actions/behaviors instead of emotions):
+        system_prompt = "You are a writing coach specializing in the 'Show, Don't Tell' technique."
+        user_prompt = f"""Convert this telling prose to showing (physical actions/behaviors instead of emotions):
 
 {text}
 
 Rewrite with physical actions that convey the same emotions:"""
         
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-            config={"temperature": 0.7}
-        )
-        
-        return response.text
+        return self._generate(system_prompt, user_prompt, temperature=0.7)
 
 
 if __name__ == "__main__":
@@ -180,4 +242,4 @@ if __name__ == "__main__":
     
     # Quick test
     print("Testing AI Writer...")
-    # Will work once GEMINI_API_KEY is set
+    # Will work once GEMINI_API_KEY or HUGGINGFACE_API_KEY is set

@@ -1,0 +1,755 @@
+AutoNovelist  |  UI Implementation Plan v1.0  |  Chat-First Architecture  |  CONFIDENTIAL
+
+
+
+
+
+
+
+IMPLEMENTATION PLAN
+
+AutoNovelist — Chat-First UI Architecture
+
+Companion to BRD v2.1  |  April 2026
+
+
+
+
+
+Document
+
+AutoNovelist UI Implementation Plan v1.0
+
+Replaces
+
+BRD v2.1 UI section — which described a form-based interface. This document supersedes all prior UI assumptions.
+
+Core Shift
+
+From: form-filling + explicit review steps. To: conversation-first, AI fills everything silently, user corrects by talking or by direct edit.
+
+Two Modes
+
+Chat Mode (default) + Studio Mode (power users). Same engine. Different windows.
+
+
+
+
+
+You talk. The novel builds itself.
+
+
+
+
+1. The Core Insight — What Was Wrong with the BRD UI
+
+
+
+
+
+The BRD v2.1 described a sophisticated AI engine but paired it with a broken mental model for the user interface. Every interaction required the writer to navigate to a form, fill fields, click approve, navigate to another section, fill more fields. This is not how writers think. Writers think in stories, in conversation, in reaction.
+
+
+
+A writer should never have to think: 'I need to go to the Character Profile section and update the Arc Intention field.' They should just say: 'Actually I want her to end the novel more broken.' The AI handles the rest.
+
+
+
+The corrected mental model is:
+
+
+
+Layer
+
+Old (Wrong) Mental Model
+
+New (Correct) Mental Model
+
+Primary interface
+
+A structured workspace with sections: World, Characters, Chapters, Codex, Export
+
+A chat window. One input. Everything else is secondary.
+
+How user gives input
+
+Fill forms, highlight text, click review buttons, navigate to correct section
+
+Type or speak naturally. The AI decides which part of the engine to update.
+
+Where world-building lives
+
+Visible at all times — the Codex is a primary navigation item the user manages
+
+Hidden by default. Built silently. Accessible on demand. Never demands attention.
+
+How user edits details
+
+Navigate to the Codex, find the entry, inline comment or edit field directly
+
+Either: say it in chat ('make her younger') OR switch to Studio Mode and edit directly. Both always available.
+
+Who this serves
+
+Power users comfortable with structured writing tools
+
+Every writer, from first-timer to professional. Studio Mode serves power users.
+
+
+
+
+
+
+2. The Two Modes — Chat Mode & Studio Mode
+
+
+
+
+
+AutoNovelist has one engine and two views into it. A user can switch between them at any time within the same project. Nothing is lost, nothing is reset. They are looking at the same data through different interfaces.
+
+
+
+2.1 Chat Mode — The Default Experience
+
+Chat Mode is what every user sees when they open AutoNovelist. It looks like a messaging app. There is a conversation thread on the left and a live preview of the current chapter (or current world state) on the right. The chat IS the interface.
+
+
+
+What the Chat Thread Contains
+
+The full conversation history between the user and the AI — from the first idea to the current chapter
+
+AI messages that contain the chapter text, inline and readable, not as an attachment
+
+AI messages that contain world proposals, character summaries, lookahead cards — all as readable chat cards, not forms
+
+Small silent status updates: 'Researching 1920s Shanghai...' / 'Building character profiles...' / 'Writing Chapter 1...'
+
+The user's own messages — all free text, no structure required
+
+
+
+How World-Building Happens in Chat Mode
+
+AI asks questions conversationally: 'Is this standalone or do you see it becoming a series?' — one at a time, not a form
+
+As the user answers, the AI silently populates the Codex in the background — the user never sees a form
+
+When world-building is complete, the AI sends a summary chat card: 'Here's what I've put together — the world, the characters, and where I think the story starts. Anything you want to change before I write Chapter 1?'
+
+The user replies in plain text: 'Make the detective older — mid-50s, not 30s' or 'Looks great, go ahead'
+
+AI updates the relevant Codex entry silently and either continues or confirms the change
+
+
+
+How Chapter Review Happens in Chat Mode
+
+The AI posts the chapter directly into the chat as a readable message
+
+The user reads it and replies naturally: 'This is great but the ending feels abrupt'
+
+AI asks a natural follow-up if needed: 'Do you want me to extend the scene or cut to a new scene that feels more complete?'
+
+User replies, AI revises, posts the updated version in the same thread
+
+When the user is happy: 'Yes, this is good' — AI marks it approved and generates the next lookahead
+
+The next lookahead appears as a chat card: 'Based on what happened in Chapter 1, here's where I think Chapter 2 could go...' User responds naturally
+
+
+
+In Chat Mode, the user never navigates anywhere. They never click 'Approve'. They never see a Codex. They just talk. Everything else is the AI's job.
+
+
+
+2.2 Studio Mode — The Power User Experience
+
+Studio Mode reveals the full engine. It is designed for writers who want surgical control — who know exactly which character arc needs adjusting, which world rule is causing a continuity problem, or which planted seed hasn't been paid off. It is also designed for writers who simply prefer a traditional writing tool interface.
+
+
+
+Studio Mode Layout
+
+Panel
+
+What It Shows
+
+Left sidebar — Navigator
+
+Project tree: Chapters (with approval status), Codex (Characters, Locations, World Rules, Research, Timeline), Story Compass (Open Tensions, Planted Seeds, Arc States), Export
+
+Centre — Editor
+
+The chapter being reviewed, with full inline comment capability (highlight any span, leave a free-text comment). Or a Codex entry in edit mode. Or a Lookahead card.
+
+Right panel — AI Chat
+
+The same chat thread from Chat Mode, always visible. Even in Studio Mode you can just type. The AI routes your message to the correct part of the engine. Studio Mode does not remove the chat — it adds panels around it.
+
+Bottom bar — Story Health
+
+Live indicators: Open tensions count, unresolved propagation debt, quality score of current chapter, planted seeds without payoff, chapter word count vs target
+
+
+
+What Studio Mode Adds That Chat Mode Doesn't Show
+
+Full Codex browser — every character profile, location entry, world rule, research node — directly editable
+
+Visual relationship graph — characters as nodes, relationships as edges, clickable
+
+Timeline view — all story events in chronological order, with chapter references
+
+Story Compass dashboard — live view of all open tensions, arc states, planted seeds, narrative momentum score
+
+Propagation debt tracker — list of downstream effects waiting for resolution
+
+Lookahead cards as visual cards — not just as chat messages, but as a card deck you can drag, reorder, or annotate
+
+Inline comment system on chapter text — highlight any span, leave a structured comment
+
+Quality score panel — chapter scores broken down by prose, pacing, voice, continuity, originality, dialogue, tension, momentum
+
+
+
+Studio Mode does not replace the chat. The chat is always in the right panel. A power user can edit a character's Codex entry directly AND send a follow-up message in the chat. Both are valid simultaneously.
+
+
+
+2.3 Switching Between Modes
+
+Scenario
+
+What Happens
+
+Chat Mode → Studio Mode
+
+User clicks 'Studio' toggle in the top bar. The chat thread slides to the right panel. The Codex, chapter editor, and navigator appear. No data changes. No interruption to the AI's work.
+
+Studio Mode → Chat Mode
+
+User clicks 'Chat' toggle. All panels collapse. Only the chat thread and chapter preview remain. Any direct edits made in Studio Mode are already saved and visible in the chat as an AI status message: 'I noticed you updated [character]'s backstory directly — I've applied that across the story.'
+
+Mid-chapter switch
+
+Switching modes mid-chapter does not interrupt generation. If the AI is writing, it continues. The view changes; the engine does not pause.
+
+Default mode setting
+
+User sets their preferred default mode in profile settings. First-time users always start in Chat Mode.
+
+
+
+
+
+
+3. Chat Intelligence — How the AI Understands What You Mean
+
+
+
+
+
+The chat is deceptively simple to look at. Behind it is a routing layer that interprets every message and decides which part of the engine to engage. The user never thinks about routing — they just type.
+
+
+
+3.1 Intent Classification
+
+Every user message is classified before being acted on. Classification happens silently in under a second.
+
+
+
+User Says
+
+Classified Intent
+
+What AI Does
+
+'A detective in 1920s Shanghai who can hear the dead'
+
+New project seed
+
+Creates project. Begins Q&A flow. Starts research engine.
+
+'Make her younger — mid 20s not 30s'
+
+Character attribute update
+
+Updates age in Character Codex entry. Checks for downstream conflicts. Confirms in chat.
+
+'This scene feels too slow'
+
+Pacing feedback on current chapter
+
+Asks which scene if ambiguous, or assumes current reading position. Revises pacing. Posts updated chapter.
+
+'Don't reveal the killer yet'
+
+Plot direction override
+
+Revises chapter ending. Updates Open Tensions — this thread stays open. Refreshes lookahead cards.
+
+'What do we know about the French Concession?'
+
+Research / Codex query
+
+Returns a summary of the relevant research nodes and location Codex entry, in natural language, inline in chat.
+
+'Go ahead, write it'
+
+Chapter generation trigger
+
+Begins writing. Posts status: 'Writing Chapter 2...' Chapter appears in chat when complete.
+
+'Actually let's make the magic system completely different'
+
+World rule major change
+
+Flags this as a significant change. Tells user which chapters (if any) will be affected. Asks to confirm before proceeding. Updates World Rules Codex.
+
+'I love this, keep going'
+
+Chapter approval + continue
+
+Marks chapter as approved. Generates next lookahead. Posts lookahead card in chat for lightweight review.
+
+
+
+3.2 Ambiguity Handling
+
+When the AI cannot confidently classify an intent, it asks a single clarifying question — never more than one — before acting.
+
+
+
+User: 'Change the ending.' AI: 'The ending of this chapter, or where you want the novel to end overall?'
+
+User: 'Make it darker.' AI: 'Do you mean the tone of this chapter, or the whole novel going forward?'
+
+User: 'She wouldn't do that.' AI assumes this is about the most recently mentioned character in the chapter. If there is genuine ambiguity between two characters, it asks.
+
+
+
+The AI never asks two questions at once. It never asks for information it can reasonably infer from context.
+
+
+
+3.3 Silent vs. Announced Actions
+
+Not everything the AI does needs a message. The chat thread stays clean by distinguishing between actions that need acknowledgement and those that don't.
+
+
+
+Action
+
+Silent or Announced?
+
+If Announced — What It Says
+
+Running web research
+
+Silent status only
+
+Small status pill: 'Researching...' — disappears when done
+
+Updating a minor Codex field
+
+Silent
+
+No message. Visible in Studio Mode if user checks.
+
+Updating a character's arc
+
+Announced
+
+'I've updated [Name]'s arc intention based on your feedback. She's now aimed at a darker resolution.'
+
+Ripple check finding a conflict
+
+Announced
+
+'That change affects Chapter 4, where [Name] mentions the detail you've just updated. Want me to revise Chapter 4 too?'
+
+Major world rule change affecting past chapters
+
+Announced + confirmation required
+
+'This changes how the ability works, which affects Chapters 2, 5, and 7. Should I update all three?'
+
+Anti-slop pass completing
+
+Silent
+
+Quality score updates in the bottom bar. No chat message unless score is below threshold.
+
+
+
+
+
+
+4. Full User Flow — Chat Mode (End to End)
+
+
+
+
+
+This section traces a complete novel project from first message to export, showing exactly what the user sees and types at each step. No forms. No navigation. Just conversation.
+
+
+
+Step 1 — First Message
+
+User types: 'I want to write a noir detective novel set in 1920s Shanghai. The detective can hear the thoughts of the dead. I want it to feel grounded — the ability is a curse, not a power.'
+
+
+
+AI responds in chat (within 3 seconds):
+
+'Love this. A few quick questions before I start building — I'll ask them one at a time. First: do you see this as a standalone novel or could it be the start of a series?'
+
+
+
+Step 2 — Conversational Q&A (3–5 exchanges)
+
+The AI asks questions one at a time. The user answers naturally. Behind the scenes, every answer populates a Codex field.
+
+
+
+AI Question
+
+User Answer
+
+What Gets Built Silently
+
+Standalone or series?
+
+'Standalone for now, maybe a series if it works'
+
+Story scope set. Series flag: possible. Story Anchor: open ending optional.
+
+Do you have a detective in mind — name, background?
+
+'Not really. Maybe Chinese-European mixed heritage, speaks three languages. Name TBD.'
+
+Character stub created. Ethnicity, linguistic ability set. Name field flagged for AI generation.
+
+How dark are you comfortable going — violence, moral ambiguity?
+
+'Quite dark. Morally grey is fine. No gratuitous gore.'
+
+Tone profile: dark, morally grey. Content boundary: no graphic gore. Applied to prose voice guide.
+
+Any story elements you already know you want — a specific scene, relationship, ending type?
+
+'I want a female antagonist who isn't evil, just on the opposite side. And I want the ending to be ambiguous.'
+
+Antagonist profile stub created. Moral alignment: grey. Story Anchor 3 (ending type): ambiguous.
+
+
+
+Step 3 — AI Builds the World (Silent, Announced by Summary)
+
+After the last question, the AI sends a status message:
+
+'I have everything I need. Building your world now — researching 1920s Shanghai, generating characters, and setting the story up. This will take about 60 seconds.'
+
+
+
+60–90 seconds later, the AI posts a World Summary card in chat — not a form, a readable narrative summary:
+
+'Here's what I've put together. The story is set in 1929 Shanghai, split between the International Settlement and the Chinese quarter. Your detective is Wei Langan — half-Irish, half-Shanghainese, a former colonial police interpreter turned private investigator. His ability emerged after the death of his mother three years ago. The antagonist is Vivienne Soong, a Black market antiquities dealer working for a faction trying to suppress a historical truth that the dead are starting to whisper about. The story begins with a murder that looks like an accident. Does any of this feel wrong? Change anything in a message or say 'start writing' and I'll begin Chapter 1.'
+
+
+
+Step 4 — User Reacts Naturally
+
+User reads the summary and replies:
+
+'I like it but make Wei older — 45, not younger. And I want the ability to be physically painful, not just emotional.'
+
+
+
+AI responds:
+
+'Done — Wei is 45, and the ability now causes physical pain: a cold pressure behind the eyes that intensifies with proximity to recent death. I've noted this as an absolute world rule so it stays consistent. Anything else, or shall I start writing?'
+
+
+
+Step 5 — Chapter Generation
+
+User: 'Start writing.' AI posts a status pill: 'Writing Chapter 1...' and then — when complete — posts the full chapter as a chat message. The chapter is readable inline. No modal, no new tab, no download.
+
+
+
+Step 6 — Chapter Review in Chat
+
+User reads the chapter in the chat thread and replies with feedback — as naturally as texting:
+
+'This is strong. The opening scene is great. But the dialogue in the third scene feels too modern — sounds like 2024, not 1929.'
+
+
+
+AI responds:
+
+'Agreed — I'll period-correct that dialogue. I'm also running a quick research pass on 1929 Shanghai vernacular to make sure the register is right. One moment.'
+
+
+
+AI revises and posts the updated section inline. Not the whole chapter — just the changed section, clearly marked. User says 'good' or gives more feedback.
+
+
+
+Step 7 — Approval and Continuation
+
+User: 'Yes, this is it. Keep going.' AI responds:
+
+'Chapter 1 locked. Here's where I think Chapter 2 goes: Wei receives an anonymous message that leads him to the French Concession, where a second body has been found — this one with no thoughts at all, which has never happened to him before. I think this is the right next pull. Shall I write it, or do you want to redirect?'
+
+
+
+User: 'Write it.' The loop continues.
+
+
+
+
+
+
+5. Technical Implementation Breakdown
+
+
+
+
+
+5.1 Frontend Architecture
+
+Component
+
+Specification
+
+Framework
+
+React (web). React Native (mobile, Phase 4). Single codebase where possible.
+
+Chat Thread
+
+Virtualized message list (react-virtualized or similar). Streaming AI responses — text appears token by token, not as a single dump. Chapter messages rendered as rich text, not plain text.
+
+Mode Toggle
+
+Top-bar toggle: Chat / Studio. Animated panel transition (200ms). State persists per project — each project remembers which mode you left it in.
+
+Studio Panels
+
+Resizable split-pane layout. Left navigator (tree), centre editor, right chat. Each pane collapsible. Layout saved per user.
+
+Inline Comment Layer
+
+Overlay on chapter text (Studio Mode). Highlight to trigger comment input. Comments anchored to text spans by character offset. Resolves gracefully if text is revised.
+
+Codex Views
+
+Character profile: card with all fields editable inline. Relationship graph: force-directed D3 graph. Timeline: horizontal scroll view. All accessible in Studio Mode navigator.
+
+Lookahead Cards
+
+In Chat Mode: rendered as a rich chat message card with a 'Write it' button. In Studio Mode: same card in a dedicated Lookahead panel, draggable and annotatable.
+
+Status System
+
+Status pills (small, dismissible) for background operations: Researching / Writing / Updating Codex / Running quality check. Never modal. Never blocking.
+
+
+
+5.2 Backend & AI Architecture
+
+System
+
+Specification
+
+Intent Router
+
+LLM-based classifier that reads each user message and routes to the correct handler: Q&A / Character update / Plot feedback / Chapter generation / World rule change / Codex query / Approval. Runs before main generation. Fast (< 500ms).
+
+Research Engine
+
+Web search API (Brave or Bing). Results summarised and stored as Research Nodes in Story Graph. Runs asynchronously — does not block chat responses.
+
+Story Graph DB
+
+Property graph (Neo4j recommended). All Codex entities + Story Compass nodes. Versioned per chapter. Propagation API exposes: get_affected_nodes(changed_node) and apply_propagation(changes).
+
+Context Assembler
+
+Before every generation call: queries Story Graph for relevant nodes (semantic similarity + relationship traversal). Assembles ranked context: world rules > character states > recent events > research nodes > prior chapter summary. Never sends the full graph — only what is relevant.
+
+Generation Pipeline
+
+Generate → Anti-slop pass → Evaluate (AI judge, 8 criteria) → Revise if score < 7.5 → Present. Max 3 revision passes. If still below threshold after 3 passes, present with score visible and a note.
+
+Streaming
+
+All AI responses stream to the chat in real time via Server-Sent Events. User sees text appearing progressively. Chapter generation streams the full chapter as it is written.
+
+Codex Sync
+
+After every chat message that results in a Codex change, the Studio Mode panels update in real time via WebSocket. Users with Studio Mode open see changes appear live.
+
+
+
+5.3 Build Priority Order (Phase 1)
+
+Phase 1 should be built in this exact sequence — each item unblocks the next:
+
+
+
+#
+
+Component
+
+Dependency
+
+Acceptance Criteria
+
+1
+
+Chat UI shell + streaming responses
+
+None
+
+User can send a message and see a streaming AI reply. Feels like iMessage, not a web form.
+
+2
+
+Intent Router
+
+Chat UI shell
+
+Correctly classifies 8 intent types on a test set of 100 messages with > 92% accuracy.
+
+3
+
+Story Graph DB + basic Codex CRUD
+
+None
+
+Can create, read, update Character, Location, WorldRule, PlotThread nodes. All changes versioned.
+
+4
+
+Q&A flow + Codex population
+
+Intent Router + Story Graph
+
+A 5-question conversation results in a fully populated Codex with no user ever seeing a form.
+
+5
+
+Research Engine
+
+Story Graph
+
+A project with a historical setting returns > 20 sourced research nodes. All visible in Codex.
+
+6
+
+Context Assembler + Chapter Generation
+
+Story Graph + Research Engine
+
+A chapter is generated with full Codex context. No character contradictions. Historically accurate.
+
+7
+
+Evaluate/revise loop + Anti-slop
+
+Chapter Generation
+
+Chapter quality score > 7.5 on average. Anti-slop flags visible in bottom bar.
+
+8
+
+Studio Mode panels (Codex browser, navigator)
+
+Story Graph + Chat UI
+
+User can switch between Chat and Studio mid-project. All Codex entries visible and editable.
+
+9
+
+Evolving lookahead + Story Compass
+
+Chapter Generation + Story Graph
+
+Lookahead cards regenerate after each chapter approval. Story Compass updates live.
+
+10
+
+DOCX export + full chat history export
+
+All above
+
+Complete novel exported as properly formatted DOCX. Chat history downloadable as PDF.
+
+
+
+
+
+
+6. Amendments to BRD v2.1
+
+
+
+
+
+This implementation plan amends the following sections of BRD v2.1. All other sections of v2.1 remain valid.
+
+
+
+BRD Section
+
+Old Assumption
+
+Amendment
+
+Section 2 — User Journey Phase A
+
+User navigates to World Proposal section. Reviews structured document. Leaves inline comments on fields.
+
+REPLACED: World Proposal is delivered as a narrative summary in the chat. User responds in free text. No navigation required. Inline comments in Studio Mode remain available but are not the primary flow.
+
+Section 2 — User Journey Phase B
+
+User reviews Lookahead card, leaves comments, approves explicitly before writing begins.
+
+REPLACED: Lookahead card appears as a chat message. User approves by saying 'go ahead' or redirects by describing what they want. No explicit 'Approve' button in Chat Mode.
+
+Section 3 — Inline Comment System
+
+Primary feedback mechanism for all users.
+
+AMENDED: Inline comments are a Studio Mode feature. In Chat Mode, feedback is conversational. Both are equally valid. Neither is required.
+
+Section 5 — FR-04 Inline Comment Review
+
+Required for chapter approval in all cases.
+
+AMENDED: Required only if the user is in Studio Mode and has left unresolved comments. In Chat Mode, 'I love it, keep going' is a valid and complete approval.
+
+Section 6 — UI Layer description
+
+'Project dashboard, Chapter editor, Story Bible explorer, visual character/location maps, inline comments, Quality score panel'
+
+REPLACED: Chat window (primary, all users) + Studio Mode panels (secondary, opt-in). Chat is the product. Studio Mode is the power tool.
+
+
+
+
+
+
+
+END OF DOCUMENT — AutoNovelist UI Implementation Plan v1.0
+
+Companion to ANWP-BRD-2026-003  |  April 2026  |  Confidential
+
+Page  of

@@ -1,0 +1,891 @@
+AutoNovelist BRD v2.1  |  Evolving Outline + Inline Review  |  CONFIDENTIAL
+
+
+
+
+
+
+
+BUSINESS REQUIREMENTS DOCUMENT
+
+AutoNovelist — AI-Powered Novel Writing Platform
+
+v2.1 — Evolving Outline + Inline Review Edition
+
+
+
+
+
+Document ID
+
+ANWP-BRD-2026-003
+
+Version
+
+2.1 — Supersedes v2.0 (Apr 21 2026)
+
+Status
+
+Draft — For Stakeholder Review
+
+Date
+
+April 21, 2026
+
+Key Changes from v2.0
+
+(1) Fixed outline replaced with Evolving Outline / Rolling 3-Chapter Lookahead. (2) Bulk feedback replaced with Inline Comment Review System. (3) User flow fully rewritten.
+
+
+
+
+
+Your idea. AI builds the world. The story discovers itself.
+
+
+
+
+1. What Changed from v2.0 — and Why
+
+
+
+
+
+Two fundamental decisions made during product review sessions require changes to the pipeline architecture and UX model:
+
+
+
+Change
+
+v2.0 Design
+
+v2.1 Design
+
+Story planning model
+
+Full novel outline generated upfront before writing begins. Fixed chapter plan.
+
+Evolving Outline: broad story anchors only (beginning / midpoint / end). Rolling 3-chapter lookahead generated dynamically. Plan updates after every chapter based on what actually happened.
+
+Feedback mechanism
+
+Bulk free-text feedback box at end of each chapter.
+
+Inline Comment Review System: user highlights any span of text — in chapters OR in Codex entries — and leaves a comment directly on it. AI responds per comment. Ripple check after each resolution.
+
+
+
+
+
+
+2. The Complete User Journey (End-to-End)
+
+
+
+
+
+This section is the definitive description of how a user experiences AutoNovelist from first login to finished novel. All subsequent functional requirements derive from this journey.
+
+
+
+Phase A — Idea & Discovery (Before Any Writing Begins)
+
+
+
+Step A1 — You Give the Idea
+
+You type anything. A single sentence, a paragraph, a messy brain-dump, a genre plus a premise. There is no required format.
+
+
+
+Example: "A detective in 1920s Shanghai who can hear the thoughts of the dead. Noir tone. I want it to feel grounded — the supernatural should feel like a burden, not a superpower."
+
+
+
+Step A2 — AI Asks Clarifying Questions (Inline, Conversational)
+
+The AI does not immediately start building. It asks a small set of targeted questions — presented as a natural conversation, not a form. Questions are generated specifically from what's unclear in your idea, not a generic template.
+
+
+
+Questions about scope: target length, number of POV characters, series or standalone?
+
+Questions about tone boundaries: how dark, how explicit, any themes to avoid?
+
+Questions about what you already know: do you have character names, an ending in mind, a specific setting detail you love?
+
+Questions stop once the AI has enough to begin. Typically 3–6 questions.
+
+
+
+Step A3 — AI Does Live Web Research
+
+Before building anything, the Research Engine runs autonomously. For the Shanghai example it would search: 1920s Shanghai geography and districts, the International Settlement and French Concession political structure, period-accurate crime and police procedure, Chinese funeral customs and ghost folklore, period slang and language mixing, historical events of that decade.
+
+
+
+All results are stored as Research Nodes in the Story Graph with source citations
+
+A Research Summary card is shown to you: 'I found X sources on Y topics — here's what I learned'
+
+You can flag any research finding as wrong, irrelevant, or overridden by your own knowledge
+
+
+
+Step A4 — AI Proposes the World
+
+The AI presents a World Proposal — a structured document covering the story's setting, rules, atmosphere, and tone. This is presented as a Codex draft with inline comment support from day one.
+
+
+
+World Proposal Section
+
+What It Contains
+
+Setting
+
+Time period, geography, specific locations with research-backed detail. For Shanghai: the three zones, key streets, landmarks, neighbourhoods.
+
+Atmosphere & Tone
+
+Prose style guide for this specific novel. Sentence length tendencies, vocabulary register, what the narration pays attention to.
+
+World Rules
+
+The laws of this world. The supernatural system, its costs and limits, how the world treats people who have it.
+
+Factions & Power
+
+Who controls what. Political, criminal, social structures that will create story conflict.
+
+Story Anchors
+
+Three loose markers only — not a plot: (1) Where the story starts emotionally. (2) A midpoint shift that changes everything. (3) The type of ending (resolution, ambiguous, tragic). These are guides, not constraints.
+
+
+
+You review the World Proposal using inline comments. Highlight 'The supernatural ability costs the detective sleep' → comment 'I prefer it costs him relationships, not sleep'. AI updates that rule and checks if anything else in the proposal needs to change.
+
+
+
+Step A5 — AI Proposes the Characters
+
+The AI generates full character profiles for the protagonist, antagonist, and 2–4 supporting characters. Each profile is a Codex entry with all fields visible and commentable.
+
+
+
+Name, age, physical description, origin
+
+Psychology: core desire, core fear, fatal flaw, greatest strength
+
+Backstory: the wound that made them who they are today
+
+Voice profile: how they speak, vocabulary level, what they never say
+
+Relationship map: how they relate to every other character
+
+Arc intention: where they start emotionally, what will challenge that, what might change
+
+
+
+You highlight the protagonist's arc intention → comment 'I want him to end the novel more broken, not redeemed'. AI updates the arc, then flags: this changes the intended midpoint shift in the World Proposal. Would you like to update that too?
+
+
+
+Step A6 — You Approve (or Keep Commenting)
+
+There is no 'done' button — there is a 'Start Writing' button that becomes available once you have no unresolved comments. You can leave comments, get AI responses, leave more comments, and iterate as many times as you want before the first chapter is written. The planning phase is complete when YOU decide it is.
+
+
+
+Phase B — The Evolving Writing Loop
+
+
+
+Core principle: The story is not planned. It is aimed. The AI knows where it's trying to go, but the path is discovered chapter by chapter — shaped by what actually happens in the prose and by your comments.
+
+
+
+Step B1 — AI Generates the Rolling 3-Chapter Lookahead
+
+Before writing Chapter 1, the AI generates a short lookahead — not a fixed plan, but a live proposal for the next 3 chapters. It is shown to you as three cards, each with a title, a one-paragraph scene intention, and the story questions it opens or closes.
+
+
+
+Card
+
+What It Shows
+
+How You Interact
+
+Chapter 1 Card
+
+Title, scene intention, opening image, character in focus, story question this chapter asks
+
+Comment directly on the card. 'Don't start with the murder scene, start with him waking from a vision.' AI updates the card, then writes.
+
+Chapter 2 Card
+
+Tentative direction based on where Chapter 1 seems to be heading. Marked as DRAFT — will update after Chapter 1 is written.
+
+You can comment early or wait. Commenting before writing Chapter 1 is allowed but the AI will re-evaluate after Chapter 1 anyway.
+
+Chapter 3 Card
+
+Loosest of the three. Shows narrative momentum: what unresolved tensions will still be alive by chapter 3?
+
+Mostly for your awareness. Comments welcome but this card changes the most between now and when it is written.
+
+
+
+Step B2 — AI Writes the Chapter
+
+Once you approve the Chapter 1 card (or comment on it and approve the revision), the AI writes the full chapter. Internally it runs the evaluate/revise loop — generating a draft, scoring it against 8 criteria, revising until the quality threshold is met. You only ever see the final passing draft.
+
+
+
+Target: 1,500–4,000 words per chapter (configurable)
+
+Written with full Story Graph context: character states, world rules, research nodes, arc intentions
+
+Anti-slop pass runs automatically before presentation
+
+You see the chapter with a Quality Score panel showing: prose, pacing, character voice, continuity, originality, dialogue, tension, forward momentum
+
+
+
+Step B3 — You Review with Inline Comments
+
+The chapter is presented in a reading view that works exactly like Google Docs review mode. You highlight any span of text — a word, a sentence, a paragraph, an entire scene — and leave a comment directly on it. Comments are free text. You write what you think.
+
+
+
+Comment Type
+
+Example
+
+What AI Does
+
+Prose quality
+
+Highlight a sentence → 'This is too on-the-nose. He wouldn't think this clearly.'
+
+Revises that specific passage. Checks if the same pattern occurs elsewhere in the chapter.
+
+Character behaviour
+
+Highlight dialogue → 'She wouldn't apologise here. She's too proud.'
+
+Revises the dialogue. Updates her voice profile in the Codex: 'does not apologise under pressure'. Applies to all future chapters.
+
+Pacing
+
+Highlight a scene → 'This feels rushed. I want to feel the weight of this moment.'
+
+Expands the scene. Checks if the chapter now exceeds word target and trims elsewhere if needed.
+
+Plot direction
+
+Highlight ending paragraph → 'Don't reveal this yet. I want to keep this mystery alive longer.'
+
+Revises the ending. Flags the Chapter 2 and 3 lookahead cards: a plot beat has been deferred — the lookahead must update.
+
+World/research accuracy
+
+Highlight a detail → 'Trams didn't run on this street in 1924.'
+
+Runs a targeted research query to verify. Corrects the detail. Updates the relevant research node and location entry in the Codex.
+
+Tone / mood
+
+Highlight an entire scene → 'Too much action here. This should feel quieter, more dread than tension.'
+
+Rewrites with adjusted pacing and atmospheric emphasis. Adds 'dread over tension' as a tonal note to the story's voice profile.
+
+
+
+Step B4 — Ripple Check After Comment Resolution
+
+After resolving all comments in a chapter, the system runs a Ripple Check — a scan of the Story Graph to determine whether any change made in response to a comment has downstream consequences.
+
+
+
+Character behaviour change → does this conflict with anything established in earlier chapters?
+
+Plot beat deferred → do the Chapter 2/3 lookahead cards need to update?
+
+World detail corrected → are there other chapters (or Codex entries) that reference the old detail?
+
+Voice profile updated → should any dialogue in already-approved chapters be flagged for review?
+
+
+
+Ripple results are shown as a Propagation Report — a short list of 'things that changed and what they affect'. You choose: auto-fix, manual fix, or mark as intentional.
+
+
+
+Step B5 — Chapter Approved, Lookahead Updates
+
+Once you mark the chapter as approved (all comments resolved, you're happy), three things happen automatically:
+
+
+
+Chapter 1 is locked in the Story Graph. Its events, character states, and research nodes are permanently recorded.
+
+The Rolling Lookahead updates: Chapter 2 card is refreshed based on what actually happened in Chapter 1. Chapter 3 card shifts accordingly. A new Chapter 4 card is generated as the new third lookahead.
+
+Any Codex updates from this chapter's comments are propagated.
+
+
+
+The story is now slightly different from what was intended before Chapter 1 was written. That is correct. That is the product working as designed. The story evolves.
+
+
+
+Step B6 — Repeat
+
+The loop of Lookahead → Write → Inline Review → Ripple Check → Approve continues for every chapter until the novel is complete. The AI always knows: what has happened, what each character currently knows, what tensions are unresolved, and what the story is broadly moving toward — but the specific path remains open.
+
+
+
+Phase C — Completion & Export
+
+
+
+Step C1 — Story Closing
+
+As the Story Graph detects that open plot threads are narrowing and character arcs are approaching resolution, the AI flags: 'Based on where the story is, it looks like we're approaching the end. Here are the unresolved threads and open character arcs that still need addressing.' You decide whether to close them in upcoming chapters or let some remain open intentionally (for a series, or for literary ambiguity).
+
+
+
+Step C2 — Full Manuscript Review
+
+Before export, a whole-manuscript pass is available. The AI reads the complete novel as a single document and produces:
+
+
+
+Continuity report: any remaining contradictions across all chapters
+
+Foreshadowing audit: elements planted that were never paid off
+
+Voice consistency report: does the prose voice drift across the novel's length?
+
+Pacing curve: word count and tension score per chapter visualised as a chart
+
+
+
+Step C3 — Export
+
+EPUB 3.0 — ready for Kindle, Apple Books, Kobo
+
+PDF — trade paperback format (5.5 x 8.5 in) and A4
+
+DOCX — standard manuscript format (double-spaced, header with title/author/word count)
+
+Story Codex export — the full world bible as a standalone PDF
+
+KDP AI Disclosure statement — auto-generated, covers the platform's AI usage in compliant language
+
+
+
+
+
+
+3. Inline Comment Review System — Detailed Specification
+
+
+
+
+
+This is the primary interaction surface of AutoNovelist. It applies to three contexts: chapter review, Codex entry review (during planning), and Lookahead card review (before each chapter is written).
+
+
+
+3.1 Comment Contexts
+
+Context
+
+What Can Be Highlighted
+
+What AI Does with Comments
+
+Chapter text
+
+Any span: word, sentence, paragraph, scene block, entire chapter
+
+Revises the highlighted span. Runs ripple check. Updates Story Graph if any facts, character states, or world rules change as a result.
+
+Codex entries (planning)
+
+Any field in a character profile, location entry, world rule, or story anchor
+
+Updates the specific field. Checks for downstream conflicts with other Codex entries or research nodes. Flags if the change affects a story anchor.
+
+Lookahead cards
+
+Scene intention, opening image, story question, character in focus
+
+Revises the card plan. Writes the chapter according to the revised card. Downstream cards may also update.
+
+
+
+3.2 Comment Lifecycle
+
+State
+
+Label
+
+Description
+
+1
+
+OPEN
+
+Comment posted by user. Awaiting AI response.
+
+2
+
+AI RESPONDED
+
+AI has made the requested change and posted a reply explaining what was revised and why. User reviews the change in context.
+
+3a
+
+RESOLVED
+
+User accepts the AI's revision. Comment thread closes. Story Graph update (if any) is committed.
+
+3b
+
+PUSHBACK
+
+User replies to the AI's response: 'Not quite — try again with...' The AI makes a second attempt. Loop continues until user resolves.
+
+4
+
+RIPPLE PENDING
+
+Comment resolved but the Ripple Check found downstream effects. User must address the propagation report before the chapter can be approved.
+
+
+
+3.3 Comment Intelligence Rules
+
+The AI applies the following rules when responding to comments, in priority order:
+
+
+
+Minimum change principle: only change what the comment targets. Do not improve other sections unprompted.
+
+Voice consistency: any revision must match the established prose voice of this novel (stored in the Codex voice profile).
+
+Character truth: any change to a character's behaviour must be consistent with their Codex profile — or must explicitly update the profile with the user's permission.
+
+Research honesty: if a comment asks for something that conflicts with a research node ('make him take the train on this route'), AI flags the conflict and offers options: override the research, adjust the detail, or run a new search.
+
+Story Graph awareness: after every resolved comment, the AI checks if the change introduces any new propagation debt.
+
+
+
+
+
+
+4. Evolving Outline & Rolling Lookahead — Detailed Specification
+
+
+
+
+
+4.1 What the System Knows at All Times (Story Compass)
+
+Rather than a fixed outline, AutoNovelist maintains a Story Compass — a set of navigational markers that give the AI direction without locking it into a path.
+
+
+
+Compass Element
+
+What It Is
+
+How It Updates
+
+Story Anchors (3)
+
+Emotional starting point, midpoint disruption type, ending resolution type. Set during planning. Deliberately vague.
+
+User can update anchors at any time. A change to an anchor triggers a lookahead recalculation.
+
+Open Tensions
+
+The live list of unresolved conflicts, mysteries, and character wants that exist in the story right now.
+
+Auto-updated after each chapter. New tensions added as prose creates them. Tensions removed when resolved.
+
+Character Arc States
+
+Where each character currently is in their arc. What they want, what they believe, what they don't know yet.
+
+Auto-updated after each chapter. User comments can also update arc states directly.
+
+Narrative Momentum Score
+
+A measure of forward pull: how urgently does the story need something to happen in the next chapter?
+
+Calculated from: number of open tensions, chapter pacing score, time since last major story event.
+
+Planted Seeds
+
+Foreshadowing elements, unanswered questions, and promised story beats that have been introduced but not yet paid off.
+
+Auto-detected from prose analysis. User can add manual seeds. Seeds are tracked until resolved.
+
+
+
+4.2 How the Rolling Lookahead Is Generated
+
+After each chapter is approved, the AI generates three new lookahead cards using the Story Compass. The cards are proposals, not instructions — you can comment on them, redirect them, or ignore the later ones entirely.
+
+
+
+Card
+
+Certainty
+
+Generation Logic
+
+Next Chapter Card
+
+HIGH — this is what we're about to write
+
+Generated from: highest-priority open tension + character with most unresolved arc pressure + research nodes relevant to current story location. You must approve this card before writing begins.
+
+Chapter +1 Card
+
+MEDIUM — likely but will update
+
+Generated from: what the Next Chapter Card will probably leave unresolved + the next open tension in priority order. Will refresh after Next Chapter is written.
+
+Chapter +2 Card
+
+LOW — directional only
+
+Generated from: Story Compass arc trajectory — what structural beat should be approaching at this point in the novel's length? Intended to show narrative direction, not a firm plan.
+
+
+
+4.3 When the User Can Redirect the Story
+
+The user can redirect the story's direction at any point through three mechanisms:
+
+
+
+Comment on a Lookahead card before writing: 'I want to skip this tension and jump forward to the confrontation.' AI adjusts the card, may flag open threads that would be left dangling.
+
+Comment on a chapter in review: 'End this chapter differently — I want him to make the wrong choice here.' AI rewrites the ending. Lookahead cards update automatically.
+
+Update a Story Anchor directly: 'I've changed my mind — I want an ambiguous ending, not a resolution.' AI recalculates narrative trajectory from the current chapter forward.
+
+
+
+In all cases the AI will flag if the redirect creates narrative debt — threads that will need addressing — without blocking the user from proceeding.
+
+
+
+
+
+
+5. Full Functional Requirements
+
+
+
+
+
+FR-01 [DIFFERENTIATOR] Live Research Engine
+
+Unchanged from v2.0. Runs during Phase A (world-building) and also during chapter writing when new locations, historical events, or technical details are introduced. All results stored as Research Nodes in Story Graph with source, date, and confidence score. User can verify, dispute, or override any node via inline comment.
+
+
+
+FR-02 [DIFFERENTIATOR] Bidirectional Propagating Story Graph
+
+The persistent graph database storing all story entities. Extended in v2.1 to include the Story Compass elements (Open Tensions, Arc States, Narrative Momentum, Planted Seeds) as first-class nodes.
+
+
+
+All Codex entities (Character, Location, Event, WorldRule, PlotThread, ResearchNode) as in v2.0
+
+NEW: Open Tension nodes — created automatically from prose analysis, resolved when closed
+
+NEW: PlantedSeed nodes — foreshadowing and promises tracked until payoff
+
+NEW: CharacterKnowledge edges — what each character knows at each chapter (epistemic state)
+
+Bidirectional propagation: chapter changes propagate to Codex; Codex changes propagate to affected chapters
+
+
+
+FR-03 [NEW v2.1] Evolving Outline Engine
+
+Story Compass maintained at all times: Story Anchors, Open Tensions, Arc States, Narrative Momentum, Planted Seeds
+
+Rolling 3-chapter lookahead generated after every approved chapter
+
+Lookahead cards presented as commentable, revisable proposals — not instructions
+
+Story Anchor updates trigger lookahead recalculation from current position forward
+
+Narrative debt flagging: when user redirect leaves threads dangling, system flags them non-blockingly
+
+
+
+FR-04 [NEW v2.1] Inline Comment Review System
+
+Applicable in three contexts: chapter text, Codex entries, Lookahead cards
+
+Any span of text can be highlighted and commented in free text
+
+Comment lifecycle: Open → AI Responded → Resolved / Pushback → Ripple Pending → Complete
+
+Minimum-change principle: AI only revises what was commented on
+
+Character truth enforcement: behaviour changes require Codex profile update with user permission
+
+Research conflict detection: comments requesting factually conflicting changes trigger a research check
+
+Ripple Check runs after each comment is resolved
+
+Chapter cannot be approved until all OPEN and RIPPLE PENDING comments are addressed
+
+
+
+FR-05 [DIFFERENTIATOR] Anti-Slop Quality Layer
+
+Runs automatically before every chapter is presented to user
+
+Detects: word-level AI tells, structural patterns, pacing uniformity, character voice flattening
+
+Quality Score displayed per chapter with breakdown by category
+
+All flags are advisory — never auto-removed. User can dismiss any flag.
+
+'Polish Mode' button: run a full anti-slop pass on demand on any chapter
+
+Voice Variance Report: shows how distinct each character's dialogue is from others
+
+
+
+FR-06 [KEPT] Story Codex
+
+Full persistent wiki for Characters, Locations, Timeline, World Rules, Plot Threads, Research Nodes. All entries auto-generated by the pipeline and auto-updated by the Propagating Graph. All entries editable and commentable by the user at any time.
+
+
+
+FR-07 [KEPT] Zero-Friction Onboarding
+
+No API key setup required. Platform hosts own AI infrastructure.
+
+Onboarding: type your idea, answer 3–6 questions, see your world. Time to first chapter: under 30 minutes.
+
+No writing software experience required.
+
+
+
+FR-08 [KEPT] Export
+
+EPUB 3.0, PDF (trade paperback + A4), DOCX (standard manuscript format)
+
+Story Codex as standalone export
+
+KDP AI Disclosure statement auto-generated
+
+Whole-manuscript review report before export
+
+
+
+
+
+
+6. System Architecture (v2.1 Updates)
+
+
+
+
+
+Two new subsystems are added in v2.1 to support the Evolving Outline and Inline Comment Review System.
+
+
+
+Subsystem
+
+Status
+
+Responsibility
+
+Idea Processor + Q&A Engine
+
+Build fresh
+
+Parse seed, generate targeted clarifying questions, structure answers into planning inputs
+
+Research Engine
+
+Build fresh [DIFF]
+
+Autonomous web search, summarisation, source attribution, research node storage, conflict detection
+
+World-Builder
+
+Adapt OSS
+
+Generate World Proposal, Character Profiles, Story Compass — all as commentable Codex drafts
+
+Story Graph DB
+
+Build fresh [DIFF]
+
+Property graph storing all Codex entities + Story Compass nodes. Versioned per chapter. Bidirectional propagation API.
+
+Evolving Outline Engine [NEW]
+
+Build fresh [DIFF]
+
+Maintains Story Compass. Generates Rolling 3-Chapter Lookahead cards after each approval. Handles narrative debt tracking.
+
+Chapter Engine
+
+Adapt OSS
+
+Context assembly from Story Graph + Lookahead card; generate; evaluate/revise loop; epistemic state update; graph propagation trigger
+
+Inline Comment Engine [NEW]
+
+Build fresh
+
+Comment lifecycle management. Span-level text targeting. Minimum-change revision execution. Ripple Check trigger. Comment context detection (chapter / Codex / Lookahead).
+
+Anti-Slop Layer
+
+Adapt OSS
+
+Post-generation quality pass: AI tells, structural patterns, voice variance, pacing uniformity
+
+Export Pipeline
+
+Adapt OSS
+
+EPUB, PDF, DOCX, Codex export, KDP disclosure statement, whole-manuscript review report
+
+UI Layer
+
+Build fresh
+
+Inline comment editor, Lookahead card deck, Story Compass dashboard, Chapter editor, Visual Codex, Propagation debt tracker, Quality score panel
+
+
+
+
+
+
+7. Phased Roadmap (v2.1)
+
+
+
+
+
+Phase
+
+Timeline
+
+Deliverables
+
+Phase 1
+Core Loop
+
+Months 1–4
+
+Full Phase A pipeline (idea → Q&A → research → world proposal → character profiles). Commentable Codex drafts. Rolling 3-chapter lookahead (basic). Chapter generation with evaluate/revise loop. Inline comment system on chapters. Anti-slop layer. Basic Story Graph. DOCX export. Zero-friction onboarding.
+
+Phase 2
+Graph & Propagation
+
+Months 5–7
+
+Bidirectional propagating Story Graph. Ripple Check after comment resolution. Propagation debt tracker UI. Story Compass (Open Tensions, Arc States, Planted Seeds, Narrative Momentum). Research engine active during chapter writing (not just planning). Character epistemic state tracking. EPUB + PDF export.
+
+Phase 3
+Depth & Voice
+
+Months 8–10
+
+Style capture (paste your writing; AI matches your voice). Voice variance reports. Mystery/thriller epistemic enforcement templates. Foreshadowing payoff tracker with deadline warnings. Series bible mode (multi-book Codex). Research gap report per chapter. Whole-manuscript review before export.
+
+Phase 4
+Scale & Ecosystem
+
+Months 11–14
+
+Mobile app (chapter review and Codex editing on-the-go). KDP AI disclosure statement generator. Local LLM option (Ollama) for privacy-first / offline users. Genre prompt packs (romance, sci-fi, literary fiction, thriller). Developer API for third-party Codex integrations.
+
+
+
+
+
+
+8. Open Questions for Stakeholder Review
+
+
+
+
+
+#
+
+Question
+
+Why It Matters
+
+Q1
+
+What is the minimum set of clarifying questions before world-building begins? Is there a cap (e.g. max 6 questions)?
+
+Too few questions → generic world. Too many → friction that kills momentum. Need a UX principle decision.
+
+Q2
+
+Can users skip the Q&A phase entirely and go straight to generation?
+
+Some users will want zero friction. Others will want deep planning. Should this be a setting or always required?
+
+Q3
+
+What happens when a user comments on a Lookahead card in a way that contradicts a Story Anchor?
+
+Do we warn and require anchor update first, or just proceed and update the anchor silently? Has UX implications.
+
+Q4
+
+Is there a maximum number of unresolved Ripple Check items before chapter approval is blocked?
+
+If a comment creates 10 downstream ripple items, should the user address all 10 before writing the next chapter? Or can some be deferred?
+
+Q5
+
+LLM choice: which model(s) do we host for generation? Does it vary by task (research vs. prose vs. anti-slop)?
+
+Different models excel at different tasks. Using Claude for prose, a smaller model for research summarisation, and a judge model for evaluation could reduce cost significantly.
+
+Q6
+
+Graph DB choice: Neo4j managed, Postgres + pgvector, or custom?
+
+Determines propagation query design and hosting cost. Must decide before Phase 1 data model work.
+
+
+
+
+
+
+
+END OF DOCUMENT — AutoNovelist BRD v2.1
+
+ANWP-BRD-2026-003  |  Evolving Outline + Inline Review Edition  |  Confidential
+
+Page  of

@@ -33,500 +33,376 @@
 <body class="min-h-screen">
     <div id="app" class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-64 bg-space-800 border-r border-space-600 flex flex-col fixed h-full">
-            <div class="p-6 border-b border-space-600">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <div><h1 class="font-semibold text-lg">Nebula</h1><p class="text-xs text-slate-400">AutoNovelist v2.1</p></div>
+    <div id="app" class="flex flex-col min-h-screen">
+        <!-- Top Bar with Mode Toggle -->
+        <header class="h-16 glass border-b border-space-600 flex items-center justify-between px-6 sticky top-0 z-50">
+            <div class="flex items-center gap-4">
+                <div class="text-xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+                    Nebula <span class="font-light text-slate-400">v2.1</span>
+                </div>
+                <div class="h-6 w-[1px] bg-space-600 mx-2"></div>
+                <div class="bg-space-800 rounded-full p-1 flex gap-1 border border-space-600 shadow-inner">
+                    <button @click="viewMode = 'chat'" 
+                            :class="viewMode === 'chat' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
+                            class="px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300">
+                        Chat Mode
+                    </button>
+                    <button @click="viewMode = 'studio'" 
+                            :class="viewMode === 'studio' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
+                            class="px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300">
+                        Studio Mode
+                    </button>
                 </div>
             </div>
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <button @click="currentView = 'dashboard'" :class="navClass('dashboard')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Dashboard</button>
-                <button @click="currentView = 'architect'" :class="navClass('architect')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm text-violet-400 font-bold">Story Architect</button>
-                <button @click="currentView = 'compass'" :class="navClass('compass')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Story Compass</button>
-                <button @click="currentView = 'lookahead'" :class="navClass('lookahead')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Lookahead</button>
-                <button @click="currentView = 'entities'" :class="navClass('entities')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Codex</button>
-                <button @click="currentView = 'chapters'" :class="navClass('chapters')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Manuscript</button>
-                <button @click="currentView = 'research'" :class="navClass('research')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Research</button>
-                <button @click="currentView = 'ai'" :class="navClass('ai')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">AI Write</button>
-                <button @click="currentView = 'export'" :class="navClass('export')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Export</button>
-                <button @click="currentView = 'visualize'" :class="navClass('visualize')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Visualize</button>
-            </nav>
-            <div class="p-4 border-t border-space-600">
-                <div class="text-xs text-slate-500 mb-2">STORY STATS</div>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-space-700 rounded p-2"><div class="text-violet-400 font-semibold">{{ stats.total_entities || 0 }}</div><div class="text-slate-500">Entities</div></div>
-                    <div class="bg-space-700 rounded p-2"><div class="text-cyan-400 font-semibold">{{ stats.total_chapters || 0 }}</div><div class="text-slate-500">Chapters</div></div>
+
+            <div class="flex items-center gap-6">
+                <div class="flex flex-col items-end">
+                    <span class="text-sm font-medium text-slate-200">{{ projectTitle }}</span>
+                    <span class="text-[10px] text-slate-500 uppercase tracking-widest">Active Manuscript</span>
                 </div>
+                <button @click="currentView = 'export'" class="btn-primary px-5 py-2 rounded-lg text-sm">Export</button>
             </div>
-        </aside>
-        
-        <!-- Main Content -->
-        <main class="flex-1 ml-64 overflow-auto">
-            <header class="sticky top-0 z-10 glass border-b border-space-600 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl font-semibold capitalize">{{ viewTitle }}</h2>
-                        <p class="text-sm text-slate-400">{{ viewSubtitle }}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button @click="showAddModal = true" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">+ Add</button>
-                    </div>
-                </div>
-            </header>
-            
-            <div class="p-8">
-                <!-- Dashboard -->
-                <div v-if="currentView === 'dashboard'" class="space-y-6">
-                    <div class="glass glow rounded-2xl p-8">
-                        <h3 class="text-2xl font-semibold mb-2">Welcome to Nebula-Writer AutoNovelist</h3>
-                        <p class="text-slate-400">AI-powered novel writing with persistent story memory</p>
-                    </div>
-                    <div class="grid grid-cols-4 gap-4">
-                        <div class="glass rounded-xl p-6 card-hover"><div class="text-3xl font-bold text-violet-400">{{ stats.entities_by_type?.character || 0 }}</div><div class="text-sm text-slate-400 mt-1">Characters</div></div>
-                        <div class="glass rounded-xl p-6 card-hover"><div class="text-3xl font-bold text-cyan-400">{{ stats.entities_by_type?.location || 0 }}</div><div class="text-sm text-slate-400 mt-1">Locations</div></div>
-                        <div class="glass rounded-xl p-6 card-hover"><div class="text-3xl font-bold text-emerald-400">{{ plotThreads.length }}</div><div class="text-sm text-slate-400 mt-1">Plot Threads</div></div>
-                        <div class="glass rounded-xl p-6 card-hover"><div class="text-3xl font-bold text-amber-400">{{ stats.total_words || 0 }}</div><div class="text-sm text-slate-400 mt-1">Words</div></div>
-                    </div>
-                    <div class="glass rounded-xl p-6">
-                        <h4 class="font-semibold mb-4">Quick Actions</h4>
-                        <div class="grid grid-cols-3 gap-3">
-                            <button @click="currentView = 'research'" class="btn-secondary px-4 py-3 rounded-lg text-sm">Research Topic</button>
-                            <button @click="currentView = 'plot'" class="btn-secondary px-4 py-3 rounded-lg text-sm">Add Plot Thread</button>
-                            <button @click="currentView = 'ai'" class="btn-secondary px-4 py-3 rounded-lg text-sm">Write Scene</button>
-                        </div>
-                    </div>
-                </div>
+        </header>
 
-                <!-- Story Architect -->
-                <div v-if="currentView === 'architect'" class="flex gap-6 h-[calc(100vh-180px)]">
-                    <!-- Chat Area -->
-                    <div class="flex-1 glass rounded-2xl flex flex-col overflow-hidden">
-                        <div class="flex-1 p-6 overflow-y-auto space-y-4" ref="chatBox">
-                            <div v-for="(msg, idx) in architectHistory" :key="idx" 
-                                 :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                                <div :class="msg.role === 'user' ? 'bg-violet-600 text-white' : 'bg-space-800 border border-space-600'" 
-                                     class="max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-lg">
-                                    <p class="whitespace-pre-wrap">{{ msg.content }}</p>
-                                </div>
-                            </div>
-                            <div v-if="loading" class="flex justify-start">
-                                <div class="bg-space-800 border border-space-600 rounded-2xl px-4 py-3 flex gap-2">
-                                    <div class="w-2 h-2 bg-violet-400 rounded-full animate-bounce"></div>
-                                    <div class="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                                    <div class="w-2 h-2 bg-violet-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="p-4 border-t border-space-600 bg-space-900/50">
-                            <form @submit.prevent="sendArchitectMessage" class="flex gap-3">
-                                <input v-model="architectInput" 
-                                       placeholder="Describe a character, a plot twist, or a world rule..." 
-                                       class="flex-1 input-field px-4 py-3 rounded-xl text-sm"
-                                       :disabled="loading">
-                                <button type="submit" class="btn-primary px-6 py-3 rounded-xl" :disabled="loading || !architectInput">
-                                    Send
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Extraction Sidebar -->
-                    <div class="w-96 flex flex-col gap-4">
-                        <div class="glass rounded-2xl p-5 flex-1 overflow-y-auto">
-                            <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex justify-between items-center">
-                                Detected Elements
-                                <span class="bg-violet-500/20 text-violet-400 text-[10px] px-2 py-0.5 rounded-full">LIVE</span>
-                            </h4>
-                            
-                            <div v-if="architectExtractions.length === 0" class="text-center py-20 text-slate-500 italic text-sm">
-                                Talk to Nebula to see extracted story elements here.
-                            </div>
-
-                            <div v-for="(ext, idx) in architectExtractions" :key="idx" 
-                                 class="p-4 bg-space-800/50 border border-space-600 rounded-xl mb-4 group animate-in fade-in slide-in-from-right-4">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400">
-                                        {{ ext.category }}
-                                    </span>
-                                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button @click="approveExtraction(idx)" class="p-1 hover:text-emerald-400" title="Add to Project">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                        </button>
-                                        <button @click="removeExtraction(idx)" class="p-1 hover:text-red-400" title="Discard">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <input v-model="ext.name" class="bg-transparent border-none font-bold text-sm focus:ring-0 p-0 w-full mb-1">
-                                <textarea v-model="ext.description" class="bg-transparent border-none text-xs text-slate-400 focus:ring-0 p-0 w-full resize-none" rows="2"></textarea>
-                            </div>
-                        </div>
-                        
-                        <div class="glass rounded-2xl p-4 bg-violet-500/5 border-violet-500/20">
-                            <p class="text-xs text-slate-400 leading-relaxed">
-                                <strong class="text-violet-400">Tip:</strong> You can edit any detected element before approving it. Approved elements are instantly added to your Codex or Story Compass.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Story Compass -->
-                <div v-if="currentView === 'compass'" class="space-y-6">
-                    <div class="grid grid-cols-3 gap-6">
-                        <!-- Anchors -->
-                        <div class="col-span-2 glass rounded-2xl p-6">
-                            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                                Story Anchors
-                            </h3>
-                            <div class="space-y-4">
-                                <div v-for="anchor in storyAnchors" :key="anchor.id" class="p-4 bg-space-800 rounded-xl border border-space-600">
-                                    <div class="flex justify-between items-center mb-1">
-                                        <span class="text-xs font-bold uppercase text-violet-400">{{ anchor.type }}</span>
-                                    </div>
-                                    <p class="text-sm">{{ anchor.description }}</p>
-                                </div>
-                                <div v-if="storyAnchors.length === 0" class="text-center py-8 text-slate-500 italic">No anchors set. Use the Onboarding flow to define your story's path.</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Momentum -->
-                        <div class="glass rounded-2xl p-6 flex flex-col items-center justify-center text-center">
-                            <h3 class="text-lg font-semibold mb-4">Narrative Momentum</h3>
-                            <div class="relative w-32 h-32 flex items-center justify-center">
-                                <svg class="w-full h-full -rotate-90">
-                                    <circle cx="64" cy="64" r="58" fill="transparent" stroke="rgba(139, 92, 246, 0.1)" stroke-width="8"/>
-                                    <circle cx="64" cy="64" r="58" fill="transparent" stroke="#8b5cf6" stroke-width="8" 
-                                            :stroke-dasharray="364" :stroke-dashoffset="364 - (momentum / 10 * 364)"/>
-                                </svg>
-                                <span class="absolute text-3xl font-bold">{{ momentum }}</span>
-                            </div>
-                            <p class="text-xs text-slate-500 mt-4">Calculated from tensions, pacing, and events</p>
-                        </div>
-                    </div>
+        <div class="flex h-[calc(100vh-64px)] overflow-hidden">
+            <!-- Sidebar (Only visible in Studio Mode) -->
+            <aside v-if="viewMode === 'studio'" class="w-64 glass border-r border-space-600 flex flex-col transition-all duration-500 ease-in-out">
+                <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-4">General</div>
+                    <button @click="currentView = 'dashboard'" :class="navClass('dashboard')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Dashboard</button>
                     
-                    <!-- Open Tensions -->
-                    <div class="glass rounded-2xl p-6">
-                        <h3 class="text-lg font-semibold mb-4">Open Tensions</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div v-for="tension in openTensions" :key="tension.id" 
-                                 class="p-4 rounded-xl border-l-4" :class="tension.priority === 'high' ? 'severity-high bg-red-900/10' : 'severity-medium bg-amber-900/10'">
-                                <p class="text-sm font-medium">{{ tension.description }}</p>
-                                <div class="flex justify-between items-center mt-2">
-                                    <span class="text-[10px] text-slate-500">{{ formatDate(tension.created_at) }}</span>
-                                    <button @click="resolveTension(tension.id)" class="text-[10px] text-violet-400 hover:underline">Mark Resolved</button>
-                                </div>
-                            </div>
-                            <div v-if="openTensions.length === 0" class="col-span-2 text-center py-8 text-slate-500 italic">No open tensions. Your story might be losing its pull!</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Lookahead Deck -->
-                <div v-if="currentView === 'lookahead'" class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-semibold">Rolling 3-Chapter Lookahead</h3>
-                        <button @click="generateLookahead" class="btn-primary px-4 py-2 rounded-lg text-sm" :disabled="loading">
-                            {{ loading ? 'Generating...' : 'Re-Generate Cards' }}
-                        </button>
-                    </div>
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">Manuscript</div>
+                    <button @click="currentView = 'chapters'" :class="navClass('chapters')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Manuscript</button>
+                    <button @click="currentView = 'lookahead'" :class="navClass('lookahead')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Lookahead</button>
                     
-                    <div class="grid grid-cols-3 gap-6">
-                        <div v-for="(card, index) in lookaheadCards" :key="card.id" 
-                             class="glass rounded-2xl p-6 card-hover relative flex flex-col h-full"
-                             :class="{'opacity-75': card.status !== 'draft'}">
-                            <div class="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-space-800 border-2 border-violet-500 flex items-center justify-center font-bold">
-                                {{ card.chapter_number }}
-                            </div>
-                            <h4 class="text-xl font-bold mb-4 text-violet-300">{{ card.title || 'Untitled Chapter' }}</h4>
-                            
-                            <div class="space-y-4 flex-1">
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Scene Intention</label>
-                                    <p class="text-sm italic">"{{ card.scene_intention }}"</p>
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Opening Image</label>
-                                    <p class="text-sm">{{ card.opening_image }}</p>
-                                </div>
-                                <div class="flex gap-4">
-                                    <div class="flex-1">
-                                        <label class="text-[10px] font-bold text-slate-500 uppercase">Character in Focus</label>
-                                        <p class="text-sm font-medium">{{ card.character_in_focus }}</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-bold text-slate-500 uppercase">Story Question</label>
-                                    <p class="text-sm font-semibold text-cyan-400">{{ card.story_question }}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-6 flex gap-2">
-                                <button v-if="card.status === 'draft'" @click="approveCard(card.id)" class="btn-primary flex-1 py-2 rounded-lg text-xs">Approve & Start</button>
-                                <button v-if="card.status === 'draft'" @click="discardCard(card.id)" class="btn-secondary flex-1 py-2 rounded-lg text-xs">Discard</button>
-                                <span v-else class="w-full text-center py-2 text-xs font-bold text-emerald-400 uppercase tracking-widest">Approved</span>
-                            </div>
-                        </div>
-                        <div v-if="lookaheadCards.length === 0 && !loading" class="col-span-3 text-center py-12 glass rounded-2xl">
-                            <p class="text-slate-500 italic mb-4">No cards generated yet.</p>
-                            <button @click="generateLookahead" class="btn-primary px-6 py-2 rounded-lg">Generate Initial 3-Chapter Deck</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Entities -->
-                <div v-if="currentView === 'entities'" class="space-y-6">
-                    <div class="flex gap-3 mb-4">
-                        <select v-model="entityFilter" class="input-field px-4 py-2 rounded-lg">
-                            <option value="">All Types</option>
-                            <option value="character">Characters</option>
-                            <option value="location">Locations</option>
-                            <option value="item">Items</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div v-for="entity in filteredEntities" :key="entity.id" class="glass rounded-xl p-5 card-hover cursor-pointer" @click="editEntity(entity)">
-                            <div class="flex justify-between items-start mb-2">
-                                <span :class="'type-badge type-' + entity.type">{{ entity.type }}</span>
-                                <button @click.stop="viewVoiceProfile(entity)" class="text-xs text-violet-400 hover:underline">Voice</button>
-                            </div>
-                            <h4 class="font-semibold text-lg">{{ entity.name }}</h4>
-                            <p class="text-sm text-slate-400 mt-1">{{ entity.description || 'No description' }}</p>
-                            <div class="mt-2 flex gap-2 text-xs">
-                                <button @click.stop="deleteEntity(entity.id)" class="text-red-400 hover:underline">Delete</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">Story Engine</div>
+                    <button @click="currentView = 'compass'" :class="navClass('compass')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Story Compass</button>
+                    <button @click="currentView = 'entities'" :class="navClass('entities')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Codex</button>
+                    <button @click="currentView = 'research'" :class="navClass('research')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Research</button>
+                    
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">Advanced</div>
+                    <button @click="currentView = 'visualize'" :class="navClass('visualize')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Visual Graph</button>
+                </nav>
                 
-                <!-- Manuscript (Chapters) -->
-                <div v-if="currentView === 'chapters'" class="space-y-6">
-                    <div v-if="!selectedChapter" class="grid grid-cols-2 gap-4">
-                        <div v-for="chapter in chapters" :key="chapter.id" class="glass rounded-xl p-6 card-hover cursor-pointer" @click="selectChapter(chapter)">
-                            <span class="text-violet-400 font-mono text-sm">CHAPTER {{ chapter.number }}</span>
-                            <h4 class="font-semibold text-lg mt-2">{{ chapter.title || 'Untitled' }}</h4>
-                            <p class="text-sm text-slate-400">{{ chapter.word_count || 0 }} words</p>
-                            <div class="mt-2 flex gap-2 text-xs">
-                                <button @click.stop="deleteChapter(chapter.id)" class="text-red-400">Delete</button>
+                <!-- Quality Score Indicator (Industry Standard DevOps feel) -->
+                <div class="p-6 border-t border-space-600 bg-space-900/50">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-slate-400">Quality Score</span>
+                        <span class="text-xs font-bold text-emerald-400">83%</span>
+                    </div>
+                    <div class="w-full bg-space-600 h-1 rounded-full overflow-hidden">
+                        <div class="bg-emerald-400 h-full w-[83%]"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-hidden bg-space-950 flex flex-col">
+                <div class="flex-1 flex overflow-hidden">
+                    <!-- Center Area -->
+                    <div class="flex-1 overflow-y-auto p-8 flex flex-col h-full">
+                        
+                        <!-- ============ CHAT MODE VIEW ============ -->
+                        <div v-if="viewMode === 'chat'" class="w-full flex justify-center gap-8 h-full max-w-6xl mx-auto">
+                            <!-- The Chat Container -->
+                            <div class="flex-1 flex flex-col h-full glass rounded-3xl overflow-hidden border border-space-600 shadow-2xl">
+                                <!-- Chat Header -->
+                                <div class="px-6 py-4 border-b border-space-600 bg-space-900/50 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                                        <span class="text-sm font-semibold">Story Architect</span>
+                                    </div>
+                                    <span class="text-xs text-slate-500 italic">Always listening...</span>
+                                </div>
+
+                                <!-- Chat Messages -->
+                                <div class="flex-1 p-6 overflow-y-auto space-y-6" ref="chatBox">
+                                    <div v-for="(msg, idx) in architectHistory" :key="idx" 
+                                         :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'"
+                                         class="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                        <div v-if="msg.type === 'proposal'" class="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-5 shadow-lg max-w-[85%]">
+                                            <div class="flex items-center gap-2 mb-3 text-violet-400">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                <span class="text-xs font-bold uppercase tracking-widest">Story Proposal</span>
+                                            </div>
+                                            <p class="text-sm text-slate-300 mb-4">{{ msg.content }}</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <span v-for="item in msg.items" class="px-2 py-1 bg-space-800 rounded text-[10px] border border-space-600 text-slate-400">
+                                                    <span class="text-violet-400 font-bold">{{ item.type }}:</span> {{ item.name }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div v-else :class="msg.role === 'user' ? 'bg-violet-600 text-white' : 'bg-space-800 border border-space-600'" 
+                                             class="max-w-[85%] rounded-2xl px-5 py-4 text-sm shadow-xl leading-relaxed">
+                                            <p class="whitespace-pre-wrap">{{ msg.content }}</p>
+                                        </div>
+                                    </div>
+                                    <div v-if="loading" class="flex justify-start">
+                                        <div class="bg-space-800 border border-space-600 rounded-2xl px-5 py-3 flex gap-2">
+                                            <div class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"></div>
+                                            <div class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                                            <div class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Input Bar -->
+                                <div class="p-6 border-t border-space-600 bg-space-900/80 backdrop-blur-md">
+                                    <form @submit.prevent="sendArchitectMessage" class="relative group">
+                                        <textarea v-model="architectInput" 
+                                               placeholder="Give feedback, redirect the story, or describe a new character..." 
+                                               class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-2xl px-6 py-4 pr-16 text-sm transition-all resize-none overflow-hidden h-14 hover:bg-space-800"
+                                               @keydown.enter.prevent="sendArchitectMessage"
+                                               :disabled="loading"></textarea>
+                                        <button type="submit" 
+                                                class="absolute right-3 top-3 p-2 bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors shadow-lg disabled:opacity-50 disabled:hover:bg-violet-600"
+                                                :disabled="loading || !architectInput">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                        </button>
+                                    </form>
+                                    <div class="mt-3 flex justify-center gap-4">
+                                        <button class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-bold">Press Enter to Send</button>
+                                        <span class="text-[10px] text-space-600">|</span>
+                                        <button class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-bold">Shift+Enter for newline</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Side (Live Preview & Extractions) -->
+                            <div class="w-96 flex flex-col gap-6 h-full">
+                                <!-- Extraction Feed -->
+                                <div class="glass rounded-3xl p-6 flex-1 overflow-y-auto border border-space-600 shadow-xl">
+                                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 flex justify-between items-center">
+                                        Live Story Elements
+                                        <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] border border-emerald-500/20">EXTRACTING</span>
+                                    </h4>
+                                    
+                                    <div v-if="architectExtractions.length === 0" class="text-center py-20">
+                                        <div class="w-12 h-12 bg-space-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-space-600">
+                                            <svg class="w-6 h-6 text-space-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                        </div>
+                                        <p class="text-xs text-slate-500 italic">Tell the AI your story ideas to see elements appear here.</p>
+                                    </div>
+
+                                    <div v-for="(ext, idx) in architectExtractions" :key="idx" 
+                                         class="p-4 bg-space-800/40 border border-space-600 rounded-2xl mb-4 group hover:border-violet-500/50 transition-all duration-300 animate-in slide-in-from-right-4">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                                                {{ ext.category }}
+                                            </span>
+                                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button @click="approveExtraction(idx)" class="p-1 hover:text-emerald-400 text-slate-500" title="Add to Project">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                </button>
+                                                <button @click="removeExtraction(idx)" class="p-1 hover:text-red-400 text-slate-500" title="Discard">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <input v-model="ext.name" class="bg-transparent border-none font-bold text-sm focus:ring-0 p-0 w-full mb-1 text-slate-200">
+                                        <textarea v-model="ext.description" class="bg-transparent border-none text-[11px] text-slate-400 focus:ring-0 p-0 w-full resize-none leading-relaxed" rows="2"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Story Health Indicator -->
+                                <div class="glass rounded-3xl p-5 border border-violet-500/20 bg-violet-500/5 flex items-center gap-4">
+                                    <div class="relative">
+                                        <svg class="w-10 h-10 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                        <div class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-space-950"></div>
+                                    </div>
+                                    <div>
+                                        <h5 class="text-[11px] font-bold text-violet-400 uppercase tracking-tighter">Engine Status</h5>
+                                        <p class="text-[10px] text-slate-400">Ripple consistency: <span class="text-emerald-400">Stable</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============ STUDIO MODE VIEWS ============ -->
+                        <div v-if="viewMode === 'studio'" class="h-full">
+                    <!-- Other views compartmentalized for power users -->
+                    <div v-if="currentView === 'compass'" class="space-y-6 animate-in slide-in-from-right-4">
+                        <div class="grid grid-cols-3 gap-6">
+                            <!-- Anchors -->
+                            <div class="col-span-2 glass rounded-2xl p-6 border border-space-600">
+                                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                    Story Anchors
+                                </h3>
+                                <div class="space-y-4">
+                                    <div v-for="anchor in storyAnchors" :key="anchor.id" class="p-4 bg-space-800 rounded-xl border border-space-600">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-xs font-bold uppercase text-violet-400">{{ anchor.type }}</span>
+                                        </div>
+                                        <p class="text-sm">{{ anchor.description }}</p>
+                                    </div>
+                                    <div v-if="storyAnchors.length === 0" class="text-center py-8 text-slate-500 italic">No anchors set.</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Momentum -->
+                            <div class="glass rounded-2xl p-6 flex flex-col items-center justify-center text-center border border-space-600">
+                                <h3 class="text-lg font-semibold mb-4">Momentum</h3>
+                                <div class="relative w-32 h-32 flex items-center justify-center">
+                                    <svg class="w-full h-full -rotate-90">
+                                        <circle cx="64" cy="64" r="58" fill="transparent" stroke="rgba(139, 92, 246, 0.1)" stroke-width="8"/>
+                                        <circle cx="64" cy="64" r="58" fill="transparent" stroke="#8b5cf6" stroke-width="8" 
+                                                :stroke-dasharray="364" :stroke-dashoffset="364 - (momentum / 10 * 364)"/>
+                                    </svg>
+                                    <span class="absolute text-3xl font-bold">{{ momentum }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div v-if="selectedChapter" class="flex gap-6 h-[calc(100vh-200px)]">
-                        <!-- Main Editor -->
-                        <div class="flex-1 glass rounded-2xl flex flex-col">
-                            <div class="p-4 border-b border-space-600 flex justify-between items-center">
+
+                    <div v-if="currentView === 'lookahead'" class="space-y-6 animate-in slide-in-from-right-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Chapter Lookahead</h3>
+                            <button @click="generateLookahead" class="btn-primary px-4 py-2 rounded-lg text-sm">Regenerate</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-6">
+                            <div v-for="card in lookaheadCards" :key="card.id" class="glass rounded-2xl p-6 border border-space-600">
+                                <h4 class="text-lg font-bold text-violet-400 mb-2">{{ card.title }}</h4>
+                                <p class="text-sm text-slate-400 italic mb-4">"{{ card.scene_intention }}"</p>
+                                <div class="flex gap-2">
+                                    <button @click="approveCard(card.id)" class="btn-primary flex-1 py-1.5 rounded text-xs">Approve</button>
+                                    <button @click="discardCard(card.id)" class="btn-secondary flex-1 py-1.5 rounded text-xs">Discard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentView === 'entities'" class="space-y-6 animate-in slide-in-from-right-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Story Codex</h3>
+                            <button @click="modalType = 'entity'; showAddModal = true" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add</button>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div v-for="entity in entities" :key="entity.id" class="glass rounded-xl p-4 border border-space-600 hover:border-violet-500/50 transition-all cursor-pointer" @click="editEntity(entity)">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400">{{ entity.type }}</span>
+                                </div>
+                                <h4 class="font-bold text-slate-200">{{ entity.name }}</h4>
+                                <p class="text-[11px] text-slate-500 line-clamp-2 mt-1">{{ entity.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="currentView === 'chapters'" class="h-full animate-in slide-in-from-right-4">
+                        <div v-if="!selectedChapter" class="grid grid-cols-3 gap-4">
+                            <div v-for="chapter in chapters" :key="chapter.id" @click="selectChapter(chapter)" class="glass rounded-xl p-6 border border-space-600 cursor-pointer hover:border-violet-500/50">
+                                <div class="text-xs text-violet-400 font-mono mb-2">CHAPTER {{ chapter.number }}</div>
+                                <h4 class="font-bold">{{ chapter.title || 'Untitled' }}</h4>
+                            </div>
+                        </div>
+                        <div v-else class="flex flex-col h-full glass rounded-2xl border border-space-600 overflow-hidden">
+                            <div class="p-4 border-b border-space-600 flex justify-between bg-space-900/50">
                                 <div class="flex items-center gap-4">
                                     <span class="text-violet-400 font-mono">CH {{ selectedChapter.number }}</span>
-                                    <input v-model="selectedChapter.title" placeholder="Chapter Title" class="bg-transparent border-none text-xl font-bold focus:ring-0 w-64">
+                                    <input v-model="selectedChapter.title" class="bg-transparent border-none text-xl font-bold focus:ring-0">
                                 </div>
                                 <div class="flex gap-2">
                                     <button @click="saveChapterContent" class="btn-primary px-4 py-2 rounded-lg text-xs">Save</button>
                                     <button @click="selectedChapter = null" class="btn-secondary px-4 py-2 rounded-lg text-xs">Close</button>
                                 </div>
                             </div>
-                            <div class="flex-1 p-6 overflow-y-auto">
-                                <textarea v-model="selectedChapter.content" 
-                                          @mouseup="handleSelection"
-                                          class="w-full h-full bg-transparent border-none focus:ring-0 resize-none font-serif leading-loose text-lg"
-                                          placeholder="Once upon a time..."></textarea>
-                            </div>
+                            <textarea v-model="selectedChapter.content" class="flex-1 p-8 bg-transparent border-none focus:ring-0 font-serif text-lg leading-relaxed resize-none"></textarea>
                         </div>
-                        
-                        <!-- Comment Sidebar -->
-                        <div class="w-80 flex flex-col gap-4">
-                            <!-- New Comment Box -->
-                            <div v-if="selectedText" class="glass rounded-2xl p-4 border-2 border-violet-500/50">
-                                <label class="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Comment on: "{{ selectedText.substring(0, 30) }}{{ selectedText.length > 30 ? '...' : '' }}"</label>
-                                <textarea v-model="commentForm.text" placeholder="AI, what do you think of this?" class="input-field w-full px-3 py-2 rounded-xl text-sm mb-3" rows="3"></textarea>
-                                <div class="flex gap-2">
-                                    <button @click="addComment" class="btn-primary flex-1 py-2 rounded-lg text-xs">Post to AI</button>
-                                    <button @click="selectedText = ''" class="btn-secondary py-2 px-3 rounded-lg text-xs">X</button>
-                                </div>
+                    </div>
+
+                    <!-- Research View -->
+                    <div v-if="currentView === 'research'" class="space-y-6 animate-in slide-in-from-right-4">
+                        <div class="glass rounded-2xl p-8 border border-space-600">
+                            <h3 class="text-xl font-bold mb-4">Web Research</h3>
+                            <div class="flex gap-3 mb-6">
+                                <input v-model="researchQuery" placeholder="Search for historical facts, settings, or details..." class="flex-1 bg-space-800 border border-space-600 rounded-xl px-4 py-3">
+                                <button @click="performResearch" class="btn-primary px-8 rounded-xl">Search</button>
                             </div>
-                            
-                            <!-- Comment Feed -->
-                            <div class="flex-1 glass rounded-2xl p-4 overflow-y-auto">
-                                <h4 class="text-sm font-semibold mb-4 text-slate-400 uppercase tracking-widest">Review Feed</h4>
-                                <div v-if="comments.length === 0" class="text-center py-12 text-slate-500 text-xs italic">No comments yet. Highlight text to ask for AI review.</div>
-                                <div v-for="comment in comments" :key="comment.id" class="p-3 bg-space-800 rounded-xl border border-space-600 mb-3 text-xs">
-                                    <div class="text-[10px] font-bold text-violet-400 mb-1">"{{ comment.highlighted_text }}"</div>
-                                    <p class="mb-2 text-slate-300">{{ comment.user_comment }}</p>
-                                    <div v-if="comment.ai_response" class="pl-3 border-l-2 border-cyan-500 mb-2 py-1">
-                                        <p class="text-cyan-400 italic">{{ comment.ai_response }}</p>
-                                    </div>
-                                    <div class="flex justify-between items-center mt-2 pt-2 border-t border-space-600">
-                                        <span class="text-[9px] text-slate-500">{{ comment.status.toUpperCase() }}</span>
-                                        <button v-if="comment.status === 'open'" class="text-emerald-400 font-bold">Resolve</button>
-                                    </div>
+                            <div class="space-y-4">
+                                <div v-for="result in researchResults" class="p-4 bg-space-800 border border-space-600 rounded-xl">
+                                    <h5 class="font-bold text-violet-400">{{ result.title }}</h5>
+                                    <p class="text-sm text-slate-400 mt-1">{{ result.snippet }}</p>
+                                    <a :href="result.url" target="_blank" class="text-xs text-slate-600 mt-2 block">{{ result.source }}</a>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Visualize View -->
+                    <div v-if="currentView === 'visualize'" class="h-full animate-in slide-in-from-right-4">
+                        <div class="glass rounded-2xl p-6 border border-space-600 h-full flex flex-col">
+                            <h3 class="text-lg font-bold mb-4">Relationship Graph</h3>
+                            <div class="flex-1 bg-space-900 rounded-xl border border-space-600 flex items-center justify-center p-8">
+                                <pre class="text-xs text-slate-500 font-mono">{{ mermaidCode }}</pre>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-4 text-center">Graph generated from Codex relationships. Use Studio Mode to edit nodes directly.</p>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- Plot Threads -->
-                <div v-if="currentView === 'plot'" class="space-y-6">
-                    <div class="flex gap-3 mb-4">
-                        <button @click="showAddPlotThread = true" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add Plot Thread</button>
+                <!-- STUDIO RIGHT SIDEBAR CHAT -->
+                <div v-if="viewMode === 'studio'" class="w-80 border-l border-space-600 glass flex flex-col h-full shrink-0">
+                    <div class="px-4 py-3 border-b border-space-600 bg-space-900/50 flex items-center gap-2">
+                        <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                        <span class="text-xs font-semibold uppercase tracking-widest text-slate-400">Story Architect</span>
                     </div>
-                    <div class="glass rounded-xl p-6">
-                        <div v-if="plotThreads.length === 0" class="text-center text-slate-400 py-8">No plot threads yet</div>
-                        <div v-for="thread in plotThreads" :key="thread.id" :class="'rounded-xl p-4 mb-3 severity-' + thread.importance">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span :class="'px-2 py-1 rounded text-xs mr-2 ' + (thread.status === 'open' ? 'status-open' : 'status-resolved')">{{ thread.status }}</span>
-                                    <span :class="'px-2 py-1 rounded text-xs ' + (thread.importance === 'central' ? 'bg-red-500/20 text-red-400' : 'bg-slate-700')">{{ thread.importance }}</span>
-                                    <h4 class="font-semibold text-lg mt-2">{{ thread.title }}</h4>
-                                    <p class="text-sm text-slate-400">{{ thread.description }}</p>
-                                    <p class="text-xs text-slate-500 mt-1">Planted: Ch. {{ thread.planted_chapter || '?' }}</p>
+                    
+                    <div class="flex-1 p-4 overflow-y-auto space-y-4" ref="studioChatBox">
+                        <div v-for="(msg, idx) in architectHistory" :key="idx" 
+                             :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                            <div v-if="msg.type === 'proposal'" class="bg-violet-500/10 border border-violet-500/30 rounded-xl p-3 shadow-sm max-w-[95%]">
+                                <div class="flex items-center gap-2 mb-2 text-violet-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    <span class="text-[10px] font-bold uppercase tracking-widest">Proposal</span>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button @click="addForeshadowing(thread)" class="text-xs text-cyan-400">+ Foreshadow</button>
-                                    <button v-if="thread.status !== 'resolved'" @click="resolvePlotThread(thread.id)" class="text-xs text-emerald-400">Resolve</button>
+                                <p class="text-[11px] text-slate-300 mb-2">{{ msg.content }}</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <span v-for="item in msg.items" class="px-1.5 py-0.5 bg-space-800 rounded text-[9px] border border-space-600 text-slate-400">
+                                        {{ item.name }}
+                                    </span>
                                 </div>
                             </div>
+                            <div v-else :class="msg.role === 'user' ? 'bg-violet-600 text-white' : 'bg-space-800 border border-space-600'" 
+                                 class="max-w-[90%] rounded-xl px-3 py-2 text-xs shadow">
+                                <p class="whitespace-pre-wrap">{{ msg.content }}</p>
+                            </div>
+                        </div>
+                        <div v-if="loading" class="flex justify-start">
+                            <div class="bg-space-800 border border-space-600 rounded-xl px-3 py-2 flex gap-1">
+                                <div class="w-1 h-1 bg-violet-400 rounded-full animate-bounce"></div>
+                                <div class="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                                <div class="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                            </div>
                         </div>
                     </div>
-                    <div v-if="foreshadowing.length > 0" class="glass rounded-xl p-6">
-                        <h4 class="font-semibold mb-4">Active Foreshadowing</h4>
-                        <div v-for="f in foreshadowing" :key="f.id" class="bg-space-700 rounded-lg p-3 mb-2">
-                            <p class="text-sm">{{ f.content }}</p>
-                            <p class="text-xs text-slate-500 mt-1">Chapter {{ f.chapter_id }} | Expected payoff: Ch. {{ f.payoff_expected_chapter || '?' }} | {{ f.fulfilled ? 'FULFILLED' : 'Pending' }}</p>
-                        </div>
+                    
+                    <div class="p-3 border-t border-space-600 bg-space-900/80">
+                        <form @submit.prevent="sendArchitectMessage" class="relative group">
+                            <textarea v-model="architectInput" 
+                                   placeholder="Talk to the AI while you edit..." 
+                                   class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 rounded-xl px-3 py-2 pr-10 text-xs resize-none overflow-hidden h-10 hover:bg-space-800"
+                                   @keydown.enter.prevent="sendArchitectMessage"
+                                   :disabled="loading"></textarea>
+                            <button type="submit" 
+                                    class="absolute right-2 top-2 p-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg shadow-lg disabled:opacity-50"
+                                    :disabled="loading || !architectInput">
+                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                            </button>
+                        </form>
                     </div>
                 </div>
-                
-                <!-- World Rules -->
-                <div v-if="currentView === 'world'" class="space-y-6">
-                    <div class="flex gap-3 mb-4">
-                        <button @click="showAddWorldRule = true" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add Rule</button>
-                    </div>
-                    <div class="glass rounded-xl p-6">
-                        <div v-for="category in worldRuleCategories" :key="category" class="mb-6">
-                            <h4 class="font-semibold text-violet-400 mb-3 capitalize">{{ category }}</h4>
-                            <div v-for="rule in worldRules.filter(r => r.category === category)" :key="rule.id" class="bg-space-700 rounded-lg p-4 mb-2">
-                                <p class="font-medium">{{ rule.rule }}</p>
-                                <p class="text-sm text-slate-400 mt-1">{{ rule.description }}</p>
-                                <p v-if="rule.exceptions" class="text-xs text-amber-400 mt-1">Exceptions: {{ rule.exceptions }}</p>
-                            </div>
-                        </div>
-                        <div v-if="worldRules.length === 0" class="text-center text-slate-400 py-8">No world rules defined</div>
-                    </div>
+            </main>
+
+            <!-- BOTTOM BAR (Studio Mode) -->
+            <div v-if="viewMode === 'studio'" class="h-10 border-t border-space-600 bg-space-950 flex items-center px-6 justify-between text-[11px] text-slate-400 z-20 shrink-0 w-full fixed bottom-0 left-64" style="width: calc(100% - 16rem);">
+                <div class="flex items-center gap-6">
+                    <span class="flex items-center gap-2 font-bold"><div class="w-2 h-2 rounded-full" :class="momentum > 50 ? 'bg-emerald-400' : 'bg-amber-400'"></div> Story Graph</span>
+                    <span><span class="text-slate-200 font-mono">{{ openTensions.length }}</span> Open Tensions</span>
+                    <span><span class="text-slate-200 font-mono">{{ foreshadowing.filter(f => !f.fulfilled).length }}</span> Unpaid Seeds</span>
                 </div>
-                
-                <!-- Research -->
-                <div v-if="currentView === 'research'" class="space-y-6">
-                    <div class="glass rounded-xl p-6">
-                        <h4 class="font-semibold mb-4">Web Research (Free - No API Key)</h4>
-                        <div class="flex gap-3 mb-4">
-                            <input v-model="researchQuery" placeholder="Search topic..." class="input-field flex-1 px-4 py-2 rounded-xl">
-                            <button @click="performResearch" class="btn-primary px-6 py-2 rounded-xl">Search</button>
-                        </div>
-                        <div v-if="researchResults.length > 0" class="space-y-3">
-                            <div v-for="(result, idx) in researchResults" :key="idx" class="bg-space-700 rounded-lg p-4">
-                                <h5 class="font-medium text-violet-400">{{ result.title }}</h5>
-                                <p class="text-sm text-slate-300 mt-1">{{ result.snippet }}</p>
-                                <a :href="result.url" target="_blank" class="text-xs text-slate-500 mt-1 block">{{ result.source }}</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="glass rounded-xl p-6">
-                        <h4 class="font-semibold mb-4">Fiction Research</h4>
-                        <div class="flex gap-3 mb-4">
-                            <input v-model="fictionTopic" placeholder="Topic (e.g., Art Deco architecture)..." class="input-field flex-1 px-4 py-2 rounded-xl">
-                            <button @click="performFictionResearch" class="btn-primary px-6 py-2 rounded-xl">Research</button>
-                        </div>
-                        <div v-if="fictionResearch">
-                            <div v-for="(fact, idx) in fictionResearch.facts" :key="idx" class="bg-space-700 rounded-lg p-3 mb-2">
-                                <p class="text-sm">{{ fact.fact }}</p>
-                                <p class="text-xs text-slate-500 mt-1">Source: {{ fact.source }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- AI Writing -->
-                <div v-if="currentView === 'ai'" class="space-y-6">
-                    <div class="glass rounded-xl p-6">
-                        <h4 class="font-semibold mb-4">AI Scene Generation</h4>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="text-sm text-slate-400">POV</label>
-                                <select v-model="aiOptions.pov" class="input-field w-full px-4 py-2 rounded-xl mt-1">
-                                    <option value="third">Third Person</option>
-                                    <option value="first">First Person</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-sm text-slate-400">Tone</label>
-                                <select v-model="aiOptions.tone" class="input-field w-full px-4 py-2 rounded-xl mt-1">
-                                    <option value="balanced">Balanced</option>
-                                    <option value="dark">Dark</option>
-                                    <option value="humor">Humorous</option>
-                                    <option value="romantic">Romantic</option>
-                                    <option value="thriller">Thriller</option>
-                                </select>
-                            </div>
-                        </div>
-                        <textarea v-model="aiBeat" class="input-field w-full px-4 py-2 rounded-xl mb-4" rows="3" placeholder="Describe the scene beat..."></textarea>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="text-sm text-slate-400">Word Count</label>
-                                <input v-model="aiOptions.wordCount" type="number" class="input-field w-full px-4 py-2 rounded-xl mt-1">
-                            </div>
-                            <div>
-                                <label class="text-sm text-slate-400">Provider</label>
-                                <select v-model="aiProvider" class="input-field w-full px-4 py-2 rounded-xl mt-1">
-                                    <option value="gemini">Gemini</option>
-                                    <option value="openai">GPT-4</option>
-                                    <option value="claude">Claude</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button @click="generateScene" class="btn-primary px-6 py-2 rounded-xl">Generate Scene</button>
-                        <div v-if="aiResult" class="mt-6 bg-space-700 rounded-xl p-6">
-                            <h5 class="text-sm text-slate-400 mb-2">Generated Scene:</h5>
-                            <div class="font-serif whitespace-pre-wrap leading-relaxed">{{ aiResult }}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Export -->
-                <div v-if="currentView === 'export'" class="space-y-6">
-                    <div class="grid grid-cols-4 gap-4">
-                        <button @click="exportBook('markdown')" class="glass rounded-xl p-6 card-hover text-left">
-                            <h4 class="font-semibold">Markdown</h4>
-                            <p class="text-sm text-slate-400">.md file</p>
-                        </button>
-                        <button @click="exportBook('html')" class="glass rounded-xl p-6 card-hover text-left">
-                            <h4 class="font-semibold">HTML</h4>
-                            <p class="text-sm text-slate-400">Web page</p>
-                        </button>
-                        <button @click="exportBook('epub')" class="glass rounded-xl p-6 card-hover text-left">
-                            <h4 class="font-semibold">EPUB</h4>
-                            <p class="text-sm text-slate-400">E-book format</p>
-                        </button>
-                        <button @click="exportBook('pdf')" class="glass rounded-xl p-6 card-hover text-left">
-                            <h4 class="font-semibold">PDF</h4>
-                            <p class="text-sm text-slate-400">Print-ready</p>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Visualize -->
-                <div v-if="currentView === 'visualize'" class="space-y-6">
-                    <div class="glass rounded-xl p-6">
-                        <h4 class="font-semibold mb-4">Relationship Graph</h4>
-                        <pre class="bg-space-900 rounded-xl p-4 text-sm font-mono text-slate-300 overflow-auto whitespace-pre-wrap">{{ mermaidCode }}</pre>
-                        <p class="text-xs text-slate-500 mt-2">Copy to <a href="https://mermaid.live" target="_blank" class="text-violet-400">mermaid.live</a> to visualize</p>
-                    </div>
-                </div>
+                <div class="font-mono"><span class="text-slate-200">{{ stats.total_words || 0 }}</span> words total</div>
             </div>
-        </main>
+        </div>
     
     <!-- Add Modal -->
     <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
@@ -606,18 +482,20 @@
             data() {
                 return {
                     currentView: 'dashboard',
+                    viewMode: 'chat',
+                    projectTitle: 'Shanghai Ghost',
                     modalType: 'entity',
                     showAddModal: false,
                     entityFilter: '',
                     selectedChapter: null,
                     selectedEntity: null,
+                    stats: { total_words: 0, chapters: 0 },
                     
                     // Data
                     entities: [],
                     relationships: [],
                     chapters: [],
                     events: [],
-                    stats: {},
                     plotThreads: [],
                     foreshadowing: [],
                     worldRules: [],
@@ -725,9 +603,9 @@
                 },
                 async fetchCompass() {
                     const [anchorsRes, tensionsRes, momentumRes] = await Promise.all([
-                        fetch('/api/story-compass/anchors'),
-                        fetch('/api/story-compass/tensions'),
-                        fetch('/api/story-compass/momentum')
+                        fetch('http://localhost:8000/api/story-compass/anchors'),
+                        fetch('http://localhost:8000/api/story-compass/tensions'),
+                        fetch('http://localhost:8000/api/story-compass/momentum')
                     ]);
                     this.storyAnchors = await anchorsRes.json();
                     this.openTensions = await tensionsRes.json();
@@ -735,13 +613,13 @@
                     this.momentum = momData.momentum_score || 0;
                 },
                 async fetchLookahead() {
-                    const res = await fetch('/api/lookahead/cards');
+                    const res = await fetch('http://localhost:8000/api/lookahead/cards');
                     this.lookaheadCards = await res.json();
                 },
                 async generateLookahead() {
                     this.loading = true;
                     try {
-                        const res = await fetch('/api/lookahead/generate', { method: 'POST' });
+                        const res = await fetch('http://localhost:8000/api/lookahead/generate', { method: 'POST' });
                         const data = await res.json();
                         this.lookaheadCards = data.cards;
                     } finally {
@@ -749,7 +627,7 @@
                     }
                 },
                 async approveCard(cardId) {
-                    await fetch(`/api/lookahead/cards/${cardId}/status`, {
+                    await fetch(`http://localhost:8000/api/lookahead/cards/${cardId}/status`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status: 'approved' })
@@ -757,7 +635,7 @@
                     this.fetchLookahead();
                 },
                 async discardCard(cardId) {
-                    await fetch(`/api/lookahead/cards/${cardId}/status`, {
+                    await fetch(`http://localhost:8000/api/lookahead/cards/${cardId}/status`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status: 'discarded' })
@@ -766,7 +644,7 @@
                 },
                 async resolveTension(tensionId) {
                     // Simplified resolution for now
-                    await fetch(`/api/story-compass/tensions/${tensionId}/resolve`, { method: 'POST' });
+                    await fetch(`http://localhost:8000/api/story-compass/tensions/${tensionId}/resolve`, { method: 'POST' });
                     this.fetchCompass();
                 },
                 /**
@@ -782,7 +660,7 @@
                     this.loading = true; // Show typing indicator
                     
                     try {
-                        const res = await fetch('/api/architect/chat', {
+                        const res = await fetch('http://localhost:8000/api/architect/chat', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -795,20 +673,39 @@
                         this.architectHistory.push({ role: 'assistant', content: data.response });
                         
                         // Handle structured extractions (Entities, Anchors, etc.)
-                        // These are queued in the sidebar for user approval.
+                        // These are queued in the sidebar AND injected as cards in the chat thread
                         if (data.extractions) {
                             const exts = data.extractions;
-                            if (exts.entities) {
+                            let extractedAny = false;
+
+                            if (exts.entities && exts.entities.length > 0) {
                                 exts.entities.forEach(e => this.architectExtractions.push({ ...e, category: 'Entity' }));
+                                extractedAny = true;
                             }
-                            if (exts.anchors) {
+                            if (exts.anchors && exts.anchors.length > 0) {
                                 exts.anchors.forEach(a => this.architectExtractions.push({ ...a, category: 'Anchor', name: a.type }));
+                                extractedAny = true;
                             }
-                            if (exts.plot_threads) {
+                            if (exts.plot_threads && exts.plot_threads.length > 0) {
                                 exts.plot_threads.forEach(p => this.architectExtractions.push({ ...p, category: 'Plot Thread', name: p.title }));
+                                extractedAny = true;
                             }
-                            if (exts.tensions) {
+                            if (exts.tensions && exts.tensions.length > 0) {
                                 exts.tensions.forEach(t => this.architectExtractions.push({ description: t, category: 'Tension', name: 'Story Tension' }));
+                                extractedAny = true;
+                            }
+
+                            // Inject a "proposal" card into the chat history if something was found
+                            if (extractedAny) {
+                                this.architectHistory.push({ 
+                                    role: 'assistant', 
+                                    type: 'proposal', 
+                                    content: "I've identified some new elements for your project. You can review them in the sidebar.",
+                                    items: [
+                                        ...(exts.entities || []).map(e => ({ type: 'Entity', name: e.name })),
+                                        ...(exts.plot_threads || []).map(p => ({ type: 'Plot Thread', name: p.title }))
+                                    ]
+                                });
                             }
                         }
                         
@@ -816,6 +713,9 @@
                         this.$nextTick(() => {
                             if (this.$refs.chatBox) {
                                 this.$refs.chatBox.scrollTop = this.$refs.chatBox.scrollHeight;
+                            }
+                            if (this.$refs.studioChatBox) {
+                                this.$refs.studioChatBox.scrollTop = this.$refs.studioChatBox.scrollHeight;
                             }
                         });
                     } catch (e) {
@@ -837,16 +737,16 @@
                         
                         // Route based on category
                         if (ext.category === 'Entity') {
-                            endpoint = '/api/entities';
+                            endpoint = 'http://localhost:8000/api/entities';
                             body = { name: ext.name, entity_type: ext.type, description: ext.description };
                         } else if (ext.category === 'Anchor') {
-                            endpoint = '/api/story-compass/anchors';
+                            endpoint = 'http://localhost:8000/api/story-compass/anchors';
                             body = { anchor_type: ext.type, description: ext.description };
                         } else if (ext.category === 'Plot Thread') {
-                            endpoint = '/api/plot-threads';
+                            endpoint = 'http://localhost:8000/api/plot-threads';
                             body = { title: ext.name, description: ext.description, importance: ext.importance };
                         } else if (ext.category === 'Tension') {
-                            endpoint = '/api/story-compass/tensions';
+                            endpoint = 'http://localhost:8000/api/story-compass/tensions';
                             body = { description: ext.description };
                         }
                         
@@ -879,7 +779,7 @@
                 },
                 async addComment() {
                     if (!this.selectedText || !this.commentForm.text) return;
-                    await fetch('/api/comments', {
+                    await fetch('http://localhost:8000/api/comments', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -895,19 +795,19 @@
                 },
                 async fetchComments() {
                     if (!this.selectedChapter) return;
-                    const res = await fetch(`/api/comments?context_type=chapter&target_id=${this.selectedChapter.id}`);
+                    const res = await fetch(`http://localhost:8000/api/comments?context_type=chapter&target_id=${this.selectedChapter.id}`);
                     this.comments = await res.json();
                 },
                 async loadData() {
                     try {
                         const [ent, chap, thr, rules, stats, rels, fore] = await Promise.all([
-                            fetch('/api/entities').then(r => r.json()),
-                            fetch('/api/chapters').then(r => r.json()),
-                            fetch('/api/plot-threads').then(r => r.json()),
-                            fetch('/api/world-rules').then(r => r.json()),
-                            fetch('/api/stats').then(r => r.json()),
-                            fetch('/api/relationships').then(r => r.json()),
-                            fetch('/api/foreshadowing').then(r => r.json())
+                            fetch('http://localhost:8000/api/entities').then(r => r.json()),
+                            fetch('http://localhost:8000/api/chapters').then(r => r.json()),
+                            fetch('http://localhost:8000/api/plot-threads').then(r => r.json()),
+                            fetch('http://localhost:8000/api/world-rules').then(r => r.json()),
+                            fetch('http://localhost:8000/api/stats').then(r => r.json()),
+                            fetch('http://localhost:8000/api/relationships').then(r => r.json()),
+                            fetch('http://localhost:8000/api/foreshadowing').then(r => r.json())
                         ]);
                         this.entities = ent;
                         this.chapters = chap;

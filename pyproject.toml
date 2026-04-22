@@ -1,0 +1,21 @@
+[tool.black]
+line-length = 120
+target-version = ['py310']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 120
+multi_line_output = 3
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = "E203, W503"
+exclude = ".git,__pycache__,docs,old,build,dist"
+
+[tool.semantic_release]
+version_variable = "backend/main.py:__version__"
+branch = "main"
+upload_to_pypi = false
+upload_to_release = true
+build_command = "pip install wheel && python setup.py sdist bdist_wheel"
