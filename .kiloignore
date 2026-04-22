@@ -1,0 +1,12 @@
+# Kilo Code Ignore File
+.git/
+.kilo/
+data/
+*.db
+*.sqlite
+__pycache__/
+*.pyc
+node_modules/
+.env
+scratch/
+tests/
