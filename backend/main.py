@@ -10,12 +10,22 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
+from fastapi.responses import FileResponse
 
-# Import Codex
+# Import Subsystems
 from codex import CodexDatabase
+from plot_manager import create_plot_manager
+from ai_writer import AIWriter
+from lookahead_engine import LookaheadEngine
+from idea_processor import create_story_architect
+from comment_system import create_comment_engine, create_quality_layer
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize app
-app = FastAPI(title="Nebula-Writer API", version="1.0.0")
+app = FastAPI(title="Nebula-Writer API", version="2.0.0")
 
 # CORS
 app.add_middleware(
@@ -26,10 +36,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database instance
-DATA_DIR = Path(__file__).parent.parent / "data"
-DATA_DIR.mkdir(exist_ok=True)
-db = CodexDatabase(str(DATA_DIR / "codex.db"))
+# Database - SQLite or Supabase
+db_type = os.environ.get("NEBULA_DB", "sqlite")
+
+if db_type == "supabase":
+    print("[OK] Using Supabase PostgreSQL database")
+    from postgres_db import PostgresDB
+    db = PostgresDB()
+else:
+    print("[OK] Using SQLite local database")
+    DATA_DIR = Path(__file__).parent.parent / "data"
+    DATA_DIR.mkdir(exist_ok=True)
+    db = CodexDatabase(str(DATA_DIR / "codex.db"))
+
+# Initialize Subsystems
+plot_manager = create_plot_manager()
+ai_writer = AIWriter()
+lookahead_engine = LookaheadEngine(db, plot_manager, ai_writer)
+story_architect = create_story_architect(ai_writer)
+comment_engine = create_comment_engine()
+quality_layer = create_quality_layer()
 
 # ============ MODELS ============
 
@@ -75,6 +101,35 @@ class SceneCreate(BaseModel):
     number: int
     beat: Optional[str] = None
     content: str = ""
+
+# v2.1 Models
+class StoryAnchorCreate(BaseModel):
+    anchor_type: str  # beginning, midpoint, end
+    description: str
+
+class OpenTensionCreate(BaseModel):
+    description: str
+    priority: str = "normal"
+
+class LookaheadCardStatus(BaseModel):
+    status: str  # approved, discarded
+
+class CommentCreate(BaseModel):
+    context_type: str
+    target_id: str
+    highlighted_text: str
+    user_comment: str
+    start: Optional[int] = None
+    end: Optional[int] = None
+
+class CommentAIResponse(BaseModel):
+    response: str
+
+class CommentResolve(BaseModel):
+    notes: Optional[str] = ""
+
+class CommentPushback(BaseModel):
+    feedback: str
 
 # ============ ENTITY ENDPOINTS ============
 
@@ -403,15 +458,538 @@ def memory_search(q: str = Query(..., min_length=2)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============ VERSION HISTORY ============
+
+@app.get("/api/chapters/{chapter_id}/versions")
+def get_chapter_versions(chapter_id: int):
+    """Get all versions of a chapter"""
+    return db.get_versions(chapter_id)
+
+@app.get("/api/versions/{version_id}")
+def get_version(version_id: int):
+    """Get a specific chapter version"""
+    version = db.get_version(version_id)
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return version
+
+class VersionCreate(BaseModel):
+    chapter_id: int
+    content: str
+
+@app.post("/api/versions")
+def save_version(req: VersionCreate):
+    """Save a new chapter version"""
+    version_id = db.save_version(req.chapter_id, req.content)
+    return {"id": version_id, "message": "Version saved"}
+
+# ============ CHARACTER KNOWLEDGE ============
+
+class CharacterKnowledgeUpdate(BaseModel):
+    entity_id: int
+    chapter_id: int
+    knowledge: str
+
+@app.post("/api/character-knowledge")
+def update_character_knowledge(req: CharacterKnowledgeUpdate):
+    """Update what a character knows at a specific chapter"""
+    knowledge_id = db.update_character_knowledge(req.entity_id, req.chapter_id, req.knowledge)
+    return {"id": knowledge_id, "message": "Knowledge updated"}
+
+@app.get("/api/character-knowledge/{entity_id}")
+def get_character_knowledge(entity_id: int, chapter_id: Optional[int] = None):
+    """Get what a character knows"""
+    return db.get_character_knowledge(entity_id, chapter_id)
+
+# ============ STORY TEMPLATES ============
+
+@app.get("/api/templates")
+def get_templates():
+    """Get all story structure templates"""
+    templates = db.get_templates()
+    for t in templates:
+        if t.get('structure'):
+            t['structure'] = json.loads(t['structure'])
+    return templates
+
+@app.get("/api/templates/{template_id}")
+def get_template(template_id: int):
+    """Get a specific template"""
+    template = db.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    if template.get('structure'):
+        template['structure'] = json.loads(template['structure'])
+    return template
+
+# ============ CONSISTENCY CHECKING ============
+
+@app.get("/api/consistency")
+def get_consistency_issues(chapter_id: Optional[int] = None, unresolved_only: bool = False):
+    """Get consistency issues"""
+    return db.get_consistency_issues(chapter_id, unresolved_only)
+
+@app.post("/api/consistency/check")
+def run_consistency_check():
+    """Run full consistency check"""
+    return db.run_consistency_check()
+
+@app.post("/api/consistency/{issue_id}/resolve")
+def resolve_consistency_issue(issue_id: int):
+    """Mark a consistency issue as resolved"""
+    success = db.resolve_consistency_issue(issue_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    return {"message": "Issue resolved"}
+
+# ============ AUTO-EXTRACT ============
+
+class ExtractRequest(BaseModel):
+    text: str
+
+@app.post("/api/extract")
+def extract_entities(req: ExtractRequest):
+    """Extract potential entities from prose text"""
+    return db.extract_entities_from_text(req.text)
+
+# ============ MULTI-AI CLIENT ============
+
+class AIClientRequest(BaseModel):
+    provider: str = "gemini"
+    prompt: str
+    system_prompt: Optional[str] = None
+
+@app.post("/api/ai/client")
+def ai_client_generate(req: AIClientRequest):
+    """Generate using any configured AI provider"""
+    try:
+        from ai_client import AIClient
+        import os
+        
+        api_key = os.environ.get(f"{req.provider.upper()}_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=400, detail=f"No API key for {req.provider}")
+        
+        client = AIClient(provider=req.provider, api_key=api_key)
+        result = client.generate(req.prompt, req.system_prompt)
+        return {"text": result, "provider": req.provider}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/ai/providers")
+def get_ai_providers():
+    """Get available AI providers"""
+    from ai_client import get_available_providers
+    return get_available_providers()
+
+# ============ NEW EXPORT FORMATS ============
+
+@app.get("/api/export/markdown")
+def export_markdown():
+    """Export story as Markdown"""
+    from exporter import StoryExporter
+    exporter = StoryExporter(db)
+    return {"content": exporter.to_plain_text()}
+
+@app.get("/api/export/html")
+def export_html():
+    """Export story as HTML"""
+    from exporter import StoryExporter
+    exporter = StoryExporter(db)
+    return {"content": exporter.to_html()}
+
+@app.get("/api/export/text")
+def export_text():
+    """Export story as plain text"""
+    from exporter import StoryExporter
+    exporter = StoryExporter(db)
+    return {"content": exporter.to_plain_text()}
+
+@app.get("/api/export/epub")
+def export_epub():
+    """Export story as EPUB (returns base64)"""
+    from exporter import StoryExporter
+    import base64
+    exporter = StoryExporter(db)
+    epub_bytes = exporter.to_epub_bytes(title="My Novel", author="Author")
+    return {"content": base64.b64encode(epub_bytes).decode(), "type": "epub"}
+
+@app.get("/api/export/pdf")
+def export_pdf():
+    """Export story as HTML optimized for PDF"""
+    from exporter import StoryExporter
+    exporter = StoryExporter(db)
+    return {"content": exporter.to_pdf_html()}
+
+# ============ RESEARCH ENGINE ============
+
+@app.get("/api/research/search")
+def research_search(q: str = Query(..., min_length=2), num_results: int = 5):
+    """Search the web for research (no API key required)"""
+    try:
+        from research import ResearchEngine
+        engine = ResearchEngine()
+        results = engine.search(q, num_results)
+        return {"results": [r.to_dict() for r in results], "query": q}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/research/fiction")
+def research_fiction(req: dict):
+    """Research topic for fiction writing"""
+    try:
+        from research import ResearchEngine
+        engine = ResearchEngine()
+        result = engine.research_for_fiction(
+            req.get("topic", ""),
+            context=req.get("context", {})
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/research/history")
+def research_history(period: str = Query(...), location: str = None):
+    """Get historical context for a time period"""
+    try:
+        from research import ResearchEngine
+        engine = ResearchEngine()
+        result = engine.get_historical_context(period, location)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ PLOT THREADS ============
+
+@app.get("/api/plot-threads")
+def get_plot_threads(status: str = None):
+    """Get plot threads"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        return pm.get_plot_threads(status)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/plot-threads")
+def create_plot_thread(req: dict):
+    """Create a new plot thread"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        thread_id = pm.add_plot_thread(
+            req.get("title", ""),
+            req.get("description"),
+            req.get("planted_chapter"),
+            req.get("importance", "normal")
+        )
+        return {"id": thread_id, "message": "Plot thread created"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/plot-threads/{thread_id}/resolve")
+def resolve_plot_thread(thread_id: int, resolved_chapter: int = None):
+    """Mark plot thread as resolved"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        success = pm.resolve_plot_thread(thread_id, resolved_chapter)
+        return {"message": "Plot thread resolved" if success else "Not found"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ FORESHADOWING ============
+
+@app.post("/api/foreshadowing")
+def add_foreshadowing(req: dict):
+    """Add foreshadowing element"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        foreshadow_id = pm.add_foreshadowing(
+            req.get("plot_thread_id"),
+            req.get("chapter_id"),
+            req.get("content"),
+            req.get("hint_level", "subtle"),
+            req.get("payoff_chapter")
+        )
+        return {"id": foreshadow_id, "message": "Foreshadowing added"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/foreshadowing")
+def get_foreshadowing(plot_thread_id: int = None):
+    """Get foreshadowing elements"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        return pm.get_foreshadowing(plot_thread_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ WORLD RULES ============
+
+@app.get("/api/world-rules")
+def get_world_rules(category: str = None):
+    """Get world rules"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        return pm.get_world_rules(category)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/world-rules")
+def add_world_rule(req: dict):
+    """Add a world rule"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        rule_id = pm.add_world_rule(
+            req.get("category", ""),
+            req.get("rule", ""),
+            req.get("description"),
+            req.get("exceptions"),
+            req.get("applies_to")
+        )
+        return {"id": rule_id, "message": "World rule added"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/world-rules/check")
+def check_world_rules(req: dict):
+    """Check text for world rule violations"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        violations = pm.check_world_rule_violation(req.get("text", ""))
+        return {"violations": violations}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ VOICE PROFILES ============
+
+@app.post("/api/voice-profiles")
+def set_voice_profile(req: dict):
+    """Set character voice profile"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        profile_id = pm.set_voice_profile(
+            req.get("entity_id"),
+            req.get("vocabulary_level", "average"),
+            req.get("speech_patterns"),
+            req.get("common_phrases"),
+            req.get("emotional_register", "neutral"),
+            req.get("formal_level", "neutral"),
+            req.get("dialect"),
+            req.get("quirks"),
+            req.get("sample_dialogue")
+        )
+        return {"id": profile_id, "message": "Voice profile set"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/voice-profiles/{entity_id}")
+def get_voice_profile(entity_id: int):
+    """Get character voice profile"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        return pm.get_voice_profile(entity_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/voice-profiles/{entity_id}/prompt")
+def get_voice_prompt(entity_id: int):
+    """Get voice profile as AI prompt"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        prompt = pm.generate_voice_prompt(entity_id)
+        return {"prompt": prompt}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ CONTINUITY CHECK ============
+
+@app.post("/api/continuity/check-chapter")
+def check_chapter_continuity(req: dict):
+    """Check continuity for a chapter"""
+    try:
+        from plot_manager import create_plot_manager
+        pm = create_plot_manager()
+        result = pm.check_continuity(
+            req.get("chapter_id"),
+            req.get("chapter_text", ""),
+            req.get("entities", []),
+            req.get("events", [])
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ v2.1 STORY COMPASS & LOOKAHEAD ============
+
+@app.post("/api/lookahead/generate")
+def generate_lookahead():
+    """Generate 3-chapter lookahead cards"""
+    try:
+        cards = lookahead_engine.generate_lookahead()
+        return {"cards": cards}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/lookahead/cards")
+def get_lookahead_cards(status: str = "draft"):
+    """Get lookahead cards"""
+    return db.get_lookahead_cards(status)
+
+@app.put("/api/lookahead/cards/{card_id}/status")
+def update_lookahead_card_status(card_id: int, status_update: LookaheadCardStatus):
+    """Update card status (approved, discarded)"""
+    success = db.update_lookahead_card_status(card_id, status_update.status)
+    if not success:
+        raise HTTPException(status_code=404, detail="Card not found")
+    return {"message": "Card updated"}
+
+@app.get("/api/story-compass/anchors")
+def get_story_anchors():
+    """Get all story anchors"""
+    return db.get_story_anchors()
+
+@app.post("/api/story-compass/anchors")
+def add_story_anchor(anchor: StoryAnchorCreate):
+    """Add a story anchor"""
+    anchor_id = db.add_story_anchor(anchor.anchor_type, anchor.description)
+    return {"id": anchor_id, "message": "Anchor added"}
+
+@app.get("/api/story-compass/tensions")
+def get_open_tensions(status: str = "open"):
+    """Get open tensions"""
+    return db.get_open_tensions(status)
+
+@app.post("/api/story-compass/tensions")
+def add_open_tension(tension: OpenTensionCreate):
+    """Add an open tension"""
+    tension_id = db.add_open_tension(tension.description, tension.priority)
+    return {"id": tension_id, "message": "Tension added"}
+
+@app.get("/api/story-compass/momentum")
+def get_narrative_momentum():
+    """Get narrative momentum score"""
+    score = db.get_narrative_momentum()
+    return {"momentum_score": score}
+
+@app.post("/api/ripple-check")
+def run_ripple_check(req: dict):
+    """Run ripple check after a change"""
+    try:
+        context_type = req.get("context_type")
+        target_id = req.get("target_id")
+        changes = req.get("changes", {})
+        report = comment_engine.ripple_check(context_type, target_id, changes)
+        return report
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ v2.1 INLINE COMMENTS ============
+
+@app.get("/api/comments")
+def get_comments(context_type: Optional[str] = None, target_id: Optional[str] = None):
+    """Get comments"""
+    return comment_engine.get_comments(context_type, target_id)
+
+@app.post("/api/comments")
+def add_comment(comment: CommentCreate):
+    """Add a new inline comment"""
+    comment_id = comment_engine.add_comment(
+        comment.context_type,
+        comment.target_id,
+        comment.highlighted_text,
+        comment.user_comment,
+        comment.start,
+        comment.end
+    )
+    return {"id": comment_id, "message": "Comment added"}
+
+@app.post("/api/comments/{comment_id}/ai-respond")
+def comment_ai_respond(comment_id: str, req: CommentAIResponse):
+    """AI responds to a comment"""
+    success = comment_engine.ai_respond(comment_id, req.response)
+    if not success:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return {"message": "AI responded"}
+
+@app.post("/api/comments/{comment_id}/resolve")
+def comment_resolve(comment_id: str, req: CommentResolve):
+    """User resolves a comment"""
+    result = comment_engine.resolve_comment(comment_id, req.notes)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.post("/api/comments/{comment_id}/pushback")
+def comment_pushback(comment_id: str, req: CommentPushback):
+    """User pushes back on AI response"""
+    success = comment_engine.pushback(comment_id, req.feedback)
+    if not success:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return {"message": "Pushback recorded"}
+
 # ============ HEALTH CHECK ============
 
 @app.get("/api/health")
 def health_check():
     """Health check endpoint"""
-    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+    return {"status": "ok", "timestamp": datetime.now().isoformat(), "version": "2.1.0"}
+
+    return {"status": "success", "result": result}
+
+# ============ v2.1 STORY ARCHITECT CHAT ============
+
+class ArchitectChatRequest(BaseModel):
+    """
+    Request model for the Story Architect chat session.
+    Contains the full message history and optionally the current story state.
+    """
+    history: List[Dict]
+    current_state: Optional[Dict] = {}
+
+@app.post("/api/architect/chat")
+def architect_chat(req: ArchitectChatRequest):
+    """
+    Primary endpoint for the Conversational Story Architect.
+    
+    Processes the chat history using the StoryArchitect engine and returns:
+    1. A natural language response for the chat UI.
+    2. A list of suggested story elements (extractions) to add to the project.
+    """
+    try:
+        # Build the current project state from the database if not provided by the client.
+        # This state provides the AI with context about existing characters and plot points.
+        state = req.current_state or {
+            "entities": db.get_entities(),
+            "anchors": db.get_story_anchors(),
+            "tensions": db.get_open_tensions(),
+            "plot_threads": db.get_plot_threads()
+        }
+        
+        # Invoke the architect logic
+        result = story_architect.process_chat(req.history, state)
+        return result
+    except Exception as e:
+        # Log the error and return a 500 status code
+        print(f"API Error in Architect Chat: {e}")
+        raise HTTPException(status_code=500, detail="Failed to process architect session")
+
+@app.get("/")
+async def read_index():
+    """Serve the frontend index.html"""
+    return FileResponse(Path(__file__).parent.parent / "frontend" / "index.html")
 
 
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 Starting Nebula-Writer API server...")
+    print("Starting Nebula-Writer API server v2.1...")
     uvicorn.run(app, host="0.0.0.0", port=8000)
