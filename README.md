@@ -1,27 +1,29 @@
-# Nebula-Writer
+# Nebula-Writer v2.0
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-blue.svg" alt="Version">
-  <img src="https://img.shields.io/badge/python-3.11+-green.svg" alt="Python">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/python-3.10+-green.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
 </p>
 
 > AI-Powered Fiction Writing Assistant with Persistent Memory
 
-Nebula-Writer is a "System of Record" for fiction that stores every character, location, and plot point so your AI never forgets. It uses RAG (Retrieval-Augmented Generation) to provide accurate context to AI writing.
+Nebula-Writer is a "System of Record" for fiction that stores every character, location, and plot point so your AI never forgets. It uses RAG (Retrieval-Augmented Generation) to provide accurate context to AI writing, with support for multiple AI providers.
 
 ## Features
 
-- 📦 **The Codex** - SQLite database for Characters, Locations, Items, Relationships
-- 📖 **Chapter Management** - Write and organize story chapters
-- 🤖 **AI Writing** - Gemini-powered scene generation with context
-- 🔍 **Semantic Search** - ChromaDB-powered RAG memory
-- ✅ **Story Audit** - Detect contradictions in your story
-- 📊 **Visualization** - Mermaid.js relationship graphs
-- 🌐 **Web UI** - Beautiful Vue.js interface
-- 📝 **CLI & REPL** - Command-line and interactive writing
-- 📤 **Export** - Markdown, HTML, JSON formats
-- 🐳 **Docker** - Easy containerized deployment
+- **The Codex** - SQLite database for Characters, Locations, Items, Relationships
+- **Chapter Management** - Write chapters with version history
+- **Story Templates** - Three-Act, Hero's Journey, Save the Cat, Snowflake
+- **Multi-AI** - Gemini, OpenAI GPT-4, Anthropic Claude
+- **Consistency Check** - Auto-detect story contradictions
+- **Character Knowledge** - Track what each character knows
+- **Auto-Extract** - Extract entities from prose text
+- **Semantic Search** - ChromaDB-powered RAG memory
+- **Version History** - Full chapter version tracking
+- **Visualization** - Mermaid.js relationship graphs
+- **Web UI** - Beautiful Vue.js interface
+- **Export** - Markdown, HTML, Plain Text, DOCX
 
 ## Quick Start
 
@@ -32,62 +34,58 @@ cd Nebula-Writer
 pip install -r requirements.txt
 
 # Run the server
-make run
-
-# Or use Docker
-make docker-build
-make docker-run
+cd backend
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-Set your Gemini API key:
-```bash
-export GEMINI_API_KEY=your_api_key_here
-```
-
-## Usage
-
-### Web UI
 Open `http://localhost:8000` in your browser.
 
-### CLI
+## Environment Variables
+
 ```bash
-# Add entity
-python nebula-writer entity add "Ravi" --type character --desc "Detective"
+# Required for AI features
+export GEMINI_API_KEY=your_gemini_key
 
-# List chapters
-python nebula-writer chapter list
-
-# Visualize
-python nebula-writer visualize
+# Optional - additional AI providers
+export OPENAI_API_KEY=your_openai_key
+export ANTHROPIC_API_KEY=your_claude_key
 ```
 
-### REPL
-```bash
-python repl.py
-```
+## Documentation
 
-## Architecture
+See the `docs/` folder for full documentation:
+- [API Reference](docs/API.md)
+- [Features Guide](docs/FEATURES.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Development](docs/DEVELOPMENT.md)
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | FastAPI, Python 3.10+, SQLite |
+| AI | Gemini, OpenAI GPT-4, Claude |
+| Memory | ChromaDB (RAG) |
+| Frontend | Vue.js 3, TailwindCSS |
+| DevOps | Docker |
+
+## Project Structure
 
 ```
 nebula-writer/
 ├── backend/          # FastAPI server
-│   ├── codex.py     # SQLite database
-│   ├── ai_writer.py # AI writing
+│   ├── main.py      # API entry point
+│   ├── codex.py    # SQLite database layer
+│   ├── ai_writer.py    # AI writing
+│   ├── ai_client.py  # Multi-AI client (NEW)
 │   ├── memory.py    # ChromaDB RAG
-│   ├── audit.py     # Story audit
-│   └── ...
-├── frontend/         # Vue.js UI
+│   └── exporter.py  # Export formats
+├── frontend/         # Vue.js SPA
+│   └── index.html
+├── docs/            # Documentation (NEW)
 ├── tests/           # Test suite
-└── repl.py          # Interactive REPL
+└── specs/          # BRD and architecture
 ```
-
-## Tech Stack
-
-- **Backend**: FastAPI, Python 3.11+, SQLite
-- **AI**: Google Gemini API
-- **Memory**: ChromaDB
-- **Frontend**: Vue.js 3, TailwindCSS
-- **DevOps**: Docker, Makefile
 
 ## License
 
@@ -95,6 +93,4 @@ MIT License - feel free to use!
 
 ---
 
-<p align="center">Made with ☕ by Sagar</p>
-# Updated
-# Security Update
+<p align="center">Made with love by Sagar</p>
