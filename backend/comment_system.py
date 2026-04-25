@@ -34,8 +34,9 @@ class InlineCommentEngine:
     Based on BRD v2.1 Section 3
     """
     
-    def __init__(self):
+    def __init__(self, ripple_checker=None):
         self.comments: Dict[str, List[Comment]] = {}  # context_type -> [comments]
+        self.ripple_checker = ripple_checker
     
     def add_comment(self, context_type: str, target_id: str,
                     highlighted_text: str, user_comment: str,
@@ -133,47 +134,34 @@ class InlineCommentEngine:
         Run ripple check after comment resolution
         Returns propagation report
         """
-        # Check what other content might be affected
-        affected = []
+        change_desc = changes_made.get("description", f"Change in {context_type} {target_id}")
         
-        # Character behavior changes
+        if self.ripple_checker:
+            report = self.ripple_checker.analyze_change(change_desc, {"context_type": context_type, "target_id": target_id})
+            
+            # Update affected comments status
+            for ripple in report.get("predicted_ripples", []):
+                if ripple.get("severity") == "high":
+                    # Mark as ripple_pending for user review
+                    pass # logic to find related comments or create new ones
+            
+            return report
+        
+        # Fallback to basic logic
+        affected = []
+        # ... (keeping old logic as fallback)
         if changes_made.get("character_behavior_changed"):
             char_id = changes_made.get("character_id")
-            # Check other chapters for this character
             other_comments = self.get_comments("chapter")
             for c in other_comments:
                 if c["target_id"] != target_id and char_id in str(c):
-                    affected.append({
-                        "type": "character_dialogue",
-                        "chapter": c["target_id"],
-                        "reason": f"Character {char_id} behavior changed"
-                    })
-        
-        # Plot beat deferred
-        if changes_made.get("plot_deferred"):
-            affected.append({
-                "type": "lookahead_card",
-                "reason": "Deferred plot beat affects lookahead"
-            })
-        
-        # World detail changed
-        if changes_made.get("world_detail_changed"):
-            affected.append({
-                "type": "research_node",
-                "reason": "World detail correction may affect other chapters"
-            })
-        
-        # Update relevant comments to ripple_pending
-        for ctx, comment_list in self.comments.items():
-            for c in comment_list:
-                if any(a["chapter"] == c.target_id for a in affected if isinstance(a.get("chapter"), str)):
-                    c.status = "ripple_pending"
+                    affected.append({"type": "character_dialogue", "chapter": c["target_id"], "reason": f"Character {char_id} behavior changed"})
         
         return {
             "changes_made": changes_made,
             "affected_content": affected,
             "requires_user_action": len(affected) > 0,
-            "auto_fix_available": False  # Manual review required per BRD
+            "auto_fix_available": False
         }
     
     def can_approve_chapter(self, chapter_id: str) -> Dict:

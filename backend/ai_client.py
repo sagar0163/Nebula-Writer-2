@@ -9,14 +9,27 @@ from typing import Dict, Optional, List
 class AIClient:
     """Unified AI client supporting multiple providers"""
     
-    PROVIDERS = ['gemini', 'openai', 'claude']
+    PROVIDERS = ['gemini', 'openai', 'claude', 'huggingface']
     
     def __init__(self, provider: str = 'gemini', api_key: str = None):
         self.provider = provider.lower()
-        self.api_key = api_key or os.environ.get("API_KEY") or os.environ.get("GEMINI_API_KEY")
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or os.environ.get("API_KEY")
+        
+        # Fallback to Hugging Face if Gemini key is missing
+        if self.provider == 'gemini' and not self.api_key:
+            hf_key = os.environ.get("HUGGINGFACE_API_KEY")
+            if hf_key:
+                print("[INFO] Gemini key missing, falling back to Hugging Face (Llama-3)")
+                self.provider = 'huggingface'
+                self.api_key = hf_key
         
         if not self.api_key:
-            raise ValueError(f"No API key provided for {provider}")
+            # Check for other providers if explicitly requested
+            if self.provider == 'openai': self.api_key = os.environ.get("OPENAI_API_KEY")
+            if self.provider == 'claude': self.api_key = os.environ.get("ANTHROPIC_API_KEY")
+            
+            if not self.api_key:
+                raise ValueError(f"No API key provided for {self.provider}")
         
         self._init_client()
     
@@ -28,6 +41,8 @@ class AIClient:
             self._init_openai()
         elif self.provider == 'claude':
             self._init_claude()
+        elif self.provider == 'huggingface':
+            self._init_huggingface()
         else:
             raise ValueError(f"Unknown provider: {self.provider}")
     
@@ -57,6 +72,13 @@ class AIClient:
             self.model = "claude-sonnet-4-20250514"
         except ImportError:
             raise ImportError("anthropic not installed. Run: pip install anthropic")
+            
+    def _init_huggingface(self):
+        """Initialize Hugging Face Inference API"""
+        import requests
+        self.client = requests
+        self.model = "meta-llama/Meta-Llama-3-8B-Instruct"
+        self.api_url = f"https://api-inference.huggingface.co/models/{self.model}"
     
     def generate(self, prompt: str, system_prompt: str = None, **kwargs) -> str:
         """Generate content using the configured provider"""
@@ -66,6 +88,8 @@ class AIClient:
             return self._generate_openai(prompt, system_prompt, **kwargs)
         elif self.provider == 'claude':
             return self._generate_claude(prompt, system_prompt, **kwargs)
+        elif self.provider == 'huggingface':
+            return self._generate_huggingface(prompt, system_prompt, **kwargs)
     
     def _generate_gemini(self, prompt: str, system_prompt: str = None, **kwargs) -> str:
         """Generate using Gemini"""
@@ -107,6 +131,31 @@ class AIClient:
             messages=messages
         )
         return response.content[0].text
+
+    def _generate_huggingface(self, prompt: str, system_prompt: str = None, **kwargs) -> str:
+        """Generate using Hugging Face Inference API"""
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        
+        full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
+        
+        payload = {
+            "inputs": full_prompt,
+            "parameters": {
+                "max_new_tokens": kwargs.get("max_tokens", 1000),
+                "temperature": kwargs.get("temperature", 0.7),
+                "return_full_text": False
+            }
+        }
+        
+        response = self.client.post(self.api_url, headers=headers, json=payload)
+        
+        if response.status_code != 200:
+            raise Exception(f"Hugging Face API Error: {response.text}")
+            
+        result = response.json()
+        if isinstance(result, list) and len(result) > 0:
+            return result[0].get("generated_text", "")
+        return str(result)
     
     def rewrite(self, text: str, style: str, **kwargs) -> str:
         """Rewrite text in a specific style"""

@@ -1,21 +1,29 @@
+[project]
+name = "nebula-writer"
+version = "2.1.0"
+description = "AI-Powered Fiction Writing Assistant"
+authors = [{ name = "Sagar", email = "sagar0163@example.com" }]
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "requests>=2.31.0",
+    "sqlite3",
+]
+
+[tool.ruff]
+line-length = 120
+select = ["E", "F", "I", "W", "C90", "B"]
+ignore = ["E501"]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+
 [tool.black]
 line-length = 120
 target-version = ['py310']
-include = '\.pyi?$'
-
-[tool.isort]
-profile = "black"
-line_length = 120
-multi_line_output = 3
-
-[tool.flake8]
-max-line-length = 120
-extend-ignore = "E203, W503"
-exclude = ".git,__pycache__,docs,old,build,dist"
-
-[tool.semantic_release]
-version_variable = "backend/main.py:__version__"
-branch = "main"
-upload_to_pypi = false
-upload_to_release = true
-build_command = "pip install wheel && python setup.py sdist bdist_wheel"

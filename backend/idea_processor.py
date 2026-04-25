@@ -84,6 +84,54 @@ class StoryArchitect:
                 "extractions": {"entities": [], "anchors": [], "tensions": [], "plot_threads": []}
             }
 
+class IdeaProcessor:
+    """
+    Q&A Engine for Idea Clarification.
+    Based on v2.1 specifications for onboarding.
+    """
+    def __init__(self):
+        self.questions = []
+        self.answers = {}
+        self.idea = ""
+        
+    def process_idea(self, idea: str) -> Dict:
+        self.idea = idea
+        # Mock logic for onboarding flow
+        self.questions = [
+            {"id": "q1", "question": "What is the primary emotional tone of this story?", "user_answer": None},
+            {"id": "q2", "question": "Who is the main antagonist or what is the primary opposing force?", "user_answer": None},
+            {"id": "q3", "question": "What is the unique 'twist' or hook that sets this world apart?", "user_answer": None}
+        ]
+        return {
+            "detected": {"genre": "unknown", "tone": "developing"},
+            "questions": self.questions,
+            "questions_remaining": len(self.questions)
+        }
+        
+    def answer_question(self, q_id: str, answer: str) -> str:
+        self.answers[q_id] = answer
+        for q in self.questions:
+            if q["id"] == q_id:
+                q["user_answer"] = answer
+                return f"Got it: {answer}"
+        return "Question not found"
+        
+    def is_ready(self) -> bool:
+        return all(q["user_answer"] is not None for q in self.questions)
+        
+    def generate_world_proposal(self) -> Dict:
+        return {
+            "name": "Developing World",
+            "description": f"A world born from the idea: {self.idea}",
+            "rules": ["Magic exists but is rare", "High political tension"]
+        }
+        
+    def generate_character_proposals(self) -> List[Dict]:
+        return [
+            {"name": "Protagonist", "type": "character", "description": "The center of the journey."},
+            {"name": "Antagonist", "type": "character", "description": "The opposing force."}
+        ]
+
 def create_story_architect(ai_writer):
     """Factory function to instantiate the StoryArchitect."""
     return StoryArchitect(ai_writer)

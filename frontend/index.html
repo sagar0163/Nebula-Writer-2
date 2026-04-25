@@ -1,715 +1,1060 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nebula-Writer | AutoNovelist</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
-        body { background: #0a0a0f; color: #f1f5f9; }
-        .glass { background: rgba(18, 18, 26, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(139, 92, 246, 0.1); }
-        .glow { box-shadow: 0 0 40px rgba(139, 92, 246, 0.15); }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-2px); border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 8px 30px rgba(139, 92, 246, 0.1); }
-        .input-field { background: #1a1a24; border: 1px solid #24242e; transition: all 0.2s; }
-        .input-field:focus { border-color: #8b5cf6; outline: none; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
-        .btn-primary { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); transition: all 0.2s; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4); }
-        .btn-secondary { background: #1a1a24; border: 1px solid #24242e; }
-        .btn-secondary:hover { border-color: #8b5cf6; }
-        .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-        .editor { min-height: 400px; font-family: Georgia, serif; line-height: 1.8; white-space: pre-wrap; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: flex; align-items: center; justify-content: center; }
-        .severity-low { border-left: 3px solid #6b7280; }
-        .severity-medium { border-left: 3px solid #f59e0b; }
-        .severity-high { border-left: 3px solid #ef4444; }
-        .status-open { background: rgba(139, 92, 246, 0.2); }
-        .status-resolved { background: rgba(16, 185, 129, 0.2); }
-        .status-planted { background: rgba(245, 158, 11, 0.2); }
+        body {
+            background: #0a0a0f;
+            color: #f1f5f9;
+        }
+
+        .glass {
+            background: rgba(18, 18, 26, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .glow {
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.1);
+        }
+
+        .input-field {
+            background: #1a1a24;
+            border: 1px solid #24242e;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #8b5cf6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: #1a1a24;
+            border: 1px solid #24242e;
+        }
+
+        .btn-secondary:hover {
+            border-color: #8b5cf6;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .editor {
+            min-height: 400px;
+            font-family: Georgia, serif;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .severity-low {
+            border-left: 3px solid #6b7280;
+        }
+
+        .severity-medium {
+            border-left: 3px solid #f59e0b;
+        }
+
+        .severity-high {
+            border-left: 3px solid #ef4444;
+        }
+
+        .status-open {
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        .status-resolved {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .status-planted {
+            background: rgba(245, 158, 11, 0.2);
+        }
+        .status-pill {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chat-bubble-user {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble-ai {
+            background: #1a1a24;
+            border: 1px solid #24242e;
+            color: #f1f5f9;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-animate {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
+
 <body class="min-h-screen">
     <div id="app" class="flex min-h-screen">
         <!-- Sidebar -->
-    <div id="app" class="flex flex-col min-h-screen">
-        <!-- Top Bar with Mode Toggle -->
-        <header class="h-16 glass border-b border-space-600 flex items-center justify-between px-6 sticky top-0 z-50">
-            <div class="flex items-center gap-4">
-                <div class="text-xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-                    Nebula <span class="font-light text-slate-400">v2.1</span>
-                </div>
-                <div class="h-6 w-[1px] bg-space-600 mx-2"></div>
-                <div class="bg-space-800 rounded-full p-1 flex gap-1 border border-space-600 shadow-inner">
-                    <button @click="viewMode = 'chat'" 
+        <div id="app" class="flex flex-col min-h-screen">
+            <!-- Top Bar with Mode Toggle -->
+            <header
+                class="h-16 glass border-b border-space-600 flex items-center justify-between px-6 sticky top-0 z-50">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="text-xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+                        Nebula <span class="font-light text-slate-400">v2.1</span>
+                    </div>
+                    <div class="h-6 w-[1px] bg-space-600 mx-2"></div>
+                    <div class="bg-space-800 rounded-full p-1 flex gap-1 border border-space-600 shadow-inner">
+                        <button @click="viewMode = 'chat'"
                             :class="viewMode === 'chat' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
                             class="px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300">
-                        Chat Mode
-                    </button>
-                    <button @click="viewMode = 'studio'" 
+                            Chat Mode
+                        </button>
+                        <button @click="viewMode = 'studio'"
                             :class="viewMode === 'studio' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'"
                             class="px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300">
-                        Studio Mode
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-6">
-                <div class="flex flex-col items-end">
-                    <span class="text-sm font-medium text-slate-200">{{ projectTitle }}</span>
-                    <span class="text-[10px] text-slate-500 uppercase tracking-widest">Active Manuscript</span>
-                </div>
-                <button @click="currentView = 'export'" class="btn-primary px-5 py-2 rounded-lg text-sm">Export</button>
-            </div>
-        </header>
-
-        <div class="flex h-[calc(100vh-64px)] overflow-hidden">
-            <!-- Sidebar (Only visible in Studio Mode) -->
-            <aside v-if="viewMode === 'studio'" class="w-64 glass border-r border-space-600 flex flex-col transition-all duration-500 ease-in-out">
-                <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-4">General</div>
-                    <button @click="currentView = 'dashboard'" :class="navClass('dashboard')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Dashboard</button>
-                    
-                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">Manuscript</div>
-                    <button @click="currentView = 'chapters'" :class="navClass('chapters')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Manuscript</button>
-                    <button @click="currentView = 'lookahead'" :class="navClass('lookahead')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Lookahead</button>
-                    
-                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">Story Engine</div>
-                    <button @click="currentView = 'compass'" :class="navClass('compass')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Story Compass</button>
-                    <button @click="currentView = 'entities'" :class="navClass('entities')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Codex</button>
-                    <button @click="currentView = 'research'" :class="navClass('research')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Research</button>
-                    
-                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">Advanced</div>
-                    <button @click="currentView = 'visualize'" :class="navClass('visualize')" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Visual Graph</button>
-                </nav>
-                
-                <!-- Quality Score Indicator (Industry Standard DevOps feel) -->
-                <div class="p-6 border-t border-space-600 bg-space-900/50">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs text-slate-400">Quality Score</span>
-                        <span class="text-xs font-bold text-emerald-400">83%</span>
-                    </div>
-                    <div class="w-full bg-space-600 h-1 rounded-full overflow-hidden">
-                        <div class="bg-emerald-400 h-full w-[83%]"></div>
+                            Studio Mode
+                        </button>
                     </div>
                 </div>
-            </aside>
 
-            <!-- Main Content Area -->
-            <main class="flex-1 overflow-hidden bg-space-950 flex flex-col">
-                <div class="flex-1 flex overflow-hidden">
-                    <!-- Center Area -->
-                    <div class="flex-1 overflow-y-auto p-8 flex flex-col h-full">
-                        
-                        <!-- ============ CHAT MODE VIEW ============ -->
-                        <div v-if="viewMode === 'chat'" class="w-full flex justify-center gap-8 h-full max-w-6xl mx-auto">
-                            <!-- The Chat Container -->
-                            <div class="flex-1 flex flex-col h-full glass rounded-3xl overflow-hidden border border-space-600 shadow-2xl">
-                                <!-- Chat Header -->
-                                <div class="px-6 py-4 border-b border-space-600 bg-space-900/50 flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                                        <span class="text-sm font-semibold">Story Architect</span>
+                <div class="flex items-center gap-6">
+                    <div class="flex flex-col items-end">
+                        <span class="text-sm font-medium text-slate-200">{{ projectTitle }}</span>
+                        <span class="text-[10px] text-slate-500 uppercase tracking-widest">Active Manuscript</span>
+                    </div>
+                    <button @click="currentView = 'export'"
+                        class="btn-primary px-5 py-2 rounded-lg text-sm">Export</button>
+                </div>
+            </header>
+
+            <div class="flex h-[calc(100vh-64px)] overflow-hidden">
+                <!-- Sidebar (Only visible in Studio Mode) -->
+                <aside v-if="viewMode === 'studio'"
+                    class="w-64 glass border-r border-space-600 flex flex-col transition-all duration-500 ease-in-out">
+                    <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-4">
+                            General</div>
+                        <button @click="currentView = 'dashboard'" :class="navClass('dashboard')"
+                            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Dashboard</button>
+
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">
+                            Manuscript</div>
+                        <button @click="currentView = 'chapters'" :class="navClass('chapters')"
+                            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Manuscript</button>
+                        <button @click="currentView = 'lookahead'" :class="navClass('lookahead')"
+                            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Lookahead</button>
+
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">Story
+                            Engine</div>
+                        <button @click="currentView = 'compass'" :class="navClass('compass')"
+                            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Story
+                            Compass</button>
+                        <button @click="currentView = 'entities'" :class="navClass('entities')"
+                            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Codex</button>
+                        <button @click="currentView = 'research'" :class="navClass('research')"
+                            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Research</button>
+
+                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2 mt-6">
+                            Advanced</div>
+                        <button @click="currentView = 'visualize'" :class="navClass('visualize')"
+                            class="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm">Visual
+                            Graph</button>
+                    </nav>
+
+                    <!-- Quality Score Indicator (Industry Standard DevOps feel) -->
+                    <div class="p-6 border-t border-space-600 bg-space-900/50">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-slate-400">Quality Score</span>
+                            <span class="text-xs font-bold text-emerald-400">83%</span>
+                        </div>
+                        <div class="w-full bg-space-600 h-1 rounded-full overflow-hidden">
+                            <div class="bg-emerald-400 h-full w-[83%]"></div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Main Content Area -->
+                <main class="flex-1 overflow-hidden bg-space-950 flex flex-col">
+                    <div class="flex-1 flex overflow-hidden">
+                        <!-- Center Area -->
+                        <div class="flex-1 overflow-y-auto p-8 flex flex-col h-full">
+
+                            <!-- ============ CHAT MODE VIEW ============ -->
+                            <div v-if="viewMode === 'chat'"
+                                class="w-full flex justify-center gap-8 h-full max-w-6xl mx-auto">
+                                <!-- The Chat Container -->
+                                <div
+                                    class="flex-1 flex flex-col h-full glass rounded-3xl overflow-hidden border border-space-600 shadow-2xl">
+                                    <!-- Chat Header -->
+                                    <div
+                                        class="px-6 py-4 border-b border-space-600 bg-space-900/50 flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                                            <span class="text-sm font-semibold">Story Architect</span>
+                                            <div v-if="loading" class="status-pill animate-pulse">
+                                                <svg class="w-2 h-2" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
+                                                Thinking...
+                                            </div>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button @click="clearChat" class="text-[10px] text-slate-500 hover:text-slate-300 uppercase tracking-widest font-bold">Clear Chat</button>
+                                        </div>
                                     </div>
-                                    <span class="text-xs text-slate-500 italic">Always listening...</span>
+
+                                    <!-- Chat Messages -->
+                                    <div class="flex-1 p-6 overflow-y-auto space-y-6" ref="chatBox">
+                                        <div v-for="(msg, idx) in architectHistory" :key="idx"
+                                            :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'"
+                                            class="message-animate">
+                                            <div v-if="msg.type === 'proposal'"
+                                                class="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-5 shadow-lg max-w-[85%]">
+                                                <div class="flex items-center gap-2 mb-3 text-violet-400">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                    </svg>
+                                                    <span class="text-xs font-bold uppercase tracking-widest">Story
+                                                        Proposal</span>
+                                                </div>
+                                                <p class="text-sm text-slate-300 mb-4">{{ msg.content }}</p>
+                                                <div class="flex flex-wrap gap-2">
+                                                    <span v-for="item in msg.items"
+                                                        class="px-2 py-1 bg-space-800 rounded text-[10px] border border-space-600 text-slate-400">
+                                                        <span class="text-violet-400 font-bold">{{ item.type }}:</span>
+                                                        {{ item.name }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div v-else-if="msg.type === 'lookahead_card'"
+                                                class="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 shadow-lg max-w-[85%]">
+                                                <div class="flex items-center gap-2 mb-3 text-emerald-400">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                    <span class="text-xs font-bold uppercase tracking-widest">Chapter Proposal</span>
+                                                </div>
+                                                <h4 class="font-bold text-slate-100 mb-1">Chapter {{ msg.data.chapter_number }}: {{ msg.data.title }}</h4>
+                                                <p class="text-[11px] text-slate-400 italic mb-4">"{{ msg.data.scene_intention }}"</p>
+                                                <button @click="executeChapter(msg.data)" class="btn-primary w-full py-2 rounded-xl text-xs font-bold">WRITE IT</button>
+                                            </div>
+                                            <div v-else
+                                                :class="msg.role === 'user' ? 'chat-bubble-user shadow-violet-500/20' : 'chat-bubble-ai shadow-black/20'"
+                                                class="max-w-[85%] rounded-2xl px-5 py-4 text-sm shadow-xl leading-relaxed">
+                                                <p class="whitespace-pre-wrap">{{ msg.content }}</p>
+                                            </div>
+                                        </div>
+                                        <div v-if="loading" class="flex justify-start">
+                                            <div
+                                                class="bg-space-800 border border-space-600 rounded-2xl px-5 py-3 flex gap-2">
+                                                <div class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce">
+                                                </div>
+                                                <div
+                                                    class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]">
+                                                </div>
+                                                <div
+                                                    class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0.4s]">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Input Bar -->
+                                    <div class="p-6 border-t border-space-600 bg-space-900/80 backdrop-blur-md">
+                                        <form @submit.prevent="sendArchitectMessage" class="relative group">
+                                            <textarea v-model="architectInput"
+                                                placeholder="Give feedback, redirect the story, or describe a new character..."
+                                                class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-2xl px-6 py-4 pr-16 text-sm transition-all resize-none overflow-hidden h-14 hover:bg-space-800"
+                                                @keydown.enter.prevent="sendArchitectMessage"
+                                                :disabled="loading"></textarea>
+                                            <button type="submit"
+                                                class="absolute right-3 top-3 p-2 bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors shadow-lg disabled:opacity-50 disabled:hover:bg-violet-600"
+                                                :disabled="loading || !architectInput">
+                                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                        <div class="mt-3 flex justify-center gap-4">
+                                            <button
+                                                class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-bold">Press
+                                                Enter to Send</button>
+                                            <span class="text-[10px] text-space-600">|</span>
+                                            <button
+                                                class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-bold">Shift+Enter
+                                                for newline</button>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <!-- Chat Messages -->
-                                <div class="flex-1 p-6 overflow-y-auto space-y-6" ref="chatBox">
-                                    <div v-for="(msg, idx) in architectHistory" :key="idx" 
-                                         :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'"
-                                         class="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                        <div v-if="msg.type === 'proposal'" class="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-5 shadow-lg max-w-[85%]">
-                                            <div class="flex items-center gap-2 mb-3 text-violet-400">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                                <span class="text-xs font-bold uppercase tracking-widest">Story Proposal</span>
+                                <!-- Right Side (Live Preview & Extractions) -->
+                                <div class="w-96 flex flex-col gap-6 h-full">
+                                    <!-- Extraction Feed -->
+                                    <div
+                                        class="glass rounded-3xl p-6 flex-1 overflow-y-auto border border-space-600 shadow-xl">
+                                        <h4
+                                            class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 flex justify-between items-center">
+                                            Live Story Elements
+                                            <span
+                                                class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] border border-emerald-500/20">EXTRACTING</span>
+                                        </h4>
+
+                                        <div v-if="architectExtractions.length === 0" class="text-center py-20">
+                                            <div
+                                                class="w-12 h-12 bg-space-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-space-600">
+                                                <svg class="w-6 h-6 text-space-600" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                                </svg>
                                             </div>
-                                            <p class="text-sm text-slate-300 mb-4">{{ msg.content }}</p>
-                                            <div class="flex flex-wrap gap-2">
-                                                <span v-for="item in msg.items" class="px-2 py-1 bg-space-800 rounded text-[10px] border border-space-600 text-slate-400">
-                                                    <span class="text-violet-400 font-bold">{{ item.type }}:</span> {{ item.name }}
+                                            <p class="text-xs text-slate-500 italic">Tell the AI your story ideas to see
+                                                elements appear here.</p>
+                                        </div>
+
+                                        <div v-for="(ext, idx) in architectExtractions" :key="idx"
+                                            class="p-4 bg-space-800/40 border border-space-600 rounded-2xl mb-4 group hover:border-violet-500/50 transition-all duration-300 animate-in slide-in-from-right-4">
+                                            <div class="flex justify-between items-start mb-3">
+                                                <span
+                                                    class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                                                    {{ ext.category }}
+                                                </span>
+                                                <div
+                                                    class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button @click="approveExtraction(idx)"
+                                                        class="p-1 hover:text-emerald-400 text-slate-500"
+                                                        title="Add to Project">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </button>
+                                                    <button @click="removeExtraction(idx)"
+                                                        class="p-1 hover:text-red-400 text-slate-500" title="Discard">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <input v-model="ext.name"
+                                                class="bg-transparent border-none font-bold text-sm focus:ring-0 p-0 w-full mb-1 text-slate-200">
+                                            <textarea v-model="ext.description"
+                                                class="bg-transparent border-none text-[11px] text-slate-400 focus:ring-0 p-0 w-full resize-none leading-relaxed"
+                                                rows="2"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Story Health Indicator -->
+                                    <div
+                                        class="glass rounded-3xl p-5 border border-violet-500/20 bg-violet-500/5 flex items-center gap-4">
+                                        <div class="relative">
+                                            <svg class="w-10 h-10 text-violet-400" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            <div
+                                                class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-space-950">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h5
+                                                class="text-[11px] font-bold text-violet-400 uppercase tracking-tighter">
+                                                Engine Status</h5>
+                                            <p class="text-[10px] text-slate-400">Ripple consistency: <span
+                                                    :class="rippleStatus === 'Stable' ? 'text-emerald-400' : 'text-amber-400'">{{ rippleStatus }}</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ============ STUDIO MODE VIEWS ============ -->
+                            <div v-if="viewMode === 'studio'" class="h-full">
+                                <!-- Other views compartmentalized for power users -->
+                                <div v-if="currentView === 'compass'"
+                                    class="space-y-6 animate-in slide-in-from-right-4">
+                                    <div class="grid grid-cols-3 gap-6">
+                                        <!-- Anchors -->
+                                        <div class="col-span-2 glass rounded-2xl p-6 border border-space-600">
+                                            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                                                <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                </svg>
+                                                Story Anchors
+                                            </h3>
+                                            <div class="space-y-4">
+                                                <div v-for="anchor in storyAnchors" :key="anchor.id"
+                                                    class="p-4 bg-space-800 rounded-xl border border-space-600">
+                                                    <div class="flex justify-between items-center mb-1">
+                                                        <span class="text-xs font-bold uppercase text-violet-400">{{
+                                                            anchor.type }}</span>
+                                                    </div>
+                                                    <p class="text-sm">{{ anchor.description }}</p>
+                                                </div>
+                                                <div v-if="storyAnchors.length === 0"
+                                                    class="text-center py-8 text-slate-500 italic">No anchors set.</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Momentum -->
+                                        <div
+                                            class="glass rounded-2xl p-6 flex flex-col items-center justify-center text-center border border-space-600">
+                                            <h3 class="text-lg font-semibold mb-4">Momentum</h3>
+                                            <div class="relative w-32 h-32 flex items-center justify-center">
+                                                <svg class="w-full h-full -rotate-90">
+                                                    <circle cx="64" cy="64" r="58" fill="transparent"
+                                                        stroke="rgba(139, 92, 246, 0.1)" stroke-width="8" />
+                                                    <circle cx="64" cy="64" r="58" fill="transparent" stroke="#8b5cf6"
+                                                        stroke-width="8" :stroke-dasharray="364"
+                                                        :stroke-dashoffset="364 - (momentum / 10 * 364)" />
+                                                </svg>
+                                                <span class="absolute text-3xl font-bold">{{ momentum }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="currentView === 'lookahead'"
+                                    class="space-y-6 animate-in slide-in-from-right-4">
+                                    <div class="flex justify-between items-center">
+                                        <h3 class="text-lg font-semibold">Chapter Lookahead</h3>
+                                        <button @click="generateLookahead"
+                                            class="btn-primary px-4 py-2 rounded-lg text-sm">Regenerate</button>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-6">
+                                        <div v-for="card in lookaheadCards" :key="card.id"
+                                            class="glass rounded-2xl p-6 border border-space-600">
+                                            <h4 class="text-lg font-bold text-violet-400 mb-2">{{ card.title }}</h4>
+                                            <p class="text-sm text-slate-400 italic mb-4">"{{ card.scene_intention }}"
+                                            </p>
+                                            <div class="flex gap-2">
+                                                <button @click="approveCard(card.id)"
+                                                    class="btn-primary flex-1 py-1.5 rounded text-xs">Approve</button>
+                                                <button @click="discardCard(card.id)"
+                                                    class="btn-secondary flex-1 py-1.5 rounded text-xs">Discard</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="currentView === 'entities'"
+                                    class="space-y-6 animate-in slide-in-from-right-4">
+                                    <div class="flex justify-between items-center">
+                                        <h3 class="text-lg font-semibold">Story Codex</h3>
+                                        <button @click="modalType = 'entity'; showAddModal = true"
+                                            class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add</button>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <div v-for="entity in entities" :key="entity.id"
+                                            class="glass rounded-xl p-4 border border-space-600 hover:border-violet-500/50 transition-all cursor-pointer"
+                                            @click="editEntity(entity)">
+                                            <div class="flex justify-between items-start mb-2">
+                                                <span
+                                                    class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400">{{
+                                                    entity.type }}</span>
+                                            </div>
+                                            <h4 class="font-bold text-slate-200">{{ entity.name }}</h4>
+                                            <p class="text-[11px] text-slate-500 line-clamp-2 mt-1">{{
+                                                entity.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-if="currentView === 'chapters'" class="h-full animate-in slide-in-from-right-4">
+                                    <div v-if="!selectedChapter" class="grid grid-cols-3 gap-4">
+                                        <div v-for="chapter in chapters" :key="chapter.id"
+                                            @click="selectChapter(chapter)"
+                                            class="glass rounded-xl p-6 border border-space-600 cursor-pointer hover:border-violet-500/50">
+                                            <div class="text-xs text-violet-400 font-mono mb-2">CHAPTER {{
+                                                chapter.number }}</div>
+                                            <h4 class="font-bold">{{ chapter.title || 'Untitled' }}</h4>
+                                        </div>
+                                    </div>
+                                    <div v-else
+                                        class="flex flex-col h-full glass rounded-2xl border border-space-600 overflow-hidden">
+                                        <div class="p-4 border-b border-space-600 flex justify-between bg-space-900/50">
+                                            <div class="flex items-center gap-4">
+                                                <span class="text-violet-400 font-mono">CH {{ selectedChapter.number
+                                                    }}</span>
+                                                <input v-model="selectedChapter.title"
+                                                    class="bg-transparent border-none text-xl font-bold focus:ring-0">
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <button @click="saveChapterContent"
+                                                    class="btn-primary px-4 py-2 rounded-lg text-xs">Save</button>
+                                                <button @click="selectedChapter = null"
+                                                    class="btn-secondary px-4 py-2 rounded-lg text-xs">Close</button>
+                                            </div>
+                                        </div>
+                                        <textarea v-model="selectedChapter.content"
+                                            class="flex-1 p-8 bg-transparent border-none focus:ring-0 font-serif text-lg leading-relaxed resize-none"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Research View -->
+                                <div v-if="currentView === 'research'"
+                                    class="space-y-6 animate-in slide-in-from-right-4">
+                                    <div class="glass rounded-2xl p-8 border border-space-600">
+                                        <h3 class="text-xl font-bold mb-4">Web Research</h3>
+                                        <div class="flex gap-3 mb-6">
+                                            <input v-model="researchQuery"
+                                                placeholder="Search for historical facts, settings, or details..."
+                                                class="flex-1 bg-space-800 border border-space-600 rounded-xl px-4 py-3">
+                                            <button @click="performResearch"
+                                                class="btn-primary px-8 rounded-xl">Search</button>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <div v-for="result in researchResults"
+                                                class="p-4 bg-space-800 border border-space-600 rounded-xl">
+                                                <h5 class="font-bold text-violet-400">{{ result.title }}</h5>
+                                                <p class="text-sm text-slate-400 mt-1">{{ result.snippet }}</p>
+                                                <a :href="result.url" target="_blank"
+                                                    class="text-xs text-slate-600 mt-2 block">{{ result.source }}</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Visualize View -->
+                                <div v-if="currentView === 'visualize'" class="h-full animate-in slide-in-from-right-4">
+                                    <div class="glass rounded-2xl p-6 border border-space-600 h-full flex flex-col">
+                                        <h3 class="text-lg font-bold mb-4">Relationship Graph</h3>
+                                        <div
+                                            class="flex-1 bg-space-900 rounded-xl border border-space-600 flex items-center justify-center p-8">
+                                            <pre class="text-xs text-slate-500 font-mono">{{ mermaidCode }}</pre>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 mt-4 text-center">Graph generated from
+                                            Codex relationships. Use Studio Mode to edit nodes directly.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- STUDIO RIGHT SIDEBAR CHAT -->
+                            <div v-if="viewMode === 'studio'"
+                                class="w-80 border-l border-space-600 glass flex flex-col h-full shrink-0">
+                                <div
+                                    class="px-4 py-3 border-b border-space-600 bg-space-900/50 flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                                    <span class="text-xs font-semibold uppercase tracking-widest text-slate-400">Story
+                                        Architect</span>
+                                </div>
+
+                                <div class="flex-1 p-4 overflow-y-auto space-y-4" ref="studioChatBox">
+                                    <div v-for="(msg, idx) in architectHistory" :key="idx"
+                                        :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                                        <div v-if="msg.type === 'proposal'"
+                                            class="bg-violet-500/10 border border-violet-500/30 rounded-xl p-3 shadow-sm max-w-[95%]">
+                                            <div class="flex items-center gap-2 mb-2 text-violet-400">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                </svg>
+                                                <span
+                                                    class="text-[10px] font-bold uppercase tracking-widest">Proposal</span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-300 mb-2">{{ msg.content }}</p>
+                                            <div class="flex flex-wrap gap-1">
+                                                <span v-for="item in msg.items"
+                                                    class="px-1.5 py-0.5 bg-space-800 rounded text-[9px] border border-space-600 text-slate-400">
+                                                    {{ item.name }}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div v-else :class="msg.role === 'user' ? 'bg-violet-600 text-white' : 'bg-space-800 border border-space-600'" 
-                                             class="max-w-[85%] rounded-2xl px-5 py-4 text-sm shadow-xl leading-relaxed">
+                                        <div v-else
+                                            :class="msg.role === 'user' ? 'bg-violet-600 text-white' : 'bg-space-800 border border-space-600'"
+                                            class="max-w-[90%] rounded-xl px-3 py-2 text-xs shadow">
                                             <p class="whitespace-pre-wrap">{{ msg.content }}</p>
                                         </div>
                                     </div>
                                     <div v-if="loading" class="flex justify-start">
-                                        <div class="bg-space-800 border border-space-600 rounded-2xl px-5 py-3 flex gap-2">
-                                            <div class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce"></div>
-                                            <div class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                                            <div class="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Input Bar -->
-                                <div class="p-6 border-t border-space-600 bg-space-900/80 backdrop-blur-md">
-                                    <form @submit.prevent="sendArchitectMessage" class="relative group">
-                                        <textarea v-model="architectInput" 
-                                               placeholder="Give feedback, redirect the story, or describe a new character..." 
-                                               class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-2xl px-6 py-4 pr-16 text-sm transition-all resize-none overflow-hidden h-14 hover:bg-space-800"
-                                               @keydown.enter.prevent="sendArchitectMessage"
-                                               :disabled="loading"></textarea>
-                                        <button type="submit" 
-                                                class="absolute right-3 top-3 p-2 bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors shadow-lg disabled:opacity-50 disabled:hover:bg-violet-600"
-                                                :disabled="loading || !architectInput">
-                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                                        </button>
-                                    </form>
-                                    <div class="mt-3 flex justify-center gap-4">
-                                        <button class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-bold">Press Enter to Send</button>
-                                        <span class="text-[10px] text-space-600">|</span>
-                                        <button class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-bold">Shift+Enter for newline</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Right Side (Live Preview & Extractions) -->
-                            <div class="w-96 flex flex-col gap-6 h-full">
-                                <!-- Extraction Feed -->
-                                <div class="glass rounded-3xl p-6 flex-1 overflow-y-auto border border-space-600 shadow-xl">
-                                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 flex justify-between items-center">
-                                        Live Story Elements
-                                        <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full text-[9px] border border-emerald-500/20">EXTRACTING</span>
-                                    </h4>
-                                    
-                                    <div v-if="architectExtractions.length === 0" class="text-center py-20">
-                                        <div class="w-12 h-12 bg-space-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-space-600">
-                                            <svg class="w-6 h-6 text-space-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                                        </div>
-                                        <p class="text-xs text-slate-500 italic">Tell the AI your story ideas to see elements appear here.</p>
-                                    </div>
-
-                                    <div v-for="(ext, idx) in architectExtractions" :key="idx" 
-                                         class="p-4 bg-space-800/40 border border-space-600 rounded-2xl mb-4 group hover:border-violet-500/50 transition-all duration-300 animate-in slide-in-from-right-4">
-                                        <div class="flex justify-between items-start mb-3">
-                                            <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                                                {{ ext.category }}
-                                            </span>
-                                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button @click="approveExtraction(idx)" class="p-1 hover:text-emerald-400 text-slate-500" title="Add to Project">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                                </button>
-                                                <button @click="removeExtraction(idx)" class="p-1 hover:text-red-400 text-slate-500" title="Discard">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                                </button>
+                                        <div
+                                            class="bg-space-800 border border-space-600 rounded-xl px-3 py-2 flex gap-1">
+                                            <div class="w-1 h-1 bg-violet-400 rounded-full animate-bounce"></div>
+                                            <div
+                                                class="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]">
+                                            </div>
+                                            <div
+                                                class="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:0.4s]">
                                             </div>
                                         </div>
-                                        <input v-model="ext.name" class="bg-transparent border-none font-bold text-sm focus:ring-0 p-0 w-full mb-1 text-slate-200">
-                                        <textarea v-model="ext.description" class="bg-transparent border-none text-[11px] text-slate-400 focus:ring-0 p-0 w-full resize-none leading-relaxed" rows="2"></textarea>
                                     </div>
                                 </div>
 
-                                <!-- Story Health Indicator -->
-                                <div class="glass rounded-3xl p-5 border border-violet-500/20 bg-violet-500/5 flex items-center gap-4">
-                                    <div class="relative">
-                                        <svg class="w-10 h-10 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                        <div class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-space-950"></div>
-                                    </div>
-                                    <div>
-                                        <h5 class="text-[11px] font-bold text-violet-400 uppercase tracking-tighter">Engine Status</h5>
-                                        <p class="text-[10px] text-slate-400">Ripple consistency: <span class="text-emerald-400">Stable</span></p>
-                                    </div>
+                                <div class="p-3 border-t border-space-600 bg-space-900/80">
+                                    <form @submit.prevent="sendArchitectMessage" class="relative group">
+                                        <textarea v-model="architectInput"
+                                            placeholder="Talk to the AI while you edit..."
+                                            class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 rounded-xl px-3 py-2 pr-10 text-xs resize-none overflow-hidden h-10 hover:bg-space-800"
+                                            @keydown.enter.prevent="sendArchitectMessage"
+                                            :disabled="loading"></textarea>
+                                        <button type="submit"
+                                            class="absolute right-2 top-2 p-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg shadow-lg disabled:opacity-50"
+                                            :disabled="loading || !architectInput">
+                                            <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                            </svg>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
+                </main>
 
-                        <!-- ============ STUDIO MODE VIEWS ============ -->
-                        <div v-if="viewMode === 'studio'" class="h-full">
-                    <!-- Other views compartmentalized for power users -->
-                    <div v-if="currentView === 'compass'" class="space-y-6 animate-in slide-in-from-right-4">
-                        <div class="grid grid-cols-3 gap-6">
-                            <!-- Anchors -->
-                            <div class="col-span-2 glass rounded-2xl p-6 border border-space-600">
-                                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                                    <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                                    Story Anchors
-                                </h3>
-                                <div class="space-y-4">
-                                    <div v-for="anchor in storyAnchors" :key="anchor.id" class="p-4 bg-space-800 rounded-xl border border-space-600">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <span class="text-xs font-bold uppercase text-violet-400">{{ anchor.type }}</span>
-                                        </div>
-                                        <p class="text-sm">{{ anchor.description }}</p>
-                                    </div>
-                                    <div v-if="storyAnchors.length === 0" class="text-center py-8 text-slate-500 italic">No anchors set.</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Momentum -->
-                            <div class="glass rounded-2xl p-6 flex flex-col items-center justify-center text-center border border-space-600">
-                                <h3 class="text-lg font-semibold mb-4">Momentum</h3>
-                                <div class="relative w-32 h-32 flex items-center justify-center">
-                                    <svg class="w-full h-full -rotate-90">
-                                        <circle cx="64" cy="64" r="58" fill="transparent" stroke="rgba(139, 92, 246, 0.1)" stroke-width="8"/>
-                                        <circle cx="64" cy="64" r="58" fill="transparent" stroke="#8b5cf6" stroke-width="8" 
-                                                :stroke-dasharray="364" :stroke-dashoffset="364 - (momentum / 10 * 364)"/>
-                                    </svg>
-                                    <span class="absolute text-3xl font-bold">{{ momentum }}</span>
-                                </div>
-                            </div>
-                        </div>
+                <!-- BOTTOM BAR (Studio Mode) -->
+                <div v-if="viewMode === 'studio'"
+                    class="h-10 border-t border-space-600 bg-space-950 flex items-center px-6 justify-between text-[11px] text-slate-400 z-20 shrink-0 w-full fixed bottom-0 left-64"
+                    style="width: calc(100% - 16rem);">
+                    <div class="flex items-center gap-6">
+                        <span class="flex items-center gap-2 font-bold">
+                            <div class="w-2 h-2 rounded-full"
+                                :class="momentum > 50 ? 'bg-emerald-400' : 'bg-amber-400'"></div> Story Graph
+                        </span>
+                        <span><span class="text-slate-200 font-mono">{{ openTensions.length }}</span> Open
+                            Tensions</span>
+                        <span><span class="text-slate-200 font-mono">{{ foreshadowing.filter(f => !f.fulfilled).length
+                                }}</span> Unpaid Seeds</span>
                     </div>
-
-                    <div v-if="currentView === 'lookahead'" class="space-y-6 animate-in slide-in-from-right-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-lg font-semibold">Chapter Lookahead</h3>
-                            <button @click="generateLookahead" class="btn-primary px-4 py-2 rounded-lg text-sm">Regenerate</button>
-                        </div>
-                        <div class="grid grid-cols-3 gap-6">
-                            <div v-for="card in lookaheadCards" :key="card.id" class="glass rounded-2xl p-6 border border-space-600">
-                                <h4 class="text-lg font-bold text-violet-400 mb-2">{{ card.title }}</h4>
-                                <p class="text-sm text-slate-400 italic mb-4">"{{ card.scene_intention }}"</p>
-                                <div class="flex gap-2">
-                                    <button @click="approveCard(card.id)" class="btn-primary flex-1 py-1.5 rounded text-xs">Approve</button>
-                                    <button @click="discardCard(card.id)" class="btn-secondary flex-1 py-1.5 rounded text-xs">Discard</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-if="currentView === 'entities'" class="space-y-6 animate-in slide-in-from-right-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-lg font-semibold">Story Codex</h3>
-                            <button @click="modalType = 'entity'; showAddModal = true" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add</button>
-                        </div>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div v-for="entity in entities" :key="entity.id" class="glass rounded-xl p-4 border border-space-600 hover:border-violet-500/50 transition-all cursor-pointer" @click="editEntity(entity)">
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400">{{ entity.type }}</span>
-                                </div>
-                                <h4 class="font-bold text-slate-200">{{ entity.name }}</h4>
-                                <p class="text-[11px] text-slate-500 line-clamp-2 mt-1">{{ entity.description }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-if="currentView === 'chapters'" class="h-full animate-in slide-in-from-right-4">
-                        <div v-if="!selectedChapter" class="grid grid-cols-3 gap-4">
-                            <div v-for="chapter in chapters" :key="chapter.id" @click="selectChapter(chapter)" class="glass rounded-xl p-6 border border-space-600 cursor-pointer hover:border-violet-500/50">
-                                <div class="text-xs text-violet-400 font-mono mb-2">CHAPTER {{ chapter.number }}</div>
-                                <h4 class="font-bold">{{ chapter.title || 'Untitled' }}</h4>
-                            </div>
-                        </div>
-                        <div v-else class="flex flex-col h-full glass rounded-2xl border border-space-600 overflow-hidden">
-                            <div class="p-4 border-b border-space-600 flex justify-between bg-space-900/50">
-                                <div class="flex items-center gap-4">
-                                    <span class="text-violet-400 font-mono">CH {{ selectedChapter.number }}</span>
-                                    <input v-model="selectedChapter.title" class="bg-transparent border-none text-xl font-bold focus:ring-0">
-                                </div>
-                                <div class="flex gap-2">
-                                    <button @click="saveChapterContent" class="btn-primary px-4 py-2 rounded-lg text-xs">Save</button>
-                                    <button @click="selectedChapter = null" class="btn-secondary px-4 py-2 rounded-lg text-xs">Close</button>
-                                </div>
-                            </div>
-                            <textarea v-model="selectedChapter.content" class="flex-1 p-8 bg-transparent border-none focus:ring-0 font-serif text-lg leading-relaxed resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Research View -->
-                    <div v-if="currentView === 'research'" class="space-y-6 animate-in slide-in-from-right-4">
-                        <div class="glass rounded-2xl p-8 border border-space-600">
-                            <h3 class="text-xl font-bold mb-4">Web Research</h3>
-                            <div class="flex gap-3 mb-6">
-                                <input v-model="researchQuery" placeholder="Search for historical facts, settings, or details..." class="flex-1 bg-space-800 border border-space-600 rounded-xl px-4 py-3">
-                                <button @click="performResearch" class="btn-primary px-8 rounded-xl">Search</button>
-                            </div>
-                            <div class="space-y-4">
-                                <div v-for="result in researchResults" class="p-4 bg-space-800 border border-space-600 rounded-xl">
-                                    <h5 class="font-bold text-violet-400">{{ result.title }}</h5>
-                                    <p class="text-sm text-slate-400 mt-1">{{ result.snippet }}</p>
-                                    <a :href="result.url" target="_blank" class="text-xs text-slate-600 mt-2 block">{{ result.source }}</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Visualize View -->
-                    <div v-if="currentView === 'visualize'" class="h-full animate-in slide-in-from-right-4">
-                        <div class="glass rounded-2xl p-6 border border-space-600 h-full flex flex-col">
-                            <h3 class="text-lg font-bold mb-4">Relationship Graph</h3>
-                            <div class="flex-1 bg-space-900 rounded-xl border border-space-600 flex items-center justify-center p-8">
-                                <pre class="text-xs text-slate-500 font-mono">{{ mermaidCode }}</pre>
-                            </div>
-                            <p class="text-[10px] text-slate-500 mt-4 text-center">Graph generated from Codex relationships. Use Studio Mode to edit nodes directly.</p>
-                        </div>
+                    <div class="font-mono"><span class="text-slate-200">{{ stats.total_words || 0 }}</span> words total
                     </div>
                 </div>
-                
-                <!-- STUDIO RIGHT SIDEBAR CHAT -->
-                <div v-if="viewMode === 'studio'" class="w-80 border-l border-space-600 glass flex flex-col h-full shrink-0">
-                    <div class="px-4 py-3 border-b border-space-600 bg-space-900/50 flex items-center gap-2">
-                        <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-                        <span class="text-xs font-semibold uppercase tracking-widest text-slate-400">Story Architect</span>
-                    </div>
-                    
-                    <div class="flex-1 p-4 overflow-y-auto space-y-4" ref="studioChatBox">
-                        <div v-for="(msg, idx) in architectHistory" :key="idx" 
-                             :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                            <div v-if="msg.type === 'proposal'" class="bg-violet-500/10 border border-violet-500/30 rounded-xl p-3 shadow-sm max-w-[95%]">
-                                <div class="flex items-center gap-2 mb-2 text-violet-400">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                    <span class="text-[10px] font-bold uppercase tracking-widest">Proposal</span>
-                                </div>
-                                <p class="text-[11px] text-slate-300 mb-2">{{ msg.content }}</p>
-                                <div class="flex flex-wrap gap-1">
-                                    <span v-for="item in msg.items" class="px-1.5 py-0.5 bg-space-800 rounded text-[9px] border border-space-600 text-slate-400">
-                                        {{ item.name }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div v-else :class="msg.role === 'user' ? 'bg-violet-600 text-white' : 'bg-space-800 border border-space-600'" 
-                                 class="max-w-[90%] rounded-xl px-3 py-2 text-xs shadow">
-                                <p class="whitespace-pre-wrap">{{ msg.content }}</p>
-                            </div>
-                        </div>
-                        <div v-if="loading" class="flex justify-start">
-                            <div class="bg-space-800 border border-space-600 rounded-xl px-3 py-2 flex gap-1">
-                                <div class="w-1 h-1 bg-violet-400 rounded-full animate-bounce"></div>
-                                <div class="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                                <div class="w-1 h-1 bg-violet-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="p-3 border-t border-space-600 bg-space-900/80">
-                        <form @submit.prevent="sendArchitectMessage" class="relative group">
-                            <textarea v-model="architectInput" 
-                                   placeholder="Talk to the AI while you edit..." 
-                                   class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 rounded-xl px-3 py-2 pr-10 text-xs resize-none overflow-hidden h-10 hover:bg-space-800"
-                                   @keydown.enter.prevent="sendArchitectMessage"
-                                   :disabled="loading"></textarea>
-                            <button type="submit" 
-                                    class="absolute right-2 top-2 p-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg shadow-lg disabled:opacity-50"
-                                    :disabled="loading || !architectInput">
-                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </main>
-
-            <!-- BOTTOM BAR (Studio Mode) -->
-            <div v-if="viewMode === 'studio'" class="h-10 border-t border-space-600 bg-space-950 flex items-center px-6 justify-between text-[11px] text-slate-400 z-20 shrink-0 w-full fixed bottom-0 left-64" style="width: calc(100% - 16rem);">
-                <div class="flex items-center gap-6">
-                    <span class="flex items-center gap-2 font-bold"><div class="w-2 h-2 rounded-full" :class="momentum > 50 ? 'bg-emerald-400' : 'bg-amber-400'"></div> Story Graph</span>
-                    <span><span class="text-slate-200 font-mono">{{ openTensions.length }}</span> Open Tensions</span>
-                    <span><span class="text-slate-200 font-mono">{{ foreshadowing.filter(f => !f.fulfilled).length }}</span> Unpaid Seeds</span>
-                </div>
-                <div class="font-mono"><span class="text-slate-200">{{ stats.total_words || 0 }}</span> words total</div>
             </div>
-        </div>
-    
-    <!-- Add Modal -->
-    <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
-        <div class="glass rounded-2xl p-8 w-full max-w-lg">
-            <div class="flex justify-between mb-6">
-                <h3 class="text-xl font-semibold">{{ modalTitle }}</h3>
-                <button @click="showAddModal = false" class="text-slate-400 hover:text-white">X</button>
-            </div>
-            
-            <!-- Entity Form -->
-            <form v-if="modalType === 'entity'" @submit.prevent="saveEntity" class="space-y-4">
-                <input v-model="form.name" placeholder="Name" class="input-field w-full px-4 py-2 rounded-xl" required>
-                <select v-model="form.entity_type" class="input-field w-full px-4 py-2 rounded-xl">
-                    <option value="character">Character</option>
-                    <option value="location">Location</option>
-                    <option value="item">Item</option>
-                </select>
-                <textarea v-model="form.description" placeholder="Description" class="input-field w-full px-4 py-2 rounded-xl" rows="3"></textarea>
-                <input v-model="form.current_location" placeholder="Current Location" class="input-field w-full px-4 py-2 rounded-xl">
-                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
-            </form>
-            
-            <!-- Relationship Form -->
-            <form v-if="modalType === 'relationship'" @submit.prevent="saveRelationship" class="space-y-4">
-                <select v-model="form.from_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
-                    <option v-for="e in entities" :key="e.id" :value="e.id">{{ e.name }}</option>
-                </select>
-                <input v-model="form.relationship_type" placeholder="e.g. loves, works_with" class="input-field w-full px-4 py-2 rounded-xl" required>
-                <select v-model="form.to_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
-                    <option v-for="e in entities" :key="e.id" :value="e.id">{{ e.name }}</option>
-                </select>
-                <div class="flex items-center gap-2">
-                    <span class="text-sm text-slate-400">Strength: {{ form.strength }}</span>
-                    <input v-model="form.strength" type="range" min="0" max="1" step="0.1" class="flex-1">
+
+            <!-- Add Modal -->
+            <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
+                <div class="glass rounded-2xl p-8 w-full max-w-lg">
+                    <div class="flex justify-between mb-6">
+                        <h3 class="text-xl font-semibold">{{ modalTitle }}</h3>
+                        <button @click="showAddModal = false" class="text-slate-400 hover:text-white">X</button>
+                    </div>
+
+                    <!-- Entity Form -->
+                    <form v-if="modalType === 'entity'" @submit.prevent="saveEntity" class="space-y-4">
+                        <input v-model="form.name" placeholder="Name" class="input-field w-full px-4 py-2 rounded-xl"
+                            required>
+                        <select v-model="form.entity_type" class="input-field w-full px-4 py-2 rounded-xl">
+                            <option value="character">Character</option>
+                            <option value="location">Location</option>
+                            <option value="item">Item</option>
+                        </select>
+                        <textarea v-model="form.description" placeholder="Description"
+                            class="input-field w-full px-4 py-2 rounded-xl" rows="3"></textarea>
+                        <input v-model="form.current_location" placeholder="Current Location"
+                            class="input-field w-full px-4 py-2 rounded-xl">
+                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+                    </form>
+
+                    <!-- Relationship Form -->
+                    <form v-if="modalType === 'relationship'" @submit.prevent="saveRelationship" class="space-y-4">
+                        <select v-model="form.from_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
+                            <option v-for="e in entities" :key="e.id" :value="e.id">{{ e.name }}</option>
+                        </select>
+                        <input v-model="form.relationship_type" placeholder="e.g. loves, works_with"
+                            class="input-field w-full px-4 py-2 rounded-xl" required>
+                        <select v-model="form.to_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
+                            <option v-for="e in entities" :key="e.id" :value="e.id">{{ e.name }}</option>
+                        </select>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-slate-400">Strength: {{ form.strength }}</span>
+                            <input v-model="form.strength" type="range" min="0" max="1" step="0.1" class="flex-1">
+                        </div>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+                    </form>
+
+                    <!-- Chapter Form -->
+                    <form v-if="modalType === 'chapter'" @submit.prevent="saveChapter" class="space-y-4">
+                        <input v-model="form.number" type="number" placeholder="Chapter #"
+                            class="input-field w-full px-4 py-2 rounded-xl" required>
+                        <input v-model="form.title" placeholder="Title" class="input-field w-full px-4 py-2 rounded-xl">
+                        <textarea v-model="form.content" placeholder="Content..."
+                            class="input-field w-full px-4 py-2 rounded-xl" rows="6"></textarea>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+                    </form>
+
+                    <!-- Plot Thread Form -->
+                    <form v-if="modalType === 'plot-thread'" @submit.prevent="savePlotThread" class="space-y-4">
+                        <input v-model="form.title" placeholder="Thread Title"
+                            class="input-field w-full px-4 py-2 rounded-xl" required>
+                        <textarea v-model="form.description" placeholder="Description"
+                            class="input-field w-full px-4 py-2 rounded-xl" rows="2"></textarea>
+                        <input v-model="form.planted_chapter" type="number" placeholder="Planted in Chapter"
+                            class="input-field w-full px-4 py-2 rounded-xl">
+                        <select v-model="form.importance" class="input-field w-full px-4 py-2 rounded-xl">
+                            <option value="minor">Minor</option>
+                            <option value="normal">Normal</option>
+                            <option value="major">Major</option>
+                            <option value="central">Central</option>
+                        </select>
+                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+                    </form>
+
+                    <!-- World Rule Form -->
+                    <form v-if="modalType === 'world-rule'" @submit.prevent="saveWorldRule" class="space-y-4">
+                        <input v-model="form.category" placeholder="Category (e.g., magic, technology)"
+                            class="input-field w-full px-4 py-2 rounded-xl" required>
+                        <input v-model="form.rule" placeholder="The Rule"
+                            class="input-field w-full px-4 py-2 rounded-xl" required>
+                        <textarea v-model="form.description" placeholder="Description"
+                            class="input-field w-full px-4 py-2 rounded-xl" rows="2"></textarea>
+                        <input v-model="form.exceptions" placeholder="Exceptions (optional)"
+                            class="input-field w-full px-4 py-2 rounded-xl">
+                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+                    </form>
                 </div>
-                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
-            </form>
-            
-            <!-- Chapter Form -->
-            <form v-if="modalType === 'chapter'" @submit.prevent="saveChapter" class="space-y-4">
-                <input v-model="form.number" type="number" placeholder="Chapter #" class="input-field w-full px-4 py-2 rounded-xl" required>
-                <input v-model="form.title" placeholder="Title" class="input-field w-full px-4 py-2 rounded-xl">
-                <textarea v-model="form.content" placeholder="Content..." class="input-field w-full px-4 py-2 rounded-xl" rows="6"></textarea>
-                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
-            </form>
-            
-            <!-- Plot Thread Form -->
-            <form v-if="modalType === 'plot-thread'" @submit.prevent="savePlotThread" class="space-y-4">
-                <input v-model="form.title" placeholder="Thread Title" class="input-field w-full px-4 py-2 rounded-xl" required>
-                <textarea v-model="form.description" placeholder="Description" class="input-field w-full px-4 py-2 rounded-xl" rows="2"></textarea>
-                <input v-model="form.planted_chapter" type="number" placeholder="Planted in Chapter" class="input-field w-full px-4 py-2 rounded-xl">
-                <select v-model="form.importance" class="input-field w-full px-4 py-2 rounded-xl">
-                    <option value="minor">Minor</option>
-                    <option value="normal">Normal</option>
-                    <option value="major">Major</option>
-                    <option value="central">Central</option>
-                </select>
-                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
-            </form>
-            
-            <!-- World Rule Form -->
-            <form v-if="modalType === 'world-rule'" @submit.prevent="saveWorldRule" class="space-y-4">
-                <input v-model="form.category" placeholder="Category (e.g., magic, technology)" class="input-field w-full px-4 py-2 rounded-xl" required>
-                <input v-model="form.rule" placeholder="The Rule" class="input-field w-full px-4 py-2 rounded-xl" required>
-                <textarea v-model="form.description" placeholder="Description" class="input-field w-full px-4 py-2 rounded-xl" rows="2"></textarea>
-                <input v-model="form.exceptions" placeholder="Exceptions (optional)" class="input-field w-full px-4 py-2 rounded-xl">
-                <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
-            </form>
+            </div>
+
         </div>
-    </div>
 
-    </div>
+        <script>
+            const { createApp } = Vue;
+            createApp({
+                data() {
+                    return {
+                        currentView: 'dashboard',
+                        viewMode: 'chat',
+                        projectTitle: 'Shanghai Ghost',
+                        modalType: 'entity',
+                        showAddModal: false,
+                        entityFilter: '',
+                        selectedChapter: null,
+                        selectedEntity: null,
+                        stats: { total_words: 0, chapters: 0 },
 
-    <script>
-        const { createApp } = Vue;
-        createApp({
-            data() {
-                return {
-                    currentView: 'dashboard',
-                    viewMode: 'chat',
-                    projectTitle: 'Shanghai Ghost',
-                    modalType: 'entity',
-                    showAddModal: false,
-                    entityFilter: '',
-                    selectedChapter: null,
-                    selectedEntity: null,
-                    stats: { total_words: 0, chapters: 0 },
-                    
-                    // Data
-                    entities: [],
-                    relationships: [],
-                    chapters: [],
-                    events: [],
-                    plotThreads: [],
-                    foreshadowing: [],
-                    worldRules: [],
-                    researchResults: [],
-                    fictionResearch: null,
-                    aiResult: '',
-                    
-                    // Form
-                    form: {
-                        name: '', entity_type: 'character', description: '', current_location: '', is_alive: true,
-                        from_entity_id: null, to_entity_id: null, relationship_type: '', strength: 0.5,
-                        number: 1, title: '', content: '',
-                        planted_chapter: null, importance: 'normal',
-                        category: '', rule: '', exceptions: ''
-                    },
-                    
-                    // Research
-                    researchQuery: '',
-                    fictionTopic: '',
-                    
-                    // AI
-                    aiProvider: 'gemini',
-                    aiBeat: '',
-                    aiOptions: { pov: 'third', tone: 'balanced', wordCount: 500 },
+                        // Data
+                        entities: [],
+                        relationships: [],
+                        chapters: [],
+                        events: [],
+                        plotThreads: [],
+                        foreshadowing: [],
+                        worldRules: [],
+                        researchResults: [],
+                        fictionResearch: null,
+                        aiResult: '',
 
-                    // v2.1 Story Compass & Lookahead
-                    storyAnchors: [],
-                    openTensions: [],
-                    momentum: 0,
-                    lookaheadCards: [],
-                    loading: false,
-                    comments: [],
-                    selectedText: '',
-                    commentForm: { text: '' },
-                    
-                    // UI state
-                    showAddPlotThread: false,
-                    showAddWorldRule: false,
+                        // Form
+                        form: {
+                            name: '', entity_type: 'character', description: '', current_location: '', is_alive: true,
+                            from_entity_id: null, to_entity_id: null, relationship_type: '', strength: 0.5,
+                            number: 1, title: '', content: '',
+                            planted_chapter: null, importance: 'normal',
+                            category: '', rule: '', exceptions: ''
+                        },
 
-                    // Architect
-                    architectInput: '',
-                    architectHistory: [
-                        { role: 'assistant', content: "Hello! I'm your Story Architect. What's on your mind? Tell me about your world, a character you're thinking of, or just a rough idea for a scene." }
-                    ],
-                    architectExtractions: []
-                }
-            },
-            computed: {
-                filteredEntities() {
-                    if (!this.entityFilter) return this.entities;
-                    return this.entities.filter(e => e.type === this.entityFilter);
-                },
-                modalTitle() {
-                    const titles = {
-                        entity: 'Add Entity', relationship: 'Add Relationship',
-                        chapter: 'Add Chapter', 'plot-thread': 'Add Plot Thread',
-                        'world-rule': 'Add World Rule'
-                    };
-                    return titles[this.modalType] || 'Add';
-                },
-                viewTitle() {
-                    const titles = {
-                        dashboard: 'Dashboard', compass: 'Story Compass', lookahead: 'Lookahead',
-                        entities: 'Codex', chapters: 'Manuscript',
-                        research: 'Research', ai: 'AI Writing', export: 'Export', visualize: 'Visualize',
-                        architect: 'Story Architect'
-                    };
-                    return titles[this.currentView] || this.currentView;
-                },
-                viewSubtitle() {
-                    const subs = {
-                        dashboard: 'Your story at a glance',
-                        architect: 'Brainstorm and build your world through chat',
-                        compass: 'Anchors, tensions, and momentum',
-                        lookahead: 'Rolling 3-chapter planning',
-                        entities: 'Characters, places, and things',
-                        chapters: 'Writing and inline review',
-                        research: 'Internet research for fiction',
-                        ai: 'Generate with AI',
-                        export: 'Export your novel',
-                        visualize: 'See connections'
-                    };
-                    return subs[this.currentView] || '';
-                },
-                mermaidCode() {
-                    if (this.relationships.length === 0) return 'graph TD\n    -- No relationships yet';
-                    let code = 'graph TD\n';
-                    this.relationships.forEach(r => {
-                        const from = r.from_name?.replace(/\s/g, '_') || 'Entity';
-                        const to = r.to_name?.replace(/\s/g, '_') || 'Entity';
-                        code += `    ${from} -->|"${r.relationship_type}"| ${to}\n`;
-                    });
-                    return code;
-                },
-                worldRuleCategories() {
-                    return [...new Set(this.worldRules.map(r => r.category))];
-                }
-            },
-            async mounted() {
-                await this.loadData();
-            },
-            methods: {
-                navClass(view) {
-                    return this.currentView === view ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white';
-                },
-                async fetchCompass() {
-                    const [anchorsRes, tensionsRes, momentumRes] = await Promise.all([
-                        fetch('http://localhost:8000/api/story-compass/anchors'),
-                        fetch('http://localhost:8000/api/story-compass/tensions'),
-                        fetch('http://localhost:8000/api/story-compass/momentum')
-                    ]);
-                    this.storyAnchors = await anchorsRes.json();
-                    this.openTensions = await tensionsRes.json();
-                    const momData = await momentumRes.json();
-                    this.momentum = momData.momentum_score || 0;
-                },
-                async fetchLookahead() {
-                    const res = await fetch('http://localhost:8000/api/lookahead/cards');
-                    this.lookaheadCards = await res.json();
-                },
-                async generateLookahead() {
-                    this.loading = true;
-                    try {
-                        const res = await fetch('http://localhost:8000/api/lookahead/generate', { method: 'POST' });
-                        const data = await res.json();
-                        this.lookaheadCards = data.cards;
-                    } finally {
-                        this.loading = false;
+                        // Research
+                        researchQuery: '',
+                        fictionTopic: '',
+
+                        // AI
+                        aiProvider: 'gemini',
+                        aiBeat: '',
+                        aiOptions: { pov: 'third', tone: 'balanced', wordCount: 500 },
+
+                        // v2.1 Story Compass & Lookahead
+                        storyAnchors: [],
+                        openTensions: [],
+                        momentum: 0,
+                        lookaheadCards: [],
+                        loading: false,
+                        comments: [],
+                        selectedText: '',
+                        commentForm: { text: '' },
+
+                        // UI state
+                        showAddPlotThread: false,
+                        showAddWorldRule: false,
+
+                        // Architect
+                        architectInput: '',
+                        architectHistory: [
+                            { role: 'assistant', content: "Hello! I'm your Story Architect. What's on your mind? Tell me about your world, a character you're thinking of, or just a rough idea for a scene." }
+                        ],
+                        architectExtractions: [],
+                        rippleStatus: 'Stable',
+                        rippleReport: null
                     }
                 },
-                async approveCard(cardId) {
-                    await fetch(`http://localhost:8000/api/lookahead/cards/${cardId}/status`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'approved' })
-                    });
-                    this.fetchLookahead();
-                },
-                async discardCard(cardId) {
-                    await fetch(`http://localhost:8000/api/lookahead/cards/${cardId}/status`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'discarded' })
-                    });
-                    this.fetchLookahead();
-                },
-                async resolveTension(tensionId) {
-                    // Simplified resolution for now
-                    await fetch(`http://localhost:8000/api/story-compass/tensions/${tensionId}/resolve`, { method: 'POST' });
-                    this.fetchCompass();
-                },
-                /**
-                 * Sends the user's chat message to the Story Architect API.
-                 * Appends the AI's response to the history and processes any extracted story elements.
-                 */
-                async sendArchitectMessage() {
-                    if (!this.architectInput || this.loading) return;
-                    
-                    const userMsg = this.architectInput;
-                    this.architectHistory.push({ role: 'user', content: userMsg });
-                    this.architectInput = ''; // Clear input
-                    this.loading = true; // Show typing indicator
-                    
-                    try {
-                        const res = await fetch('http://localhost:8000/api/architect/chat', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                history: this.architectHistory
-                            })
+                computed: {
+                    filteredEntities() {
+                        if (!this.entityFilter) return this.entities;
+                        return this.entities.filter(e => e.type === this.entityFilter);
+                    },
+                    modalTitle() {
+                        const titles = {
+                            entity: 'Add Entity', relationship: 'Add Relationship',
+                            chapter: 'Add Chapter', 'plot-thread': 'Add Plot Thread',
+                            'world-rule': 'Add World Rule'
+                        };
+                        return titles[this.modalType] || 'Add';
+                    },
+                    viewTitle() {
+                        const titles = {
+                            dashboard: 'Dashboard', compass: 'Story Compass', lookahead: 'Lookahead',
+                            entities: 'Codex', chapters: 'Manuscript',
+                            research: 'Research', ai: 'AI Writing', export: 'Export', visualize: 'Visualize',
+                            architect: 'Story Architect'
+                        };
+                        return titles[this.currentView] || this.currentView;
+                    },
+                    viewSubtitle() {
+                        const subs = {
+                            dashboard: 'Your story at a glance',
+                            architect: 'Brainstorm and build your world through chat',
+                            compass: 'Anchors, tensions, and momentum',
+                            lookahead: 'Rolling 3-chapter planning',
+                            entities: 'Characters, places, and things',
+                            chapters: 'Writing and inline review',
+                            research: 'Internet research for fiction',
+                            ai: 'Generate with AI',
+                            export: 'Export your novel',
+                            visualize: 'See connections'
+                        };
+                        return subs[this.currentView] || '';
+                    },
+                    mermaidCode() {
+                        if (this.relationships.length === 0) return 'graph TD\n    -- No relationships yet';
+                        let code = 'graph TD\n';
+                        this.relationships.forEach(r => {
+                            const from = r.from_name?.replace(/\s/g, '_') || 'Entity';
+                            const to = r.to_name?.replace(/\s/g, '_') || 'Entity';
+                            code += `    ${from} -->|"${r.relationship_type}"| ${to}\n`;
                         });
-                        const data = await res.json();
-                        
-                        // Push AI response to chat history
-                        this.architectHistory.push({ role: 'assistant', content: data.response });
-                        
-                        // Handle structured extractions (Entities, Anchors, etc.)
-                        // These are queued in the sidebar AND injected as cards in the chat thread
-                        if (data.extractions) {
-                            const exts = data.extractions;
-                            let extractedAny = false;
+                        return code;
+                    },
+                    worldRuleCategories() {
+                        return [...new Set(this.worldRules.map(r => r.category))];
+                    }
+                },
+                async mounted() {
+                    await this.loadData();
+                    await this.fetchChatHistory();
+                },
+                methods: {
+                    navClass(view) {
+                        return this.currentView === view ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white';
+                    },
+                    async fetchCompass() {
+                        const [anchorsRes, tensionsRes, momentumRes] = await Promise.all([
+                            fetch('http://localhost:8000/api/story-compass/anchors'),
+                            fetch('http://localhost:8000/api/story-compass/tensions'),
+                            fetch('http://localhost:8000/api/story-compass/momentum')
+                        ]);
+                        this.storyAnchors = await anchorsRes.json();
+                        this.openTensions = await tensionsRes.json();
+                        const momData = await momentumRes.json();
+                        this.momentum = momData.momentum_score || 0;
+                    },
+                    async fetchLookahead() {
+                        const res = await fetch('http://localhost:8000/api/lookahead/cards');
+                        this.lookaheadCards = await res.json();
+                    },
+                    async generateLookahead() {
+                        this.loading = true;
+                        try {
+                            const res = await fetch('http://localhost:8000/api/lookahead/generate', { method: 'POST' });
+                            const data = await res.json();
+                            this.lookaheadCards = data.cards;
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                    async approveCard(cardId) {
+                        await fetch(`http://localhost:8000/api/lookahead/cards/${cardId}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'approved' })
+                        });
+                        this.fetchLookahead();
+                    },
+                    async discardCard(cardId) {
+                        await fetch(`http://localhost:8000/api/lookahead/cards/${cardId}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'discarded' })
+                        });
+                        this.fetchLookahead();
+                    },
+                    async resolveTension(tensionId) {
+                        // Simplified resolution for now
+                        await fetch(`http://localhost:8000/api/story-compass/tensions/${tensionId}/resolve`, { method: 'POST' });
+                        this.fetchCompass();
+                    },
+                    /**
+                     * Sends the user's chat message to the Story Architect API.
+                     * Appends the AI's response to the history and processes any extracted story elements.
+                     */
+                    async sendArchitectMessage() {
+                        if (!this.architectInput || this.loading) return;
 
-                            if (exts.entities && exts.entities.length > 0) {
-                                exts.entities.forEach(e => this.architectExtractions.push({ ...e, category: 'Entity' }));
-                                extractedAny = true;
-                            }
-                            if (exts.anchors && exts.anchors.length > 0) {
-                                exts.anchors.forEach(a => this.architectExtractions.push({ ...a, category: 'Anchor', name: a.type }));
-                                extractedAny = true;
-                            }
-                            if (exts.plot_threads && exts.plot_threads.length > 0) {
-                                exts.plot_threads.forEach(p => this.architectExtractions.push({ ...p, category: 'Plot Thread', name: p.title }));
-                                extractedAny = true;
-                            }
-                            if (exts.tensions && exts.tensions.length > 0) {
-                                exts.tensions.forEach(t => this.architectExtractions.push({ description: t, category: 'Tension', name: 'Story Tension' }));
-                                extractedAny = true;
+                        const userMsg = this.architectInput;
+                        this.architectHistory.push({ role: 'user', content: userMsg, timestamp: new Date().toISOString() });
+                        this.architectInput = ''; // Clear input
+                        this.loading = true; // Show typing indicator
+
+                        try {
+                            const res = await fetch('http://localhost:8000/api/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    message: userMsg,
+                                    project_state: {
+                                        current_view: this.currentView,
+                                        view_mode: this.viewMode
+                                    }
+                                })
+                            });
+                            const data = await res.json();
+
+                            // Push AI response to chat history (if it's not already in there from a sync)
+                            // The backend saves to DB, so we'll just push the immediate response
+                            this.architectHistory.push({ 
+                                role: 'assistant', 
+                                content: data.message,
+                                actions: data.actions,
+                                timestamp: new Date().toISOString()
+                            });
+
+                            // Handle UI Updates from the engine
+                            if (data.ui_update) {
+                                const up = data.ui_update;
+                                if (up.refresh_codex) await this.loadData();
+                                if (up.refresh_chapters) await this.loadData();
+                                if (up.show_generation) {
+                                    this.viewMode = 'studio';
+                                    this.currentView = 'chapters';
+                                }
                             }
 
-                            // Inject a "proposal" card into the chat history if something was found
-                            if (extractedAny) {
-                                this.architectHistory.push({ 
-                                    role: 'assistant', 
-                                    type: 'proposal', 
-                                    content: "I've identified some new elements for your project. You can review them in the sidebar.",
-                                    items: [
-                                        ...(exts.entities || []).map(e => ({ type: 'Entity', name: e.name })),
-                                        ...(exts.plot_threads || []).map(p => ({ type: 'Plot Thread', name: p.title }))
-                                    ]
+                            // Handle specific actions (like lookahead cards appearing in chat)
+                            if (data.actions) {
+                                data.actions.forEach(action => {
+                                    if (action.type === 'start_qa') {
+                                        // Specific UI logic for onboarding
+                                    }
                                 });
                             }
+
+                            this.scrollChat();
+                        } catch (e) {
+                            console.error("Chat failed", e);
+                        } finally {
+                            this.loading = false;
                         }
-                        
-                        // Auto-scroll to bottom of chat
+                    },
+                    async fetchChatHistory() {
+                        const res = await fetch('http://localhost:8000/api/chat/history');
+                        this.architectHistory = await res.json();
+                        if (this.architectHistory.length === 0) {
+                            this.architectHistory = [{ role: 'assistant', content: "Hello! I'm your Story Architect. What's on your mind? Tell me about your world, a character you're thinking of, or just a rough idea for a scene." }];
+                        }
+                        this.scrollChat();
+                    },
+                    async resolveComment(commentId) {
+                        try {
+                            const res = await fetch(`http://localhost:8000/api/comments/${commentId}/resolve`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ resolution_notes: 'Accepted' })
+                            });
+                            const data = await res.json();
+                            
+                            // Trigger ripple check
+                            this.rippleStatus = 'Analyzing...';
+                            const rippleRes = await fetch(`http://localhost:8000/api/ripple-check`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    context_type: data.context_type,
+                                    target_id: data.target_id,
+                                    changes: { description: 'Comment resolved: ' + commentId }
+                                })
+                            });
+                            this.rippleReport = await rippleRes.json();
+                            this.rippleStatus = this.rippleReport.requires_manual_review ? 'Requires Review' : 'Stable';
+                            
+                            await this.loadData();
+                        } catch (e) {
+                            console.error("Resolve error:", e);
+                            this.rippleStatus = 'Error';
+                        }
+                    },
+                    async clearChat() {
+                        if (confirm("Clear chat history?")) {
+                            await fetch('http://localhost:8000/api/chat/clear', { method: 'POST' });
+                            this.architectHistory = [];
+                            this.fetchChatHistory();
+                        }
+                    },
+                    scrollChat() {
                         this.$nextTick(() => {
                             if (this.$refs.chatBox) {
                                 this.$refs.chatBox.scrollTop = this.$refs.chatBox.scrollHeight;
@@ -718,249 +1063,260 @@
                                 this.$refs.studioChatBox.scrollTop = this.$refs.studioChatBox.scrollHeight;
                             }
                         });
-                    } catch (e) {
-                        console.error("Architect failed", e);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                /**
-                 * Saves an extracted element to the permanent story database.
-                 * Routes to the correct API endpoint based on the element category.
-                 */
-                async approveExtraction(idx) {
-                    const ext = this.architectExtractions[idx];
-                    try {
-                        let endpoint = '';
-                        let body = {};
-                        
-                        // Route based on category
-                        if (ext.category === 'Entity') {
-                            endpoint = 'http://localhost:8000/api/entities';
-                            body = { name: ext.name, entity_type: ext.type, description: ext.description };
-                        } else if (ext.category === 'Anchor') {
-                            endpoint = 'http://localhost:8000/api/story-compass/anchors';
-                            body = { anchor_type: ext.type, description: ext.description };
-                        } else if (ext.category === 'Plot Thread') {
-                            endpoint = 'http://localhost:8000/api/plot-threads';
-                            body = { title: ext.name, description: ext.description, importance: ext.importance };
-                        } else if (ext.category === 'Tension') {
-                            endpoint = 'http://localhost:8000/api/story-compass/tensions';
-                            body = { description: ext.description };
-                        }
-                        
-                        if (endpoint) {
-                            await fetch(endpoint, {
+                    },
+                    async executeChapter(card) {
+                        this.loading = true;
+                        try {
+                            const res = await fetch('http://localhost:8000/api/chat', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(body)
+                                body: JSON.stringify({ message: "Go ahead, write it." })
                             });
-                            // Remove from queue and refresh project data
-                            this.removeExtraction(idx);
+                            this.viewMode = 'studio';
+                            this.currentView = 'chapters';
                             await this.loadData();
+                        } finally {
+                            this.loading = false;
                         }
-                    } catch (e) {
-                        console.error("Approval failed", e);
-                    }
-                },
+                    },
 
-                /**
-                 * Discards an extracted element without saving it.
-                 */
-                removeExtraction(idx) {
-                    this.architectExtractions.splice(idx, 1);
-                },
-                handleSelection(e) {
-                    const selection = window.getSelection();
-                    if (selection.toString().length > 0) {
-                        this.selectedText = selection.toString();
-                    }
-                },
-                async addComment() {
-                    if (!this.selectedText || !this.commentForm.text) return;
-                    await fetch('http://localhost:8000/api/comments', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            context_type: 'chapter',
-                            target_id: String(this.selectedChapter?.id),
-                            highlighted_text: this.selectedText,
-                            user_comment: this.commentForm.text
-                        })
-                    });
-                    this.commentForm.text = '';
-                    this.selectedText = '';
-                    this.fetchComments();
-                },
-                async fetchComments() {
-                    if (!this.selectedChapter) return;
-                    const res = await fetch(`http://localhost:8000/api/comments?context_type=chapter&target_id=${this.selectedChapter.id}`);
-                    this.comments = await res.json();
-                },
-                async loadData() {
-                    try {
-                        const [ent, chap, thr, rules, stats, rels, fore] = await Promise.all([
-                            fetch('http://localhost:8000/api/entities').then(r => r.json()),
-                            fetch('http://localhost:8000/api/chapters').then(r => r.json()),
-                            fetch('http://localhost:8000/api/plot-threads').then(r => r.json()),
-                            fetch('http://localhost:8000/api/world-rules').then(r => r.json()),
-                            fetch('http://localhost:8000/api/stats').then(r => r.json()),
-                            fetch('http://localhost:8000/api/relationships').then(r => r.json()),
-                            fetch('http://localhost:8000/api/foreshadowing').then(r => r.json())
-                        ]);
-                        this.entities = ent;
-                        this.chapters = chap;
-                        this.plotThreads = thr;
-                        this.worldRules = rules;
-                        this.stats = stats;
-                        this.relationships = rels;
-                        this.foreshadowing = fore;
-                        
-                        await this.fetchCompass();
-                        await this.fetchLookahead();
-                    } catch (e) { console.error("Load failed", e); }
-                },
-                closeModal() {
-                    this.showAddModal = false;
-                    this.form = { name: '', entity_type: 'character', description: '', current_location: '', is_alive: true, from_entity_id: null, to_entity_id: null, relationship_type: '', strength: 0.5, number: 1, title: '', content: '', planted_chapter: null, importance: 'normal', category: '', rule: '', exceptions: '' };
-                },
-                async saveEntity() {
-                    await fetch('http://localhost:8000/api/entities', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
-                    this.closeModal();
-                    await this.loadData();
-                },
-                async saveRelationship() {
-                    await fetch('http://localhost:8000/api/relationships', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
-                    this.closeModal();
-                    await this.loadData();
-                },
-                async saveChapter() {
-                    await fetch('http://localhost:8000/api/chapters', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
-                    this.closeModal();
-                    await this.loadData();
-                },
-                async savePlotThread() {
-                    await fetch('http://localhost:8000/api/plot-threads', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
-                    this.closeModal();
-                    await this.loadData();
-                },
-                async saveWorldRule() {
-                    await fetch('http://localhost:8000/api/world-rules', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(this.form) });
-                    this.closeModal();
-                    await this.loadData();
-                },
-                async deleteEntity(id) {
-                    if (confirm('Delete this entity?')) {
-                        await fetch(`http://localhost:8000/api/entities/${id}`, { method: 'DELETE' });
-                        await this.loadData();
-                    }
-                },
-                async deleteChapter(id) {
-                    if (confirm('Delete this chapter?')) {
-                        await fetch(`http://localhost:8000/api/chapters/${id}`, { method: 'DELETE' });
-                        await this.loadData();
-                    }
-                },
-                editEntity(entity) {
-                    this.form = { ...entity };
-                    this.modalType = 'entity';
-                    this.showAddModal = true;
-                },
-                selectChapter(chapter) {
-                    this.selectedChapter = { ...chapter };
-                },
-                async saveChapterContent() {
-                    if (!this.selectedChapter) return;
-                    await fetch(`http://localhost:8000/api/chapters/${this.selectedChapter.id}`, {
-                        method: 'PUT', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ title: this.selectedChapter.title, content: this.selectedChapter.content })
-                    });
-                    await this.loadData();
-                },
-                async checkChapterContinuity() {
-                    if (!this.selectedChapter) return;
-                    const res = await fetch('http://localhost:8000/api/continuity/check-chapter', {
-                        method: 'POST', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({
-                            chapter_id: this.selectedChapter.id,
-                            chapter_text: this.selectedChapter.content,
-                            entities: this.entities,
-                            events: []
-                        })
-                    });
-                    const result = await res.json();
-                    alert(`Continuity issues: ${result.issues?.length || 0}`);
-                },
-                async resolvePlotThread(id) {
-                    await fetch(`http://localhost:8000/api/plot-threads/${id}/resolve`, { method: 'POST' });
-                    await this.loadData();
-                },
-                async addForeshadowing(thread) {
-                    const content = prompt('Foreshadowing content:');
-                    if (content) {
-                        await fetch('http://localhost:8000/api/foreshadowing', {
-                            method: 'POST', headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ plot_thread_id: thread.id, chapter_id: thread.planted_chapter || 1, content, hint_level: 'subtle' })
-                        });
-                        await this.loadData();
-                    }
-                },
-                async performResearch() {
-                    if (!this.researchQuery) return;
-                    try {
-                        const res = await fetch(`http://localhost:8000/api/research/search?q=${encodeURIComponent(this.researchQuery)}&num_results=5`);
-                        const data = await res.json();
-                        this.researchResults = data.results || [];
-                    } catch(e) { alert('Research failed'); }
-                },
-                async performFictionResearch() {
-                    if (!this.fictionTopic) return;
-                    try {
-                        const res = await fetch('http://localhost:8000/api/research/fiction', {
-                            method: 'POST', headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ topic: this.fictionTopic })
-                        });
-                        this.fictionResearch = await res.json();
-                    } catch(e) { alert('Research failed'); }
-                },
-                viewVoiceProfile(entity) {
-                    this.selectedEntity = entity;
-                    alert(`Voice profile for ${entity.name} - coming soon`);
-                },
-                async generateScene() {
-                    if (!this.aiBeat) return;
-                    try {
-                        const res = await fetch('http://localhost:8000/api/ai/client', {
-                            method: 'POST', headers: {'Content-Type':'application/json'},
+                    /**
+                     * Saves an extracted element to the permanent story database.
+                     * Routes to the correct API endpoint based on the element category.
+                     */
+                    async approveExtraction(idx) {
+                        const ext = this.architectExtractions[idx];
+                        try {
+                            let endpoint = '';
+                            let body = {};
+
+                            // Route based on category
+                            if (ext.category === 'Entity') {
+                                endpoint = 'http://localhost:8000/api/entities';
+                                body = { name: ext.name, entity_type: ext.type, description: ext.description };
+                            } else if (ext.category === 'Anchor') {
+                                endpoint = 'http://localhost:8000/api/story-compass/anchors';
+                                body = { anchor_type: ext.type, description: ext.description };
+                            } else if (ext.category === 'Plot Thread') {
+                                endpoint = 'http://localhost:8000/api/plot-threads';
+                                body = { title: ext.name, description: ext.description, importance: ext.importance };
+                            } else if (ext.category === 'Tension') {
+                                endpoint = 'http://localhost:8000/api/story-compass/tensions';
+                                body = { description: ext.description };
+                            }
+
+                            if (endpoint) {
+                                await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(body)
+                                });
+                                // Remove from queue and refresh project data
+                                this.removeExtraction(idx);
+                                await this.loadData();
+                            }
+                        } catch (e) {
+                            console.error("Approval failed", e);
+                        }
+                    },
+
+                    /**
+                     * Discards an extracted element without saving it.
+                     */
+                    removeExtraction(idx) {
+                        this.architectExtractions.splice(idx, 1);
+                    },
+                    handleSelection(e) {
+                        const selection = window.getSelection();
+                        if (selection.toString().length > 0) {
+                            this.selectedText = selection.toString();
+                        }
+                    },
+                    async addComment() {
+                        if (!this.selectedText || !this.commentForm.text) return;
+                        await fetch('http://localhost:8000/api/comments', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                provider: this.aiProvider,
-                                prompt: this.aiBeat,
-                                system_prompt: `Write in ${this.aiOptions.pov} person, ${this.aiOptions.tone} tone. Target: ${this.aiOptions.wordCount} words.`
+                                context_type: 'chapter',
+                                target_id: String(this.selectedChapter?.id),
+                                highlighted_text: this.selectedText,
+                                user_comment: this.commentForm.text
                             })
                         });
-                        const data = await res.json();
-                        this.aiResult = data.text || 'Error generating';
-                    } catch(e) { this.aiResult = 'Error: ' + e.message; }
-                },
-                async exportBook(format) {
-                    try {
-                        const res = await fetch(`http://localhost:8000/api/export/${format}`);
-                        const data = await res.json();
-                        let content = data.content || JSON.stringify(data, null, 2);
-                        if (format === 'epub') {
-                            content = atob(data.content);
+                        this.commentForm.text = '';
+                        this.selectedText = '';
+                        this.fetchComments();
+                    },
+                    async fetchComments() {
+                        if (!this.selectedChapter) return;
+                        const res = await fetch(`http://localhost:8000/api/comments?context_type=chapter&target_id=${this.selectedChapter.id}`);
+                        this.comments = await res.json();
+                    },
+                    async loadData() {
+                        try {
+                            const [ent, chap, thr, rules, stats, rels, fore] = await Promise.all([
+                                fetch('http://localhost:8000/api/entities').then(r => r.json()),
+                                fetch('http://localhost:8000/api/chapters').then(r => r.json()),
+                                fetch('http://localhost:8000/api/plot-threads').then(r => r.json()),
+                                fetch('http://localhost:8000/api/world-rules').then(r => r.json()),
+                                fetch('http://localhost:8000/api/stats').then(r => r.json()),
+                                fetch('http://localhost:8000/api/relationships').then(r => r.json()),
+                                fetch('http://localhost:8000/api/foreshadowing').then(r => r.json())
+                            ]);
+                            this.entities = ent;
+                            this.chapters = chap;
+                            this.plotThreads = thr;
+                            this.worldRules = rules;
+                            this.stats = stats;
+                            this.relationships = rels;
+                            this.foreshadowing = fore;
+
+                            await this.fetchCompass();
+                            await this.fetchLookahead();
+                        } catch (e) { console.error("Load failed", e); }
+                    },
+                    closeModal() {
+                        this.showAddModal = false;
+                        this.form = { name: '', entity_type: 'character', description: '', current_location: '', is_alive: true, from_entity_id: null, to_entity_id: null, relationship_type: '', strength: 0.5, number: 1, title: '', content: '', planted_chapter: null, importance: 'normal', category: '', rule: '', exceptions: '' };
+                    },
+                    async saveEntity() {
+                        await fetch('http://localhost:8000/api/entities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+                        this.closeModal();
+                        await this.loadData();
+                    },
+                    async saveRelationship() {
+                        await fetch('http://localhost:8000/api/relationships', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+                        this.closeModal();
+                        await this.loadData();
+                    },
+                    async saveChapter() {
+                        await fetch('http://localhost:8000/api/chapters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+                        this.closeModal();
+                        await this.loadData();
+                    },
+                    async savePlotThread() {
+                        await fetch('http://localhost:8000/api/plot-threads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+                        this.closeModal();
+                        await this.loadData();
+                    },
+                    async saveWorldRule() {
+                        await fetch('http://localhost:8000/api/world-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+                        this.closeModal();
+                        await this.loadData();
+                    },
+                    async deleteEntity(id) {
+                        if (confirm('Delete this entity?')) {
+                            await fetch(`http://localhost:8000/api/entities/${id}`, { method: 'DELETE' });
+                            await this.loadData();
                         }
-                        const blob = new Blob([content], { type: format === 'epub' ? 'application/epub+zip' : 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `novel.${format}`;
-                        a.click();
-                    } catch(e) { alert('Export failed'); }
+                    },
+                    async deleteChapter(id) {
+                        if (confirm('Delete this chapter?')) {
+                            await fetch(`http://localhost:8000/api/chapters/${id}`, { method: 'DELETE' });
+                            await this.loadData();
+                        }
+                    },
+                    editEntity(entity) {
+                        this.form = { ...entity };
+                        this.modalType = 'entity';
+                        this.showAddModal = true;
+                    },
+                    selectChapter(chapter) {
+                        this.selectedChapter = { ...chapter };
+                    },
+                    async saveChapterContent() {
+                        if (!this.selectedChapter) return;
+                        await fetch(`http://localhost:8000/api/chapters/${this.selectedChapter.id}`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title: this.selectedChapter.title, content: this.selectedChapter.content })
+                        });
+                        await this.loadData();
+                    },
+                    async checkChapterContinuity() {
+                        if (!this.selectedChapter) return;
+                        const res = await fetch('http://localhost:8000/api/continuity/check-chapter', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                chapter_id: this.selectedChapter.id,
+                                chapter_text: this.selectedChapter.content,
+                                entities: this.entities,
+                                events: []
+                            })
+                        });
+                        const result = await res.json();
+                        alert(`Continuity issues: ${result.issues?.length || 0}`);
+                    },
+                    async resolvePlotThread(id) {
+                        await fetch(`http://localhost:8000/api/plot-threads/${id}/resolve`, { method: 'POST' });
+                        await this.loadData();
+                    },
+                    async addForeshadowing(thread) {
+                        const content = prompt('Foreshadowing content:');
+                        if (content) {
+                            await fetch('http://localhost:8000/api/foreshadowing', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ plot_thread_id: thread.id, chapter_id: thread.planted_chapter || 1, content, hint_level: 'subtle' })
+                            });
+                            await this.loadData();
+                        }
+                    },
+                    async performResearch() {
+                        if (!this.researchQuery) return;
+                        try {
+                            const res = await fetch(`http://localhost:8000/api/research/search?q=${encodeURIComponent(this.researchQuery)}&num_results=5`);
+                            const data = await res.json();
+                            this.researchResults = data.results || [];
+                        } catch (e) { alert('Research failed'); }
+                    },
+                    async performFictionResearch() {
+                        if (!this.fictionTopic) return;
+                        try {
+                            const res = await fetch('http://localhost:8000/api/research/fiction', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ topic: this.fictionTopic })
+                            });
+                            this.fictionResearch = await res.json();
+                        } catch (e) { alert('Research failed'); }
+                    },
+                    viewVoiceProfile(entity) {
+                        this.selectedEntity = entity;
+                        alert(`Voice profile for ${entity.name} - coming soon`);
+                    },
+                    async generateScene() {
+                        if (!this.aiBeat) return;
+                        try {
+                            const res = await fetch('http://localhost:8000/api/ai/client', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    provider: this.aiProvider,
+                                    prompt: this.aiBeat,
+                                    system_prompt: `Write in ${this.aiOptions.pov} person, ${this.aiOptions.tone} tone. Target: ${this.aiOptions.wordCount} words.`
+                                })
+                            });
+                            const data = await res.json();
+                            this.aiResult = data.text || 'Error generating';
+                        } catch (e) { this.aiResult = 'Error: ' + e.message; }
+                    },
+                    async exportBook(format) {
+                        try {
+                            const res = await fetch(`http://localhost:8000/api/export/${format}`);
+                            const data = await res.json();
+                            let content = data.content || JSON.stringify(data, null, 2);
+                            if (format === 'epub') {
+                                content = atob(data.content);
+                            }
+                            const blob = new Blob([content], { type: format === 'epub' ? 'application/epub+zip' : 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `novel.${format}`;
+                            a.click();
+                        } catch (e) { alert('Export failed'); }
+                    }
                 }
-            }
-        }).mount('#app');
-    </script>
+            }).mount('#app');
+        </script>
 </body>
+
 </html>

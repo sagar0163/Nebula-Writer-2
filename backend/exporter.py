@@ -182,7 +182,7 @@ class StoryExporter:
             nav_items = []
             nav_items.append('    <li><a href="chapter_ch1.xhtml">Chapter 1</a></li>')
             for ch in chapters[1:]:
-                nav_items.append(f'    <li><a href="chapter_ch{chapters.index(ch)+1}.xhtml">Chapter {chapters.index(ch)+1}: {self._escape_xml(ch.get("title", "Untitled"))}</a></li>')
+                 nav_items.append(f'    <li><a href="chapter_ch{chapters.index(ch)+1}.xhtml">Chapter {chapters.index(ch)+1}: {self._escape_xml(ch.get("title", "Untitled"))}</a></li>')
             
             nav_xhtml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
@@ -192,10 +192,10 @@ class StoryExporter:
   <link rel="stylesheet" type="text/css" href="styles.css"/>
 </head>
 <body>
-  <nav epub="type="toc" id="toc">
+  <nav epub:type="toc" id="toc">
     <h1>Table of Contents</h1>
     <ol>
-{"\\n".join(nav_items)}
+{chr(10).join(nav_items)}
     </ol>
   </nav>
 </body>
@@ -229,7 +229,7 @@ p.first { text-indent: 0; }
 </head>
 <body>
   <div class="chapter">
-    <h2>{self._escape_xml(ch.get('title', f'Chapter {ch["number"]}')}</h2>
+    <h2>{self._escape_xml(ch.get('title', f'Chapter {ch["number"]}'))}</h2>
 {para_html}
   </div>
 </body>

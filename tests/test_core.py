@@ -4,11 +4,11 @@ Nebula-Writer Tests
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent / "backend"))
-from codex import CodexDatabase
-from audit import StoryAuditor
-from search import SearchEngine
-from exporter import StoryExporter
+sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
+from backend.codex import CodexDatabase
+from backend.audit import StoryAuditor
+from backend.exporter import StoryExporter
 
 
 def test_codex():

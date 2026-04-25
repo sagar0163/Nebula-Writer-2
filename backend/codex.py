@@ -207,13 +207,37 @@ class CodexDatabase:
             )
         """)
         
+        # Conversations Table (v2.1 Persistence)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT DEFAULT 'default',
+                messages JSON NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
         conn.commit()
         conn.close()
         
         # Insert default story templates
         self._insert_default_templates()
         
+        # Initialize default story compass if not exists
+        self._init_story_compass()
+        
         print(f"[OK] Codex database initialized at {self.db_path}")
+
+    def _init_story_compass(self):
+        """Ensure at least one story compass record exists"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM story_compass")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("INSERT INTO story_compass (momentum_score) VALUES (0.0)")
+            conn.commit()
+        conn.close()
     
     def _insert_default_templates(self):
         """Insert default story structure templates"""
@@ -1057,6 +1081,50 @@ class CodexDatabase:
                     extracted['characters'].append({'name': name.title(), 'confidence': 'medium'})
         
         return extracted
+
+    # ============ CONVERSATION PERSISTENCE ============
+
+    def save_conversation(self, messages: List[Dict], user_id: str = "default") -> int:
+        """Save conversation history to database"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        # Check if a conversation exists for this user
+        cursor.execute("SELECT id FROM conversations WHERE user_id = ?", (user_id,))
+        row = cursor.fetchone()
+        
+        messages_json = json.dumps(messages)
+        now = datetime.now().isoformat()
+        
+        if row:
+            conversation_id = row[0]
+            cursor.execute("""
+                UPDATE conversations 
+                SET messages = ?, updated_at = ? 
+                WHERE id = ?
+            """, (messages_json, now, conversation_id))
+        else:
+            cursor.execute("""
+                INSERT INTO conversations (user_id, messages, updated_at) 
+                VALUES (?, ?, ?)
+            """, (user_id, messages_json, now))
+            conversation_id = cursor.lastrowid
+            
+        conn.commit()
+        conn.close()
+        return conversation_id
+
+    def load_conversation(self, user_id: str = "default") -> List[Dict]:
+        """Load conversation history from database"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT messages FROM conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1", (user_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return json.loads(row[0])
+        return []
 
 
 if __name__ == "__main__":

@@ -150,23 +150,52 @@ Never contradict established facts from the Codex.
 """
         return prompt
     
-    def get_context(self, db, entity_ids: List[int] = None, chapter: int = None, max_entities: int = 10, max_events: int = 5) -> Dict:
-        """Retrieve context from Codex with limits to prevent context overflow"""
-        context = {"entities": [], "relationships": [], "recent_events": []}
+    def get_context(self, db, entity_ids: List[int] = None, chapter: int = None, max_entities: int = 5, max_events: int = 3) -> Dict:
+        """
+        Retrieve context from Codex with AGGRESSIVE limits to prevent token overflow.
+        Target: < 15,000 tokens total
+        """
+        context = {"entities": [], "relationships": [], "recent_events": [], "chapters": []}
         
-        # Get entities with attributes (limited)
-        entities = db.get_entities()[:max_entities]
+        # Entities: max 5, max 3 attributes each
+        all_entities = db.get_entities()
+        if entity_ids:
+            entities = [e for e in all_entities if e['id'] in entity_ids][:max_entities]
+        else:
+            entities = all_entities[:max_entities]
+        
         for e in entities:
-            if entity_ids and e['id'] not in entity_ids:
-                continue
-            e['attributes'] = db.get_attributes(e['id'])[:5]  # Limit attributes
+            e['attributes'] = db.get_attributes(e['id'])[:3]  # Max 3 attrs
+            # Remove large fields
+            if 'description' in e and len(e['description']) > 200:
+                e['description'] = e['description'][:200] + "..."
             context["entities"].append(e)
         
-        # Get relationships (limited)
-        context["relationships"] = db.get_relationships()[:20]
+        # Relationships: only those involving selected entities, max 10
+        all_rels = db.get_relationships()
+        if entity_ids:
+            rels = [r for r in all_rels if r['from_entity_id'] in entity_ids or r['to_entity_id'] in entity_ids][:10]
+        else:
+            rels = all_rels[:10]
+        context["relationships"] = rels
         
-        # Get recent events (limited)
-        context["recent_events"] = db.get_events(chapter)[:max_events]
+        # Events: only for specific chapter, max 3
+        if chapter:
+            events = db.get_events(chapter)[:max_events]
+        else:
+            events = []
+        context["recent_events"] = events
+        
+        # Chapters: only current chapter summary, MAX word count 500
+        if chapter:
+            chap = db.get_chapter(chapter)
+            if chap:
+                chap_summ = {
+                    "number": chap.get("number"),
+                    "title": chap.get("title", ""),
+                    "summary": chap.get("summary", "")[:300] if chap.get("summary") else ""
+                }
+                context["chapters"].append(chap_summ)
         
         return context
     

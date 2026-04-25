@@ -18,7 +18,9 @@ from plot_manager import create_plot_manager
 from ai_writer import AIWriter
 from lookahead_engine import LookaheadEngine
 from idea_processor import create_story_architect
+from ripple_checker import create_ripple_checker
 from comment_system import create_comment_engine, create_quality_layer
+from conversation import ConversationEngine
 import os
 from dotenv import load_dotenv
 
@@ -54,8 +56,10 @@ plot_manager = create_plot_manager()
 ai_writer = AIWriter()
 lookahead_engine = LookaheadEngine(db, plot_manager, ai_writer)
 story_architect = create_story_architect(ai_writer)
-comment_engine = create_comment_engine()
+ripple_checker = create_ripple_checker(db, ai_writer)
+comment_engine = create_comment_engine(ripple_checker)
 quality_layer = create_quality_layer()
+conversation_engine = ConversationEngine(db, ai_writer)
 
 # ============ MODELS ============
 
@@ -983,13 +987,308 @@ def architect_chat(req: ArchitectChatRequest):
         print(f"API Error in Architect Chat: {e}")
         raise HTTPException(status_code=500, detail="Failed to process architect session")
 
+# ============ ARCHITECT / CHAT MODE (v2.1) ============
+
+@app.post("/api/architect/chat")
+def architect_chat(req: dict):
+    """
+    Conversational onboarding and world-building
+    LEGACY endpoint - now routes to the new conversation engine
+    """
+    try:
+        # For backward compatibility, extract last message
+        history = req.get("history", [])
+        if not history:
+            return {"response": "I'm ready. What's the idea?", "extractions": {}}
+        
+        last_msg = history[-1].get("content", "")
+        
+        # Route to the main conversation engine
+        result = conversation_engine.process_message(last_msg)
+        
+        return {
+            "response": result["message"],
+            "extractions": result.get("extracted_info", {}),
+            "actions": result.get("actions", [])
+        }
+    except Exception as e:
+        print(f"API Error in Architect Chat: {e}")
+        raise HTTPException(status_code=500, detail="Failed to process architect session")
+
+# Main v2.1 Chat API is defined at the bottom of the file
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/conversation/history")
+def get_conversation_history(limit: int = 20):
+    """Get recent conversation"""
+    engine = get_conversation_engine()
+    return {"history": engine.get_conversation_history(limit)}
+
+@app.post("/api/conversation/clear")
+def clear_conversation():
+    """Clear chat history"""
+    engine = get_conversation_engine()
+    engine.clear_history()
+    return {"message": "Conversation cleared"}
+
+# ============ v2.1 CONVERSATION-DRIVEN OPERATIONS ============
+
+@app.post("/api/idea/start")
+def start_idea_processing(req: dict):
+    """Start new project - process idea and begin Q&A"""
+    try:
+        from idea_processor import IdeaProcessor
+        processor = IdeaProcessor()
+        result = processor.process_idea(req.get("idea", ""))
+        return {
+            "detected": result["detected"],
+            "questions": result["questions"][:1],  # Ask first question only
+            "progress": result["questions_remaining"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/idea/answer")
+def process_idea_answer(req: dict):
+    """Answer clarifying question"""
+    try:
+        from idea_processor import IdeaProcessor
+        processor = IdeaProcessor()
+        
+        # Restore state from session (simplified - in prod use DB/session)
+        answer = processor.answer_question(
+            req.get("question_id", ""),
+            req.get("answer", "")
+        )
+        
+        result = {
+            "answer": answer,
+            "ready": processor.is_ready()
+        }
+        
+        if processor.is_ready():
+            # Generate world proposal
+            world = processor.generate_world_proposal()
+            characters = processor.generate_character_proposals()
+            result["world_proposal"] = world
+            result["character_proposals"] = characters
+            result["next_step"] = "review_world"
+        else:
+            # Get next question
+            next_q = next((q for q in processor.questions if not q.user_answer), None)
+            if next_q:
+                result["next_question"] = next_q.to_dict()
+                result["progress"] = f"{sum(1 for q in processor.questions if q.user_answer)}/{len(processor.questions)}"
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/compass")
+def get_story_compass():
+    """Get current Story Compass state"""
+    try:
+        from outline_engine import create_evolution_engine
+        engine = create_evolution_engine()
+        # Initialize with default if fresh
+        if not engine.story_anchors.emotional_start:
+            engine.initialize()
+        return engine.get_compass()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/lookahead")
+def get_lookahead_cards():
+    """Get rolling 3-chapter lookahead"""
+    try:
+        from outline_engine import create_evolution_engine
+        engine = create_evolution_engine()
+        return {"cards": engine.get_lookahead_cards()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/lookahead/approve")
+def approve_lookahead(chapter_num: int):
+    """Approve lookahead card before writing"""
+    try:
+        from outline_engine import create_evolution_engine
+        engine = create_evolution_engine()
+        success = engine.approve_lookahead_card(chapter_num)
+        return {"approved": success, "chapter": chapter_num}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/plot/redirect")
+def redirect_story_direction(req: dict):
+    """User redirects story direction"""
+    try:
+        from outline_engine import create_evolution_engine
+        engine = create_evolution_engine()
+        result = engine.redirect_story(
+            req.get("type", "user_redirect"),
+            req.get("details", "")
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/comments")
+def create_inline_comment(req: dict):
+    """Add inline comment to chapter/codex/lookahead"""
+    try:
+        from comment_system import create_comment_engine
+        engine = create_comment_engine()
+        comment_id = engine.add_comment(
+            context_type=req.get("context_type", "chapter"),
+            target_id=str(req.get("target_id", "")),
+            highlighted_text=req.get("highlighted_text", ""),
+            user_comment=req.get("comment", ""),
+            start=req.get("start_offset"),
+            end=req.get("end_offset")
+        )
+        return {"comment_id": comment_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/comments")
+def get_inline_comments(context_type: str = None, target_id: str = None):
+    """Get comments"""
+    try:
+        from comment_system import create_comment_engine
+        engine = create_comment_engine()
+        comments = engine.get_comments(context_type, target_id)
+        open_count = len([c for c in comments if c["status"] in ["open", "ai_responded", "pushback", "ripple_pending"]])
+        return {
+            "comments": comments,
+            "open_count": open_count,
+            "can_approve": open_count == 0
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/comments/{comment_id}/ai-respond")
+def ai_respond_to_comment(comment_id: str, req: dict):
+    """AI responds to comment"""
+    try:
+        from comment_system import create_comment_engine
+        engine = create_comment_engine()
+        success = engine.ai_respond(comment_id, req.get("response", ""))
+        return {"responded": success}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/comments/{comment_id}/resolve")
+def resolve_inline_comment(comment_id: str, req: dict = None):
+    """Resolve comment and trigger ripple check"""
+    try:
+        from comment_system import create_comment_engine
+        engine = create_comment_engine()
+        notes = req.get("notes", "") if req else ""
+        result = engine.resolve_comment(comment_id, notes)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/comments/pushback")
+def pushback_comment(comment_id: str, req: dict):
+    """User pushes back on AI response"""
+    try:
+        from comment_system import create_comment_engine
+        engine = create_comment_engine()
+        success = engine.pushback(comment_id, req.get("feedback", ""))
+        return {"pushback_recorded": success}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/quality/analyze")
+def analyze_chapter_quality(chapter_id: int = None, content: str = None):
+    """Analyze chapter quality (anti-slop)"""
+    try:
+        from comment_system import create_quality_layer
+        quality = create_quality_layer()
+        
+        if content:
+            result = quality.analyze_chapter(content)
+        elif chapter_id:
+            chapter = db.get_chapter(chapter_id=chapter_id)
+            if chapter:
+                result = quality.analyze_chapter(chapter.get("content", ""))
+            else:
+                raise HTTPException(status_code=404, detail="Chapter not found")
+        else:
+            raise HTTPException(status_code=400, detail="Provide chapter_id or content")
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chapter/{chapter_id}/can-approve")
+def can_approve_chapter(chapter_id: int):
+    """Check if chapter can be approved (no blocking comments)"""
+    try:
+        from comment_system import create_comment_engine
+        engine = create_comment_engine()
+        return engine.can_approve_chapter(str(chapter_id))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ CHAT MODE (v2.1) ============
+
+class ChatRequest(BaseModel):
+    message: str
+    project_state: Optional[Dict] = None
+
+@app.post("/api/chat")
+def chat_with_ai(req: ChatRequest):
+    """Main chat endpoint for Chat-First architecture"""
+    try:
+        response = conversation_engine.process_message(req.message, req.project_state)
+        return response
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chat/history")
+def get_chat_history():
+    """Get recent chat history"""
+    try:
+        return conversation_engine.get_conversation_history()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat/clear")
+def clear_chat_history():
+    """Clear chat history"""
+    try:
+        conversation_engine.clear_history()
+        return {"cleared": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============ HEALTH CHECK ============
+
+@app.get("/api/health")
+def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "version": "2.1.0",
+        "mode": "chat-first",
+        "database": os.environ.get("NEBULA_DB", "sqlite")
+    }
+
 @app.get("/")
 async def read_index():
     """Serve the frontend index.html"""
     return FileResponse(Path(__file__).parent.parent / "frontend" / "index.html")
 
-
 if __name__ == "__main__":
     import uvicorn
-    print("Starting Nebula-Writer API server v2.1...")
+    print("Starting Nebula-Writer API server v2.1 (Chat-First)...")
+    print("Using database:", os.environ.get("NEBULA_DB", "sqlite"))
     uvicorn.run(app, host="0.0.0.0", port=8000)
