@@ -27,7 +27,7 @@ import importlib.metadata
 try:
     __version__ = importlib.metadata.version("nebula-writer")
 except importlib.metadata.PackageNotFoundError:
-    __version__ = "2.1.0"
+    __version__ = "3.0.0"
 
 # Initialize app
 app = FastAPI(title="Nebula-Writer API", version=__version__)
@@ -199,6 +199,7 @@ def create_entity(entity: EntityCreate):
         is_alive=entity.is_alive,
         image_url=entity.image_url,
     )
+    orchestrator.clear_cache()
     return {"id": entity_id, "message": "Entity created"}
 
 
@@ -215,6 +216,7 @@ def update_entity(entity_id: int, entity: EntityCreate):
     )
     if not success:
         raise HTTPException(status_code=404, detail="Entity not found")
+    orchestrator.clear_cache()
     return {"message": "Entity updated"}
 
 
@@ -224,6 +226,7 @@ def delete_entity(entity_id: int):
     success = db.delete_entity(entity_id)
     if not success:
         raise HTTPException(status_code=404, detail="Entity not found")
+    orchestrator.clear_cache()
     return {"message": "Entity deleted"}
 
 
@@ -234,6 +237,7 @@ def delete_entity(entity_id: int):
 def create_attribute(attr: AttributeCreate):
     """Add an attribute to an entity"""
     attr_id = db.add_attribute(attr.entity_id, attr.key, attr.value)
+    orchestrator.clear_cache()
     return {"id": attr_id, "message": "Attribute added"}
 
 
@@ -302,6 +306,7 @@ def create_event(event: EventCreate):
         scene=event.scene,
         significance=event.significance,
     )
+    orchestrator.clear_cache()
     return {"id": event_id, "message": "Event logged"}
 
 
@@ -330,6 +335,7 @@ def create_chapter(chapter: ChapterCreate):
     """Create a new chapter"""
     try:
         chapter_id = db.add_chapter(chapter.number, chapter.title, chapter.content)
+        orchestrator.clear_cache()
         return {"id": chapter_id, "message": "Chapter created"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -341,6 +347,7 @@ def update_chapter(chapter_id: int, chapter: ChapterUpdate):
     success = db.update_chapter(chapter_id, content=chapter.content, title=chapter.title, summary=chapter.summary)
     if not success:
         raise HTTPException(status_code=404, detail="Chapter not found")
+    orchestrator.clear_cache()
     return {"message": "Chapter updated"}
 
 
@@ -366,6 +373,7 @@ def get_scenes(chapter_id: int):
 def create_scene(scene: SceneCreate):
     """Create a new scene"""
     scene_id = db.add_scene(scene.chapter_id, scene.number, scene.beat, scene.content)
+    orchestrator.clear_cache()
     return {"id": scene_id, "message": "Scene created"}
 
 
