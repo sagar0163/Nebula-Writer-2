@@ -26,6 +26,11 @@ class NarrativeCache:
     def set(cls, key: str, data: Any):
         cls._cache[key] = {"data": data, "timestamp": time.time()}
 
+    @classmethod
+    def clear(cls):
+        """Clear all cached narrative data."""
+        cls._cache.clear()
+
 
 async def run_parallel_checks(ripple_checker, description: str, research_engine=None):
     """
