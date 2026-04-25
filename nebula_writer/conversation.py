@@ -258,7 +258,7 @@ Respond as: intent|confidence|{{"key": "value"}}
 
     def _handle_new_project(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
         """Start new project - trigger Q&A flow"""
-        from idea_processor import IdeaProcessor
+        from nebula_writer.idea_processor import IdeaProcessor
 
         processor = IdeaProcessor()
         if not state or not state.get("processor"):
@@ -300,7 +300,7 @@ Respond as: intent|confidence|{{"key": "value"}}
         word_count = intent.extracted_info.get("word_count", 2500)
 
         # Get lookahead cards
-        from outline_engine import create_evolution_engine
+        from nebula_writer.outline_engine import create_evolution_engine
 
         engine = create_evolution_engine()
         cards = engine.get_lookahead_cards()
@@ -329,7 +329,7 @@ Respond as: intent|confidence|{{"key": "value"}}
     def _handle_question(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
         """Answer question about story"""
         # Query Codex and provide answer
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         create_plot_manager()
 
@@ -350,7 +350,7 @@ Respond as: intent|confidence|{{"key": "value"}}
 
     def _handle_research_query(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
         """Handle research query"""
-        from research import ResearchEngine
+        from nebula_writer.research import ResearchEngine
 
         # Extract topic from message
         topic = message.replace("research", "").replace("look up", "").replace("search", "").strip()
@@ -381,7 +381,7 @@ Respond as: intent|confidence|{{"key": "value"}}
 
     def _handle_plot_direction(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
         """Handle story direction change"""
-        from outline_engine import create_evolution_engine
+        from nebula_writer.outline_engine import create_evolution_engine
 
         engine = create_evolution_engine()
 
