@@ -1,45 +1,29 @@
-from dataclasses import dataclass
-from typing import Dict, List
-from nebula_writer.core.narrative_intent_engine import NarrativeIntent
+from typing import List, Dict, Any
 
-
-@dataclass
 class GenerationConstraints:
     """
-    Step 6: Structured input layer for the AIWriter.
-    Combines intent, simulation, bias, and context.
+    Structured input layer for the AIWriter.
+    Combines directive, character predictions, and context.
     """
-
-    intent: NarrativeIntent
-    character_simulations: List[Dict]
-    narrative_bias: str
-    context_string: str
-    active_anchors: List[str]
+    def __init__(self, directive: Any, character_predictions: List[Dict], context_string: str):
+        self.directive = directive
+        self.character_predictions = character_predictions
+        self.context_string = context_string
 
     def to_system_prompt(self) -> str:
-        """Converts constraints into a high-density system prompt."""
-        sims = "\n".join([
-            f"- {s['name']}: {s['emotional_state']}, stance: {s['conflict_stance']}, actions: {', '.join(s['intended_actions'])}"
-            for s in self.character_simulations
-        ])
+        """Converts constraints into a high-density directive prompt."""
+        prompt = f"### NARRATIVE DIRECTIVE\n"
+        prompt += f"REQUIRED OUTCOME: {self.directive.required_outcome}\n"
+        prompt += f"TENSION PROGRESSION: {self.directive.tension_progression}\n"
+        prompt += f"PACING TARGET: {self.directive.pacing_target}/10\n"
         
-        anchors = "\n".join([f"- {a}" for a in self.active_anchors])
-        
-        return f"""
-### NARRATIVE INTENT
-Purpose: {self.intent.scene_purpose.value}
-Pacing: {self.intent.pacing.value}
-Focus: {self.intent.character_focus}
+        prompt += "\n### CHARACTER BEHAVIOR\n"
+        for pred in self.character_predictions:
+            prompt += f"- {pred['name']}: {pred['conflict_stance']} stance (Resistance: {pred['resistance_level']}). Intent: {pred['intended_actions'][0]}\n"
 
-### CHARACTER SIMULATIONS
-{sims}
+        prompt += "\n### CONSTRAINTS\n"
+        for constraint in self.directive.constraints:
+            prompt += f"- {constraint}\n"
 
-### STYLE & BIAS
-{self.narrative_bias}
-
-### STORY ANCHORS (NON-NEGOTIABLE)
-{anchors}
-
-### RELEVANT CONTEXT
-{self.context_string}
-"""
+        prompt += f"\n### STORY CONTEXT\n{self.context_string}"
+        return prompt
