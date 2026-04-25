@@ -34,30 +34,32 @@ class CharacterAgent:
         # Find last event mentioning this character
         return "Unknown"
 
-    def simulate_behavior(self, scene_context: str) -> Dict:
+    def predict_actions(self, scene_context: str) -> Dict:
         """
-        Active Simulation (Step 3): Predicts character actions and internal state.
-        Output guides the prompt constraints for generation.
+        Decision Engine: Predicts how this character would react to a specific beat.
+        Calculates resistance levels and conflict stances.
         """
         persona = self.derive_persona()
         
         # 1. Determine Emotional State
-        # In a real implementation, this would use a small LLM call or complex logic
-        emotional_state = "anxious" if persona["fears"] else "neutral"
+        emotional_state = "anxious" if persona.get("fears") else "neutral"
         
-        # 2. Determine Conflict Stance
-        # Is the character likely to push back or concede?
-        stance = "resistant" if "goal" in scene_context.lower() else "cooperative"
+        # 2. Determine Conflict Stance & Resistance
+        resistance = 0.7 if "goal" in scene_context.lower() else 0.3
+        stance = "resistant" if resistance > 0.5 else "cooperative"
         
         # 3. Intended Action
-        intended_action = f"Protect {persona['goals'][0] if persona['goals'] else 'self'}"
+        goals = persona.get("goals", [])
+        intended_action = f"Protect {goals[0] if goals else 'self'}"
         
         return {
-            "name": persona["name"],
+            "entity_id": self.entity_id,
+            "name": persona.get("name", "Unknown"),
             "emotional_state": emotional_state,
             "conflict_stance": stance,
+            "resistance_level": resistance,
             "intended_actions": [intended_action],
-            "voice_directive": persona["voice"]
+            "voice_directive": persona.get("voice", "Neutral")
         }
 
     def simulate_action(self, scenario: str) -> str:
