@@ -1285,6 +1285,22 @@ def clear_chat_history():
 
 # ============ HEALTH CHECK ============
 
+@app.get("/api/system/stability")
+def check_stability():
+    """Verify core narrative engine integrity"""
+    required_files = [
+        "backend/core/narrative_state_engine.py",
+        "backend/core/memory_manager.py",
+        "backend/services/orchestrator.py"
+    ]
+    status = {file: os.path.exists(Path(__file__).parent.parent / file) for file in required_files}
+    is_stable = all(status.values())
+    return {
+        "stable": is_stable,
+        "files_checked": status,
+        "timestamp": datetime.now().isoformat()
+    }
+
 @app.get("/api/health")
 def health_check():
     """Health check endpoint"""
