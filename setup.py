@@ -13,7 +13,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "nebula-writer=nebula-writer:main",
+            "nebula-writer=nebula_writer.main:main",
         ],
     },
     python_requires=">=3.10",
