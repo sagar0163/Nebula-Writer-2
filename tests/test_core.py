@@ -7,9 +7,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
-from backend.audit import StoryAuditor
-from backend.codex import CodexDatabase
-from backend.exporter import StoryExporter
+from nebula_writer.audit import StoryAuditor
+from nebula_writer.codex import CodexDatabase
+from nebula_writer.exporter import StoryExporter
 
 
 def test_codex():
