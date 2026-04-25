@@ -219,6 +219,18 @@ class CodexDatabase:
             )
         """)
 
+        # Story Plan Table (v3.0 Directive Engine)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS story_plan (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                target_ending TEXT,
+                major_milestones TEXT,
+                thematic_focus TEXT,
+                arc_targets TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         conn.commit()
         conn.close()
 
@@ -1316,3 +1328,36 @@ if __name__ == "__main__":
     print("\n📊 Statistics:", db.get_stats())
     print("\n🔍 Relationships:", db.get_relationships())
     print("\n📖 Chapters:", db.get_chapters())
+
+    # ============ STORY PLAN OPERATIONS ============
+
+    def get_story_plan(self) -> Optional[Dict]:
+        """Get the current long-term story plan."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM story_plan ORDER BY updated_at DESC LIMIT 1")
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def update_story_plan(self, plan: Dict) -> bool:
+        """Update or create the long-term story plan."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        # Check if plan exists
+        cursor.execute("SELECT id FROM story_plan LIMIT 1")
+        row = cursor.fetchone()
+        
+        if row:
+            set_clause = ", ".join([f"{k} = ?" for k in plan.keys()])
+            values = list(plan.values()) + [row['id']]
+            cursor.execute(f"UPDATE story_plan SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", values)
+        else:
+            cols = ", ".join(plan.keys())
+            placeholders = ", ".join(["?" for _ in plan])
+            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(plan.values()))
+            
+        conn.commit()
+        conn.close()
+        return True
