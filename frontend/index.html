@@ -149,9 +149,8 @@
 </head>
 
 <body class="min-h-screen">
-    <div id="app" class="flex min-h-screen">
-        <!-- Sidebar -->
-        <div id="app" class="flex flex-col min-h-screen">
+    <!-- Sidebar -->
+    <div id="app" class="flex flex-col min-h-screen w-full">
             <!-- Top Bar with Mode Toggle -->
             <header
                 class="h-16 glass border-b border-space-600 flex items-center justify-between px-6 sticky top-0 z-50">
@@ -436,6 +435,21 @@
                             <!-- ============ STUDIO MODE VIEWS ============ -->
                             <div v-if="viewMode === 'studio'" class="h-full">
                                 <!-- Other views compartmentalized for power users -->
+                                <div v-if="currentView === 'dashboard'" class="h-full flex items-center justify-center animate-in slide-in-from-right-4">
+                                    <div class="text-center">
+                                        <div class="w-20 h-20 bg-space-800 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-space-600 shadow-2xl">
+                                            <svg class="w-10 h-10 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                        </div>
+                                        <h2 class="text-3xl font-bold mb-3 text-slate-100">Welcome to Studio Mode</h2>
+                                        <p class="text-slate-400 max-w-md mx-auto mb-8">This is your command center. Use the sidebar to manage your manuscript, explore the story compass, or research world-building facts.</p>
+                                        <button @click="currentView = 'chapters'" class="btn-primary px-6 py-3 rounded-xl shadow-lg shadow-violet-500/20 font-semibold tracking-wide">
+                                            Open Manuscript
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div v-if="currentView === 'compass'"
                                     class="space-y-6 animate-in slide-in-from-right-4">
                                     <div class="grid grid-cols-3 gap-6">
@@ -596,8 +610,9 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- STUDIO RIGHT SIDEBAR CHAT -->
+                        <!-- STUDIO RIGHT SIDEBAR CHAT -->
                             <div v-if="viewMode === 'studio'"
                                 class="w-80 border-l border-space-600 glass flex flex-col h-full shrink-0">
                                 <div
@@ -668,6 +683,7 @@
                                     </form>
                                 </div>
                             </div>
+                    </div>
                 </main>
 
                 <!-- BOTTOM BAR (Studio Mode) -->
@@ -771,7 +787,6 @@
                     </form>
                 </div>
             </div>
-
         </div>
 
         <script>
