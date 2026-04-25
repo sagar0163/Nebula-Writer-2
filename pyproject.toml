@@ -27,3 +27,10 @@ python_files = "test_*.py"
 [tool.black]
 line-length = 120
 target-version = ['py310']
+
+[tool.semantic_release]
+version_variable = "pyproject.toml:version"
+branch = "main"
+upload_to_pypi = false
+upload_to_release = true
+build_command = "pip install . && python devops.py"

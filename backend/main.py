@@ -26,8 +26,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import importlib.metadata
+try:
+    __version__ = importlib.metadata.version("nebula-writer")
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "2.1.0"
+
 # Initialize app
-app = FastAPI(title="Nebula-Writer API", version="2.0.0")
+app = FastAPI(title="Nebula-Writer API", version=__version__)
 
 # CORS
 app.add_middleware(
@@ -51,15 +57,20 @@ else:
     DATA_DIR.mkdir(exist_ok=True)
     db = CodexDatabase(str(DATA_DIR / "codex.db"))
 
-# Initialize Subsystems
-plot_manager = create_plot_manager()
-ai_writer = AIWriter()
+# Initialize Orchestrator (Step 7)
+from services.orchestrator import NarrativeOrchestrator
+orchestrator = NarrativeOrchestrator()
+
+# Keep direct access for simple CRUD (backwards compatibility)
+db = orchestrator.db
+plot_manager = orchestrator.pm
+ai_writer = orchestrator.ai
 lookahead_engine = LookaheadEngine(db, plot_manager, ai_writer)
 story_architect = create_story_architect(ai_writer)
-ripple_checker = create_ripple_checker(db, ai_writer)
+ripple_checker = orchestrator.ripple
 comment_engine = create_comment_engine(ripple_checker)
 quality_layer = create_quality_layer()
-conversation_engine = ConversationEngine(db, ai_writer)
+conversation_engine = orchestrator.conv
 
 # ============ MODELS ============
 
@@ -1242,10 +1253,13 @@ class ChatRequest(BaseModel):
     project_state: Optional[Dict] = None
 
 @app.post("/api/chat")
-def chat_with_ai(req: ChatRequest):
-    """Main chat endpoint for Chat-First architecture"""
+async def chat_with_ai(req: ChatRequest):
+    """
+    Main chat endpoint (Step 3)
+    Routes through NarrativeOrchestrator for stateful, priority-aware generation.
+    """
     try:
-        response = conversation_engine.process_message(req.message, req.project_state)
+        response = await orchestrator.handle_chat(req.message)
         return response
     except Exception as e:
         import traceback
@@ -1277,7 +1291,7 @@ def health_check():
     return {
         "status": "ok",
         "timestamp": datetime.now().isoformat(),
-        "version": "2.1.0",
+        "version": __version__,
         "mode": "chat-first",
         "database": os.environ.get("NEBULA_DB", "sqlite")
     }
