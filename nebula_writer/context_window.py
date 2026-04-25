@@ -195,7 +195,7 @@ class ContextWindow:
     @classmethod
     def _build_research_context(cls, db, topics: List[str] = None) -> str:
         """Build research context (topic-based)"""
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
 
@@ -217,7 +217,7 @@ class ContextWindow:
     @classmethod
     def _build_compass_context(cls, db) -> str:
         """Build story compass state"""
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
 
