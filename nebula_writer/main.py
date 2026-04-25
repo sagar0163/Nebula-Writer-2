@@ -53,7 +53,7 @@ db_type = os.environ.get("NEBULA_DB", "sqlite")
 
 if db_type == "supabase":
     print("[OK] Using Supabase PostgreSQL database")
-    from postgres_db import PostgresDB
+    from nebula_writer.postgres_db import PostgresDB
 
     db = PostgresDB()
 else:
@@ -461,7 +461,7 @@ def ai_write_scene(req: AIWriteRequest):
 def ai_rewrite(req: AIRewriteRequest):
     """Rewrite text in a different style"""
     try:
-        from ai_writer import AIWriter
+        from nebula_writer.ai_writer import AIWriter
 
         ai = AIWriter()
         result = ai.rewrite_style(req.text, req.style)
@@ -474,7 +474,7 @@ def ai_rewrite(req: AIRewriteRequest):
 def ai_describe(req: AIDescribeRequest):
     """Generate sensory description for an entity"""
     try:
-        from ai_writer import AIWriter
+        from nebula_writer.ai_writer import AIWriter
 
         ai = AIWriter()
         result = ai.generate_description(req.entity_name, db)
@@ -487,7 +487,7 @@ def ai_describe(req: AIDescribeRequest):
 def ai_show_not_tell(req: AIShowNotTellRequest):
     """Convert telling to showing"""
     try:
-        from ai_writer import AIWriter
+        from nebula_writer.ai_writer import AIWriter
 
         ai = AIWriter()
         result = ai.show_not_tell(req.text)
@@ -503,7 +503,7 @@ def ai_show_not_tell(req: AIShowNotTellRequest):
 def audit_story():
     """Run full story audit"""
     try:
-        from audit import StoryAuditor
+        from nebula_writer.audit import StoryAuditor
 
         auditor = StoryAuditor(db)
         return auditor.audit_all_chapters()
@@ -518,7 +518,7 @@ def audit_story():
 def rebuild_memory():
     """Rebuild vector memory index"""
     try:
-        from memory import MemorySystem
+        from nebula_writer.memory import MemorySystem
 
         mem = MemorySystem()
         return mem.rebuild_index(db)
@@ -530,7 +530,7 @@ def rebuild_memory():
 def memory_search(q: str = Query(..., min_length=2)):
     """Semantic search in memory"""
     try:
-        from memory import MemorySystem
+        from nebula_writer.memory import MemorySystem
 
         mem = MemorySystem()
         return mem.get_relevant_context(q, db)
@@ -666,7 +666,7 @@ def ai_client_generate(req: AIClientRequest):
     try:
         import os
 
-        from ai_client import AIClient
+        from nebula_writer.ai_client import AIClient
 
         api_key = os.environ.get(f"{req.provider.upper()}_API_KEY") or os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -682,7 +682,7 @@ def ai_client_generate(req: AIClientRequest):
 @app.get("/api/ai/providers")
 def get_ai_providers():
     """Get available AI providers"""
-    from ai_client import get_available_providers
+    from nebula_writer.ai_client import get_available_providers
 
     return get_available_providers()
 
@@ -693,7 +693,7 @@ def get_ai_providers():
 @app.get("/api/export/markdown")
 def export_markdown():
     """Export story as Markdown"""
-    from exporter import StoryExporter
+    from nebula_writer.exporter import StoryExporter
 
     exporter = StoryExporter(db)
     return {"content": exporter.to_plain_text()}
@@ -702,7 +702,7 @@ def export_markdown():
 @app.get("/api/export/html")
 def export_html():
     """Export story as HTML"""
-    from exporter import StoryExporter
+    from nebula_writer.exporter import StoryExporter
 
     exporter = StoryExporter(db)
     return {"content": exporter.to_html()}
@@ -711,7 +711,7 @@ def export_html():
 @app.get("/api/export/text")
 def export_text():
     """Export story as plain text"""
-    from exporter import StoryExporter
+    from nebula_writer.exporter import StoryExporter
 
     exporter = StoryExporter(db)
     return {"content": exporter.to_plain_text()}
@@ -722,7 +722,7 @@ def export_epub():
     """Export story as EPUB (returns base64)"""
     import base64
 
-    from exporter import StoryExporter
+    from nebula_writer.exporter import StoryExporter
 
     exporter = StoryExporter(db)
     epub_bytes = exporter.to_epub_bytes(title="My Novel", author="Author")
@@ -732,7 +732,7 @@ def export_epub():
 @app.get("/api/export/pdf")
 def export_pdf():
     """Export story as HTML optimized for PDF"""
-    from exporter import StoryExporter
+    from nebula_writer.exporter import StoryExporter
 
     exporter = StoryExporter(db)
     return {"content": exporter.to_pdf_html()}
@@ -745,7 +745,7 @@ def export_pdf():
 def research_search(q: str = Query(..., min_length=2), num_results: int = 5):
     """Search the web for research (no API key required)"""
     try:
-        from research import ResearchEngine
+        from nebula_writer.research import ResearchEngine
 
         engine = ResearchEngine()
         results = engine.search(q, num_results)
@@ -758,7 +758,7 @@ def research_search(q: str = Query(..., min_length=2), num_results: int = 5):
 def research_fiction(req: dict):
     """Research topic for fiction writing"""
     try:
-        from research import ResearchEngine
+        from nebula_writer.research import ResearchEngine
 
         engine = ResearchEngine()
         result = engine.research_for_fiction(req.get("topic", ""), context=req.get("context", {}))
@@ -771,7 +771,7 @@ def research_fiction(req: dict):
 def research_history(period: str = Query(...), location: str = None):
     """Get historical context for a time period"""
     try:
-        from research import ResearchEngine
+        from nebula_writer.research import ResearchEngine
 
         engine = ResearchEngine()
         result = engine.get_historical_context(period, location)
@@ -787,7 +787,7 @@ def research_history(period: str = Query(...), location: str = None):
 def get_plot_threads(status: str = None):
     """Get plot threads"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         return pm.get_plot_threads(status)
@@ -799,7 +799,7 @@ def get_plot_threads(status: str = None):
 def create_plot_thread(req: dict):
     """Create a new plot thread"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         thread_id = pm.add_plot_thread(
@@ -814,7 +814,7 @@ def create_plot_thread(req: dict):
 def resolve_plot_thread(thread_id: int, resolved_chapter: int = None):
     """Mark plot thread as resolved"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         success = pm.resolve_plot_thread(thread_id, resolved_chapter)
@@ -830,7 +830,7 @@ def resolve_plot_thread(thread_id: int, resolved_chapter: int = None):
 def add_foreshadowing(req: dict):
     """Add foreshadowing element"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         foreshadow_id = pm.add_foreshadowing(
@@ -849,7 +849,7 @@ def add_foreshadowing(req: dict):
 def get_foreshadowing(plot_thread_id: int = None):
     """Get foreshadowing elements"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         return pm.get_foreshadowing(plot_thread_id)
@@ -864,7 +864,7 @@ def get_foreshadowing(plot_thread_id: int = None):
 def get_world_rules(category: str = None):
     """Get world rules"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         return pm.get_world_rules(category)
@@ -876,7 +876,7 @@ def get_world_rules(category: str = None):
 def add_world_rule(req: dict):
     """Add a world rule"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         rule_id = pm.add_world_rule(
@@ -895,7 +895,7 @@ def add_world_rule(req: dict):
 def check_world_rules(req: dict):
     """Check text for world rule violations"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         violations = pm.check_world_rule_violation(req.get("text", ""))
@@ -911,7 +911,7 @@ def check_world_rules(req: dict):
 def set_voice_profile(req: dict):
     """Set character voice profile"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         profile_id = pm.set_voice_profile(
@@ -934,7 +934,7 @@ def set_voice_profile(req: dict):
 def get_voice_profile(entity_id: int):
     """Get character voice profile"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         return pm.get_voice_profile(entity_id)
@@ -946,7 +946,7 @@ def get_voice_profile(entity_id: int):
 def get_voice_prompt(entity_id: int):
     """Get voice profile as AI prompt"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         prompt = pm.generate_voice_prompt(entity_id)
@@ -962,7 +962,7 @@ def get_voice_prompt(entity_id: int):
 def check_chapter_continuity(req: dict):
     """Check continuity for a chapter"""
     try:
-        from plot_manager import create_plot_manager
+        from nebula_writer.plot_manager import create_plot_manager
 
         pm = create_plot_manager()
         result = pm.check_continuity(
@@ -1163,7 +1163,7 @@ def clear_conversation():
 def start_idea_processing(req: dict):
     """Start new project - process idea and begin Q&A"""
     try:
-        from idea_processor import IdeaProcessor
+        from nebula_writer.idea_processor import IdeaProcessor
 
         processor = IdeaProcessor()
         result = processor.process_idea(req.get("idea", ""))
@@ -1180,7 +1180,7 @@ def start_idea_processing(req: dict):
 def process_idea_answer(req: dict):
     """Answer clarifying question"""
     try:
-        from idea_processor import IdeaProcessor
+        from nebula_writer.idea_processor import IdeaProcessor
 
         processor = IdeaProcessor()
 
@@ -1214,7 +1214,7 @@ def process_idea_answer(req: dict):
 def get_story_compass():
     """Get current Story Compass state"""
     try:
-        from outline_engine import create_evolution_engine
+        from nebula_writer.outline_engine import create_evolution_engine
 
         engine = create_evolution_engine()
         # Initialize with default if fresh
@@ -1229,7 +1229,7 @@ def get_story_compass():
 def get_lookahead_evolution():
     """Get rolling 3-chapter lookahead"""
     try:
-        from outline_engine import create_evolution_engine
+        from nebula_writer.outline_engine import create_evolution_engine
 
         engine = create_evolution_engine()
         return {"cards": engine.get_lookahead_cards()}
@@ -1241,7 +1241,7 @@ def get_lookahead_evolution():
 def approve_lookahead(chapter_num: int):
     """Approve lookahead card before writing"""
     try:
-        from outline_engine import create_evolution_engine
+        from nebula_writer.outline_engine import create_evolution_engine
 
         engine = create_evolution_engine()
         success = engine.approve_lookahead_card(chapter_num)
@@ -1254,7 +1254,7 @@ def approve_lookahead(chapter_num: int):
 def redirect_story_direction(req: dict):
     """User redirects story direction"""
     try:
-        from outline_engine import create_evolution_engine
+        from nebula_writer.outline_engine import create_evolution_engine
 
         engine = create_evolution_engine()
         result = engine.redirect_story(req.get("type", "user_redirect"), req.get("details", ""))
@@ -1267,7 +1267,7 @@ def redirect_story_direction(req: dict):
 def create_inline_comment(req: dict):
     """Add inline comment to chapter/codex/lookahead"""
     try:
-        from comment_system import create_comment_engine
+        from nebula_writer.comment_system import create_comment_engine
 
         engine = create_comment_engine()
         comment_id = engine.add_comment(
@@ -1287,7 +1287,7 @@ def create_inline_comment(req: dict):
 def get_inline_comments(context_type: str = None, target_id: str = None):
     """Get comments"""
     try:
-        from comment_system import create_comment_engine
+        from nebula_writer.comment_system import create_comment_engine
 
         engine = create_comment_engine()
         comments = engine.get_comments(context_type, target_id)
@@ -1301,7 +1301,7 @@ def get_inline_comments(context_type: str = None, target_id: str = None):
 def ai_respond_to_comment(comment_id: str, req: dict):
     """AI responds to comment"""
     try:
-        from comment_system import create_comment_engine
+        from nebula_writer.comment_system import create_comment_engine
 
         engine = create_comment_engine()
         success = engine.ai_respond(comment_id, req.get("response", ""))
@@ -1314,7 +1314,7 @@ def ai_respond_to_comment(comment_id: str, req: dict):
 def resolve_inline_comment(comment_id: str, req: dict = None):
     """Resolve comment and trigger ripple check"""
     try:
-        from comment_system import create_comment_engine
+        from nebula_writer.comment_system import create_comment_engine
 
         engine = create_comment_engine()
         notes = req.get("notes", "") if req else ""
@@ -1328,7 +1328,7 @@ def resolve_inline_comment(comment_id: str, req: dict = None):
 def pushback_comment(comment_id: str, req: dict):
     """User pushes back on AI response"""
     try:
-        from comment_system import create_comment_engine
+        from nebula_writer.comment_system import create_comment_engine
 
         engine = create_comment_engine()
         success = engine.pushback(comment_id, req.get("feedback", ""))
@@ -1341,7 +1341,7 @@ def pushback_comment(comment_id: str, req: dict):
 def analyze_chapter_quality(chapter_id: int = None, content: str = None):
     """Analyze chapter quality (anti-slop)"""
     try:
-        from comment_system import create_quality_layer
+        from nebula_writer.comment_system import create_quality_layer
 
         quality = create_quality_layer()
 
@@ -1365,7 +1365,7 @@ def analyze_chapter_quality(chapter_id: int = None, content: str = None):
 def can_approve_chapter(chapter_id: int):
     """Check if chapter can be approved (no blocking comments)"""
     try:
-        from comment_system import create_comment_engine
+        from nebula_writer.comment_system import create_comment_engine
 
         engine = create_comment_engine()
         return engine.can_approve_chapter(str(chapter_id))
