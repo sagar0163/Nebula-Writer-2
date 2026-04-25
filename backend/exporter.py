@@ -232,12 +232,12 @@ p.first { text-indent: 0; }
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title>{self._escape_xml(ch.get("title", f"Chapter {ch["number"]}"))}</title>
+  <title>{self._escape_xml(ch.get("title", f"Chapter {ch['number']}"))}</title>
   <link rel="stylesheet" type="text/css" href="styles.css"/>
 </head>
 <body>
   <div class="chapter">
-    <h2>{self._escape_xml(ch.get("title", f"Chapter {ch["number"]}"))}</h2>
+    <h2>{self._escape_xml(ch.get("title", f"Chapter {ch['number']}"))}</h2>
 {para_html}
   </div>
 </body>
@@ -301,7 +301,7 @@ p.first { text-indent: 0; }
             content = ch.get("content", "")
             paragraphs = content.split("\n\n")
             html += f"""
-  <h2>{ch.get("title", f"Chapter {ch["number"]}")}</h2>"""
+  <h2>{ch.get("title", f"Chapter {ch['number']}")}</h2>"""
             for i, para in enumerate(paragraphs):
                 if para.strip():
                     html += f'\n  <p class="{"first" if i == 0 else ""}">{para}</p>'

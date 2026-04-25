@@ -1200,7 +1200,6 @@ class CodexDatabase:
         conn.commit()
         conn.close()
 
-
         # Common patterns for names (capitalized words)
         potential_names = re.findall(r"\b([A-Z][a-z]+)\b", text)
 

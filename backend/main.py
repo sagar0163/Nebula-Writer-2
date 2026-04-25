@@ -1134,7 +1134,6 @@ def architect_chat(req: ArchitectChatRequest):
 # ============ v2.1 CONVERSATION-DRIVEN OPERATIONS ============
 
 
-
 @app.get("/api/conversation/history")
 def get_conversation_history(limit: int = 20):
     """Get recent conversation"""
