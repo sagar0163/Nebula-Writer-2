@@ -1090,17 +1090,6 @@ def comment_pushback(comment_id: str, req: CommentPushback):
     return {"message": "Pushback recorded"}
 
 
-# ============ HEALTH CHECK ============
-
-
-@app.get("/api/health")
-def health_check():
-    """Health check endpoint"""
-    return {"status": "ok", "timestamp": datetime.now().isoformat(), "version": "2.1.0"}
-
-    return {"status": "success", "result": result}
-
-
 # ============ v2.1 STORY ARCHITECT CHAT ============
 
 
@@ -1142,41 +1131,8 @@ def architect_chat(req: ArchitectChatRequest):
         raise HTTPException(status_code=500, detail="Failed to process architect session")
 
 
-# ============ ARCHITECT / CHAT MODE (v2.1) ============
+# ============ v2.1 CONVERSATION-DRIVEN OPERATIONS ============
 
-
-@app.post("/api/architect/chat")
-def architect_chat(req: dict):
-    """
-    Conversational onboarding and world-building
-    LEGACY endpoint - now routes to the new conversation engine
-    """
-    try:
-        # For backward compatibility, extract last message
-        history = req.get("history", [])
-        if not history:
-            return {"response": "I'm ready. What's the idea?", "extractions": {}}
-
-        last_msg = history[-1].get("content", "")
-
-        # Route to the main conversation engine
-        result = conversation_engine.process_message(last_msg)
-
-        return {
-            "response": result["message"],
-            "extractions": result.get("extracted_info", {}),
-            "actions": result.get("actions", []),
-        }
-    except Exception as e:
-        print(f"API Error in Architect Chat: {e}")
-        raise HTTPException(status_code=500, detail="Failed to process architect session")
-
-    # Main v2.1 Chat API is defined at the bottom of the file
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/conversation/history")
@@ -1264,7 +1220,7 @@ def get_story_compass():
 
 
 @app.get("/api/lookahead")
-def get_lookahead_cards():
+def get_lookahead_evolution():
     """Get rolling 3-chapter lookahead"""
     try:
         from outline_engine import create_evolution_engine

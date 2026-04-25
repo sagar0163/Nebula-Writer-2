@@ -1200,13 +1200,6 @@ class CodexDatabase:
         conn.commit()
         conn.close()
 
-    # ============ AUTO-EXTRACT ENTITIES ============
-
-    def extract_entities_from_text(self, text: str) -> Dict:
-        """Extract potential entities from prose text using pattern matching"""
-        import re
-
-        extracted = {"characters": [], "locations": [], "items": []}
 
         # Common patterns for names (capitalized words)
         potential_names = re.findall(r"\b([A-Z][a-z]+)\b", text)
