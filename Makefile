@@ -1,8 +1,9 @@
-.PHONY: install run test docker-build docker-run clean
+.PHONY: install run test docker-build docker-run clean lint format check devops
 
 # Install dependencies
 install:
 	pip install -r requirements.txt
+	pip install ruff pytest
 
 # Run the API server
 run:
@@ -15,6 +16,21 @@ repl:
 # Run tests
 test:
 	pytest tests/ -v
+
+# Linting with Ruff
+lint:
+	ruff check . --fix
+
+# Formatting with Ruff
+format:
+	ruff format .
+
+# Full Quality Check (Lint + Format + Test)
+check: lint format test
+
+# DevOps Automation Script
+devops:
+	python devops.py
 
 # Docker build
 docker-build:
