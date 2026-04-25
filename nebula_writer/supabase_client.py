@@ -109,7 +109,7 @@ class DatabaseFactory:
             return SupabaseClient()
         else:
             # Use SQLite (original codex)
-            from codex import CodexDatabase
+            from nebula_writer.codex import CodexDatabase
 
             data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
             os.makedirs(data_dir, exist_ok=True)
