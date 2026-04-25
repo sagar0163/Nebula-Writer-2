@@ -1,14 +1,14 @@
-import sqlite3
 import json
-from datetime import datetime
-from typing import Dict, List, Optional
+import sqlite3
+from typing import Dict
+
 
 class VersioningService:
     """
     Handles snapshots and rollbacks for Chapters and Codex states.
     Non-breaking: Uses new tables to store history.
     """
-    
+
     def __init__(self, db_path: str = "data/codex.db"):
         self.db_path = db_path
         self._init_versioning_tables()
@@ -16,7 +16,7 @@ class VersioningService:
     def _init_versioning_tables(self):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         # New table for full state snapshots
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS codex_snapshots (
@@ -27,7 +27,7 @@ class VersioningService:
                 metadata TEXT
             )
         """)
-        
+
         # Existing chapter_versions is already in codex.py, but we'll ensure it's robust
         conn.commit()
         conn.close()
@@ -36,18 +36,18 @@ class VersioningService:
         """Creates a lightweight snapshot of the current Codex entities."""
         entities = db.get_entities()
         relationships = db.get_relationships()
-        
-        snapshot_data = {
-            "entities": entities,
-            "relationships": relationships
-        }
-        
+
+        snapshot_data = {"entities": entities, "relationships": relationships}
+
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO codex_snapshots (snapshot_type, data)
             VALUES (?, ?)
-        """, (snapshot_type, json.dumps(snapshot_data)))
+        """,
+            (snapshot_type, json.dumps(snapshot_data)),
+        )
         snapshot_id = cursor.lastrowid
         conn.commit()
         conn.close()

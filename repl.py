@@ -2,13 +2,14 @@
 Nebula-Writer Interactive REPL
 Interactive writing session
 """
+
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "backend"))
-from codex import CodexDatabase
 from ai_writer import AIWriter
-from prompts import PROMPTS, get_prompt
+from codex import CodexDatabase
+from prompts import PROMPTS
 
 
 def print_banner():
@@ -26,11 +27,11 @@ def cmd_entities(db):
     if not entities:
         print("No entities yet.")
         return
-    
+
     print("\n📦 ENTITIES:")
     for e in entities:
         print(f"  [{e['type']:10}] {e['name']}")
-        if e.get('description'):
+        if e.get("description"):
             print(f"               {e['description'][:50]}...")
 
 
@@ -40,7 +41,7 @@ def cmd_chapters(db):
     if not chapters:
         print("No chapters yet.")
         return
-    
+
     print("\n📖 CHAPTERS:")
     for ch in chapters:
         print(f"  Ch.{ch['number']:2} {ch.get('title', 'Untitled'):30} ({ch.get('word_count', 0)} words)")
@@ -54,12 +55,12 @@ def cmd_write(db):
         print(f"❌ {e}")
         print("Set GEMINI_API_KEY to use AI features.")
         return
-    
+
     print("\n🎯 Writing a scene...")
     beat = input("  Beat/plot point: ")
     words = input("  Word count (default 500): ")
     word_count = int(words) if words.strip() else 500
-    
+
     print("\n✨ Writing...")
     result = ai.write_scene(db, beat, word_count)
     print(f"\n{result}\n")
@@ -72,17 +73,17 @@ def cmd_rewrite(db):
     except ValueError as e:
         print(f"❌ {e}")
         return
-    
+
     print("\n🎨 Rewrite in style...")
     print("  Styles: noir, romantic, horror, humor, thriller")
     style = input("  Style: ").strip().lower()
     print("\n  Paste your text (Ctrl+D to finish):")
     text = sys.stdin.read().strip()
-    
+
     if not text:
         print("No text provided.")
         return
-    
+
     print(f"\n✨ Rewriting in {style}...")
     result = ai.rewrite_style(text, style)
     print(f"\n{result}\n")
@@ -112,7 +113,7 @@ def cmd_help():
     print("""
 📚 COMMANDS:
   entities         List all entities
-  chapters         List all chapters  
+  chapters         List all chapters
   write            Write a new scene (AI)
   rewrite          Rewrite text in different style
   prompts          List prompt templates
@@ -124,16 +125,16 @@ def cmd_help():
 
 def main():
     print_banner()
-    
+
     db_path = Path(__file__).parent / "data" / "codex.db"
     db = CodexDatabase(str(db_path))
-    
+
     print("Type 'help' for commands.\n")
-    
+
     while True:
         try:
             cmd = input("nebula> ").strip().lower()
-            
+
             if not cmd:
                 continue
             elif cmd == "exit" or cmd == "quit":

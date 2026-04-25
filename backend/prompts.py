@@ -2,8 +2,8 @@
 Nebula-Writer Prompt Templates
 Pre-built prompts for common writing tasks
 """
-from typing import Dict, List
 
+from typing import Dict, List
 
 PROMPTS = {
     "scene_opener": {
@@ -14,20 +14,18 @@ PROMPTS = {
 - Mood: {mood}
 - Main character present: {character}
 
-Make it immersive and engaging."""
+Make it immersive and engaging.""",
     },
-    
     "character_intro": {
-        "name": "Character Introduction", 
+        "name": "Character Introduction",
         "description": "Introduce a character to readers",
         "template": """Write a character introduction for **{name}**.
 - Role: {role}
 - Key traits: {traits}
 - First impression: {impression}
 
-Include physical description and personality."""
+Include physical description and personality.""",
     },
-    
     "dialogue_scene": {
         "name": "Dialogue Scene",
         "description": "Write a conversation between characters",
@@ -36,9 +34,8 @@ Include physical description and personality."""
 - Subtext: {subtext}
 - Tension level: {tension}
 
-Make it natural and revealing of character."""
+Make it natural and revealing of character.""",
     },
-    
     "action_sequence": {
         "name": "Action Sequence",
         "description": "Write an exciting action scene",
@@ -48,17 +45,15 @@ Make it natural and revealing of character."""
 - Goal: {goal}
 - Obstacle: {obstacle}
 
-Make it fast-paced and visceral."""
+Make it fast-paced and visceral.""",
     },
-    
     "sensory_description": {
         "name": "Sensory Description",
         "description": "Describe a location or object using all senses",
         "template": """Write a sensory description of **{subject}**.
 Include: sight, sound, smell, taste, and touch.
-Make it immersive and atmospheric."""
+Make it immersive and atmospheric.""",
     },
-    
     "emotion_transition": {
         "name": "Emotion Transition",
         "description": "Show character emotional changes",
@@ -66,9 +61,8 @@ Make it immersive and atmospheric."""
 - Trigger: {trigger}
 - Setting: {setting}
 
-Use physical actions and internal thoughts, not direct emotion labels."""
+Use physical actions and internal thoughts, not direct emotion labels.""",
     },
-    
     "backstory_injection": {
         "name": "Backstory Injection",
         "description": "Reveal character backstory naturally",
@@ -76,9 +70,8 @@ Use physical actions and internal thoughts, not direct emotion labels."""
 - Current situation: {situation}
 - How it surfaces: {method}
 
-Make it feel organic, not like an info dump."""
+Make it feel organic, not like an info dump.""",
     },
-    
     "cliffhanger": {
         "name": "Chapter Cliffhanger",
         "description": "End a chapter on a cliffhanger",
@@ -87,9 +80,8 @@ Make it feel organic, not like an info dump."""
 - Stakes: {stakes}
 - Reveal or decision: {reveal}
 
-Leave the reader wanting more."""
+Leave the reader wanting more.""",
     },
-    
     "romantic_scene": {
         "name": "Romantic Scene",
         "description": "Write a romantic moment",
@@ -98,9 +90,8 @@ Leave the reader wanting more."""
 - Mood: {mood}
 - Emotional stakes: {stakes}
 
-Include sensory details and emotional vulnerability."""
+Include sensory details and emotional vulnerability.""",
     },
-    
     "noir_description": {
         "name": "Noir Description",
         "description": "Write in noir style",
@@ -110,8 +101,8 @@ Include sensory details and emotional vulnerability."""
 - Style: short sentences, metaphors
 
 Original text:
-{text}"""
-    }
+{text}""",
+    },
 }
 
 
@@ -119,20 +110,19 @@ def get_prompt(template_key: str, **kwargs) -> str:
     """Get a prompt template with variables filled"""
     if template_key not in PROMPTS:
         raise ValueError(f"Unknown prompt: {template_key}")
-    
+
     template = PROMPTS[template_key]["template"]
-    
+
     # Replace placeholders
     for key, value in kwargs.items():
         template = template.replace(f"{{{key}}}", str(value))
-    
+
     return template
 
 
 def list_prompts() -> List[Dict]:
     """List all available prompts"""
-    return [{"key": k, "name": v["name"], "description": v["description"]} 
-            for k, v in PROMPTS.items()]
+    return [{"key": k, "name": v["name"], "description": v["description"]} for k, v in PROMPTS.items()]
 
 
 if __name__ == "__main__":
@@ -140,6 +130,6 @@ if __name__ == "__main__":
     print("Available prompts:")
     for p in list_prompts():
         print(f"  - {p['key']}: {p['name']}")
-    
+
     print("\nExample prompt:")
     print(get_prompt("scene_opener", setting="a rainy Mumbai street", mood="tense", character="Ravi"))

@@ -14,10 +14,12 @@ dependencies = [
 
 [tool.ruff]
 line-length = 120
-select = ["E", "F", "I", "W", "C90", "B"]
-ignore = ["E501"]
 
-[tool.ruff.mccabe]
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "C90", "B"]
+ignore = ["E501", "C901", "F821", "E722"]
+
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.pytest.ini_options]

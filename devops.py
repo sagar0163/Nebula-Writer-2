@@ -1,7 +1,5 @@
 import subprocess
-import sys
-import os
-from pathlib import Path
+
 
 def run_command(command, description):
     print(f"\n[RUNNING] {description}...")
@@ -9,13 +7,14 @@ def run_command(command, description):
         subprocess.run(command, check=True, shell=True)
         print(f"[SUCCESS] {description} completed successfully.")
         return True
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         print(f"[FAILURE] {description} failed.")
         return False
 
+
 def main():
     print("=== Nebula-Writer DevOps Automation ===")
-    
+
     # 1. Install/Update dependencies
     run_command("pip install -r requirements.txt", "Installing dependencies")
     run_command("pip install ruff pytest", "Installing DevOps tools")
@@ -30,11 +29,12 @@ def main():
     # 4. Running Tests
     run_command("pytest", "Running Unit Tests")
 
-    print("\n" + "="*40)
+    print("\n" + "=" * 40)
     print("DevOps Check Complete!")
     print("Code is linted, formatted, and tested.")
     print("Usage: 'python devops.py' or 'make devops'")
-    print("="*40)
+    print("=" * 40)
+
 
 if __name__ == "__main__":
     main()

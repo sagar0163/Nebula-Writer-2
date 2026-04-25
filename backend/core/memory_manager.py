@@ -2,15 +2,16 @@
 Nebula-Writer Memory Manager (Refactored from ContextWindow)
 Manages token budgets with importance-based prioritization.
 """
-from typing import List, Dict, Optional
+
 from core.narrative_state_engine import NarrativeSnapshot
+
 
 class MemoryManager:
     """
     Upgraded context system with priority-based inclusion.
     Layers: Core (Rules) > Active (Recent) > Compressed (Summaries).
     """
-    
+
     # Priority-based Token Budgeting
     PRIORITIES = {
         "ANCHORS": 1.0,
@@ -18,7 +19,7 @@ class MemoryManager:
         "CORE_ENTITIES": 0.8,
         "RECENT_CHAPTERS": 0.7,
         "WORLD_RULES": 0.7,
-        "BACKGROUND": 0.4
+        "BACKGROUND": 0.4,
     }
 
     def __init__(self, token_limit: int = 120000):
@@ -29,16 +30,16 @@ class MemoryManager:
         Builds optimized context string based on snapshot priorities.
         """
         sections = []
-        
+
         # 1. CORE MEMORY (Highest Priority)
         sections.append(self._format_core_memory(snapshot))
-        
+
         # 2. ACTIVE MEMORY
         sections.append(self._format_active_memory(snapshot))
-        
+
         # 3. COMPRESSED MEMORY
         sections.append(self._format_compressed_memory(snapshot))
-        
+
         # 4. CURRENT INTENT
         if user_input:
             sections.append(f"USER REQUEST: {user_input}")
@@ -63,7 +64,7 @@ class MemoryManager:
         char_limit = self.token_limit * 4
         if len(text) <= char_limit:
             return text
-        
+
         # In a real implementation, this would prune by section priority
         return text[:char_limit] + "... [TRUNCATED]"
 
