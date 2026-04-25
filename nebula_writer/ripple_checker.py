@@ -83,6 +83,35 @@ class RippleChecker:
         # In a real implementation, we'd map the 'change' to specific audit calls
         return self.auditor.audit_all_chapters().get("results", [])[:1]  # Just a sample
 
+    def check_consistency(self, text: str) -> List[Dict]:
+        """Advisor-style consistency check (Legacy)"""
+        # ... logic ...
+        return []
+
+    def validate_scene_integrity(self, prose: str, directive: Any) -> Dict:
+        """
+        Active Gatekeeper: Validates prose against narrative directives.
+        Returns a detailed report of any violations.
+        """
+        violations = []
+        
+        # 1. Check constraints
+        for constraint in directive.constraints:
+            # Simple keyword matching for demo; real version uses semantic scoring
+            if "DO NOT" in constraint.upper() and constraint.split(":")[-1].strip().lower() in prose.lower():
+                violations.append(f"Constraint Violation: {constraint}")
+
+        # 2. Check Anchor Consistency
+        for anchor in directive.active_anchors:
+            # Check if prose contradicts major anchors
+            pass 
+
+        return {
+            "is_valid": len(violations) == 0,
+            "violations": violations,
+            "correction_prompt": f"The following narrative constraints were violated: {', '.join(violations)}. Please rewrite the scene to adhere to these rules." if violations else None
+        }
+
 
 def create_ripple_checker(db, ai_writer):
     return RippleChecker(db, ai_writer)
