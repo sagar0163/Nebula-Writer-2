@@ -17,12 +17,12 @@ except ImportError:
     from google import genai
 
 try:
-    from huggingface_hub import InferenceClient
+    from huggingface_hub import AsyncInferenceClient
 except ImportError:
     import subprocess
 
     subprocess.run(["pip", "install", "huggingface-hub"], check=True)
-    from huggingface_hub import InferenceClient
+    from huggingface_hub import AsyncInferenceClient
 
 
 class AIWriter:
@@ -30,13 +30,7 @@ class AIWriter:
 
     def __init__(self, gemini_key: str = None, hf_token: str = None):
         """
-        Initializes the multi-provider AI client.
-
-        Nebula-Writer prioritizes Hugging Face (Llama-3) for logic and creativity,
-        with a robust fallback to Google Gemini-2.0-Flash for speed and reliability.
-
-        :param gemini_key: API key for Google Gemini (optional if in ENV).
-        :param hf_token: API key for Hugging Face Inference API (optional if in ENV).
+        Initializes the AI client with a dynamic Load Balancer for Space clones.
         """
         self.gemini_key = gemini_key or os.environ.get("GEMINI_API_KEY")
         self.hf_token = hf_token or os.environ.get("HUGGINGFACE_API_KEY")
@@ -52,59 +46,118 @@ class AIWriter:
             except Exception as e:
                 print(f"FAILED to initialize Gemini: {e}")
 
-        # Initialize Hugging Face client
-        self.hf_client = None
-        # Using Llama-3.2-1B-Instruct as the primary lightweight model
-        self.hf_model = "meta-llama/Llama-3.2-1B-Instruct"
-        if self.hf_token:
-            try:
-                self.hf_client = InferenceClient(model=self.hf_model, token=self.hf_token)
-            except Exception as e:
-                print(f"FAILED to initialize Hugging Face: {e}")
+        # Initialize Hugging Face worker pool
+        self.worker_pool = []
+        self.current_worker_index = 0
+        
+        # Collect all available Space URLs from ENV
+        self.worker_metadata = []
+        space_configs = [
+            ("Writer-Brain", os.environ.get("HF_WRITER_URL")),
+            ("Ripple-Check", os.environ.get("HF_RIPPLE_URL")),
+            ("Architect-Bot", os.environ.get("HF_ARCHITECT_URL"))
+        ]
 
-    def _generate(self, system_prompt: str, user_prompt: str, temperature: float = 0.8, max_tokens: int = 2000) -> str:
+        for name, url in space_configs:
+            if url and self.hf_token:
+                try:
+                    client = AsyncInferenceClient(model=url, token=self.hf_token)
+                    self.worker_pool.append(client)
+                    self.worker_metadata.append({
+                        "name": name,
+                        "url": url,
+                        "status": "ready",
+                        "usage_count": 0
+                    })
+                    print(f"[LOAD BALANCER] Added worker: {name} ({url})")
+                except Exception as e:
+                    print(f"FAILED to add worker {url}: {e}")
+
+        # Fallback to public model if pool is empty
+        if not self.worker_pool and self.hf_token:
+            public_model = "meta-llama/Llama-3.2-1B-Instruct"
+            self.worker_pool.append(AsyncInferenceClient(model=public_model, token=self.hf_token))
+            self.worker_metadata.append({
+                "name": "Llama-Fallback",
+                "url": public_model,
+                "status": "ready",
+                "usage_count": 0
+            })
+            print(f"[LOAD BALANCER] Using public model fallback: {public_model}")
+
+    def _get_next_worker(self):
+        """Dynamic selection: Find first 'ready' worker, otherwise fallback to round-robin"""
+        if not self.worker_pool:
+            return None, -1
+        
+        # 1. Try to find a worker that is currently READY
+        for i in range(len(self.worker_pool)):
+            idx = (self.current_worker_index + i) % len(self.worker_pool)
+            if self.worker_metadata[idx]["status"] == "ready":
+                # Advance round-robin pointer to next
+                self.current_worker_index = (idx + 1) % len(self.worker_pool)
+                
+                # Update metadata
+                self.worker_metadata[idx]["status"] = "active"
+                self.worker_metadata[idx]["usage_count"] += 1
+                return self.worker_pool[idx], idx
+        
+        # 2. If all workers are busy, fallback to standard round-robin
+        idx = self.current_worker_index
+        self.current_worker_index = (idx + 1) % len(self.worker_pool)
+        
+        self.worker_metadata[idx]["status"] = "active"
+        self.worker_metadata[idx]["usage_count"] += 1
+        return self.worker_pool[idx], idx
+
+    def get_worker_status(self):
+        """Returns the current status of all workers in the pool"""
+        return self.worker_metadata
+
+    async def generate(self, prompt: str, system_prompt: str = None, temperature: float = 0.7, max_tokens: int = 1000) -> str:
+        """Public async wrapper for the internal generation engine"""
+        return await self._generate(system_prompt or "You are a helpful assistant.", prompt, temperature, max_tokens)
+
+    async def _generate(self, system_prompt: str, user_prompt: str, temperature: float = 0.8, max_tokens: int = 2000) -> str:
         """
-        Internal generation engine with fallback logic.
-
-        Attempts to generate content using Hugging Face (Llama-3).
-        If the inference API fails or times out, it seamlessly falls back to Google Gemini.
-
-        :param system_prompt: Instructions defining the AI's persona and constraints.
-        :param user_prompt: The specific request or context from the user.
-        :param temperature: Sampling temperature (0.0 for deterministic, 1.0 for creative).
-        :param max_tokens: Maximum length of the generated response.
-        :return: The generated text response.
+        Internal generation engine with Dynamic Load Balancing and Fallback.
         """
+        # 1. Pick the next worker from the pool
+        worker, worker_idx = self._get_next_worker()
 
-        # Attempt generation with Hugging Face first
-        if self.hf_client:
+        if worker:
             try:
-                print(f"Generating with Hugging Face ({self.hf_model})...")
+                print(f"Routing request to Worker #{worker_idx} ({self.worker_metadata[worker_idx]['name']})...")
                 messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
-                response = self.hf_client.chat_completion(
+                response = await worker.chat_completion(
                     messages=messages, max_tokens=max_tokens, temperature=temperature
                 )
+                
+                # Reset status back to ready
+                self.worker_metadata[worker_idx]["status"] = "ready"
+                
                 return response.choices[0].message.content
             except Exception as e:
-                print(f"Hugging Face failed: {e}")
-                if not self.gemini_client:
-                    raise e
-                print("Falling back to Gemini...")
+                print(f"Worker failed: {e}. Trying fallback...")
+                if worker_idx != -1:
+                    self.worker_metadata[worker_idx]["status"] = "error"
 
-        # Fallback to Gemini
+                
+        # 2. Fallback to Gemini if workers fail
         if self.gemini_client:
             try:
                 print("Generating with Gemini (gemini-2.0-flash)...")
-                response = self.gemini_client.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=user_prompt,
-                    config={
-                        "system_instruction": system_prompt,
-                        "temperature": temperature,
-                        "max_output_tokens": max_tokens,
-                    },
-                )
-                return response.text
+                async with self.gemini_client.aio as aclient:
+                    response = await aclient.models.generate_content(
+                        model="gemini-2.0-flash",
+                        contents=user_prompt,
+                        config={
+                            "system_instruction": system_prompt,
+                            "temperature": temperature,
+                            "max_output_tokens": max_tokens,
+                        },
+                    )
+                    return response.text
             except Exception as e:
                 print(f"Gemini failed: {e}")
                 raise e
@@ -198,7 +251,7 @@ Never contradict established facts from the Codex.
 
         return context
 
-    def write_scene(
+    async def write_scene(
         self, db, beat: str, word_count: int = 500, entity_ids: List[int] = None, chapter: int = None
     ) -> str:
         """Write a scene based on a beat"""
@@ -212,9 +265,9 @@ Target length: ~{word_count} words.
 
 Write the scene now:"""
 
-        return self._generate(system_prompt, user_prompt, temperature=0.8, max_tokens=2000)
+        return await self._generate(system_prompt, user_prompt, temperature=0.8, max_tokens=2000)
 
-    def rewrite_style(self, text: str, style: str) -> str:
+    async def rewrite_style(self, text: str, style: str) -> str:
         """Rewrite text in a different style"""
         style_prompts = {
             "noir": "Write in a dark, gritty noir style. Short sentences, cynical tone, shadowy atmosphere.",
@@ -227,9 +280,9 @@ Write the scene now:"""
         style_prompt = style_prompts.get(style.lower(), f"Rewrite in {style} style.")
         system_prompt = "You are a versatile editor and writer. Rewrite the user's text exactly as requested."
 
-        return self._generate(system_prompt, f"{style_prompt}\n\nRewrite:\n{text}", temperature=0.8)
+        return await self._generate(system_prompt, f"{style_prompt}\n\nRewrite:\n{text}", temperature=0.8)
 
-    def generate_description(self, entity_name: str, db) -> str:
+    async def generate_description(self, entity_name: str, db) -> str:
         """Generate sensory description for an entity"""
         entity = None
         for e in db.get_entities():
@@ -250,9 +303,9 @@ Attributes: {", ".join([f"{a['key']}: {a['value']}" for a in attrs])}
 
 Include smell, touch, sound, and sight. Make it immersive:"""
 
-        return self._generate(system_prompt, user_prompt, temperature=0.7)
+        return await self._generate(system_prompt, user_prompt, temperature=0.7)
 
-    def show_not_tell(self, text: str) -> str:
+    async def show_not_tell(self, text: str) -> str:
         """Convert telling to showing"""
         system_prompt = "You are a writing coach specializing in the 'Show, Don't Tell' technique."
         user_prompt = f"""Convert this telling prose to showing (physical actions/behaviors instead of emotions):
@@ -261,7 +314,7 @@ Include smell, touch, sound, and sight. Make it immersive:"""
 
 Rewrite with physical actions that convey the same emotions:"""
 
-        return self._generate(system_prompt, user_prompt, temperature=0.7)
+        return await self._generate(system_prompt, user_prompt, temperature=0.7)
 
 
 if __name__ == "__main__":
