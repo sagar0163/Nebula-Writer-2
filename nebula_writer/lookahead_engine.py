@@ -22,7 +22,7 @@ class LookaheadEngine:
         self.pm = plot_manager
         self.ai = ai_writer
 
-    def generate_lookahead(self) -> List[Dict]:
+    async def generate_lookahead(self) -> List[Dict]:
         """
         Generate three lookahead cards - BRD Section 4.2
         """
@@ -59,16 +59,15 @@ class LookaheadEngine:
         """
 
         # Use AIWriter's generate method
-        # Note: AIWriter uses _generate internally but exposes generate_scene which might be more suitable
         try:
             # We'll use a generic generation call
-            response = self.ai._generate(
-                prompt, system_prompt="You are an expert novelist planning the next steps of a story."
+            response = await self.ai._generate(
+                prompt, system_prompt="You are an expert novelist planning the next steps of a story.", role="architect"
             )
         except AttributeError:
-            # Fallback if _generate is private or named differently
-            response = self.ai.generate_scene(
-                prompt, system_prompt="You are an expert novelist planning the next steps of a story."
+             # Fallback
+             response = await self.ai.generate(
+                prompt, system_prompt="You are an expert novelist planning the next steps of a story.", role="architect"
             )
 
         # Extract JSON (simplified extraction)

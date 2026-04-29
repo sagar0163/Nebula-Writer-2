@@ -36,7 +36,7 @@ async def run_parallel_checks(ripple_checker, description: str, research_engine=
     """
     Runs research and ripple checks in parallel (Step 8).
     """
-    tasks = [asyncio.to_thread(ripple_checker.analyze_change, description)]
+    tasks = [ripple_checker.analyze_change(description)]
 
     if research_engine:
         # tasks.append(research_engine.perform_research(description))
