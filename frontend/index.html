@@ -7,33 +7,71 @@
     <title>Nebula-Writer | AutoNovelist</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.5);
+            --bg-deep: #050508;
+            --bg-glass: rgba(13, 13, 20, 0.7);
+            --border-glass: rgba(255, 255, 255, 0.05);
+        }
+
         body {
-            background: #0a0a0f;
+            background: var(--bg-deep);
             color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Outfit', sans-serif;
         }
 
         .glass {
-            background: rgba(18, 18, 26, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(139, 92, 246, 0.1);
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-premium {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .node-pulse {
+            position: relative;
+        }
+
+        .node-pulse::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: 0;
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(2); opacity: 0; }
         }
 
         .glow {
-            box-shadow: 0 0 40px rgba(139, 92, 246, 0.15);
+            box-shadow: 0 0 30px var(--accent-glow);
         }
 
         .card-hover {
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .card-hover:hover {
-            transform: translateY(-2px);
-            border-color: rgba(139, 92, 246, 0.3);
-            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.1);
+            transform: translateY(-4px) scale(1.01);
+            border-color: var(--accent);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
         }
 
         .input-field {
@@ -157,7 +195,7 @@
                 <div class="flex items-center gap-4">
                     <div
                         class="text-xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-                        Nebula <span class="font-light text-slate-400">v2.1</span>
+                        Nebula <span class="font-light text-slate-400">v3.0 Quantum</span>
                     </div>
                     <div class="h-6 w-[1px] bg-space-600 mx-2"></div>
                     <div class="bg-space-800 rounded-full p-1 flex gap-1 border border-space-600 shadow-inner">
@@ -175,6 +213,31 @@
                 </div>
 
                 <div class="flex items-center gap-6">
+                    <!-- Worker Pool Monitor -->
+                    <div class="hidden md:flex items-center gap-4 px-4 py-1.5 bg-white/5 rounded-2xl border border-white/5">
+                        <div v-for="worker in workerStatus" :key="worker.name" 
+                             class="flex items-center gap-2 group relative">
+                            <div :class="[
+                                'w-2 h-2 rounded-full transition-all duration-500',
+                                worker.status === 'active' ? 'bg-violet-400 glow node-pulse' : 
+                                worker.status === 'error' ? 'bg-red-500' : 'bg-slate-600'
+                            ]"></div>
+                            <span class="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">
+                                {{ worker.name.split('-')[0] }}
+                            </span>
+                            
+                            <!-- Tooltip -->
+                            <div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 glass px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] min-w-[120px] border border-white/10">
+                                <div class="text-[10px] font-bold text-violet-400 mb-1">{{ worker.name }}</div>
+                                <div class="text-[9px] text-slate-400 truncate">{{ worker.url }}</div>
+                                <div class="flex justify-between items-center mt-1">
+                                    <span class="text-[8px] text-slate-500 uppercase">Requests</span>
+                                    <span class="text-[9px] font-mono text-slate-300">{{ worker.usage_count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="flex flex-col items-end">
                         <span class="text-sm font-medium text-slate-200">{{ projectTitle }}</span>
                         <span class="text-[10px] text-slate-500 uppercase tracking-widest">Active Manuscript</span>
@@ -713,8 +776,17 @@
                         <button @click="showAddModal = false" class="text-slate-400 hover:text-white">X</button>
                     </div>
 
+                    <div v-if="modalType === 'entity' && (form.entity_type === 'character' || form.type === 'character')" class="flex gap-4 mb-4 border-b border-white/10">
+                        <button @click="entityModalTab = 'info'" 
+                                :class="entityModalTab === 'info' ? 'border-b-2 border-violet-500 text-violet-400' : 'text-slate-500'"
+                                class="pb-2 text-xs font-bold uppercase tracking-widest transition-all">Basic Info</button>
+                        <button @click="entityModalTab = 'knowledge'" 
+                                :class="entityModalTab === 'knowledge' ? 'border-b-2 border-violet-500 text-violet-400' : 'text-slate-500'"
+                                class="pb-2 text-xs font-bold uppercase tracking-widest transition-all">Knowledge Base</button>
+                    </div>
+
                     <!-- Entity Form -->
-                    <form v-if="modalType === 'entity'" @submit.prevent="saveEntity" class="space-y-4">
+                    <form v-if="modalType === 'entity' && entityModalTab === 'info'" @submit.prevent="saveEntity" class="space-y-4">
                         <input v-model="form.name" placeholder="Name" class="input-field w-full px-4 py-2 rounded-xl"
                             required>
                         <select v-model="form.entity_type" class="input-field w-full px-4 py-2 rounded-xl">
@@ -728,6 +800,61 @@
                             class="input-field w-full px-4 py-2 rounded-xl">
                         <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
                     </form>
+
+                    <!-- Knowledge Base Timeline -->
+                    <div v-if="modalType === 'entity' && entityModalTab === 'knowledge'" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                        <!-- Add Knowledge Form -->
+                        <div class="mb-6">
+                            <button v-if="!showAddKnowledgeForm" @click="showAddKnowledgeForm = true" 
+                                    class="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors">
+                                <i class="fas fa-plus-circle"></i> Add Knowledge Point
+                            </button>
+                            <div v-else class="p-4 bg-white/5 rounded-xl border border-white/10 space-y-3 animate-in fade-in slide-in-from-top-2">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">New Knowledge Point</span>
+                                    <button @click="showAddKnowledgeForm = false" class="text-slate-500 hover:text-white">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <textarea v-model="newKnowledge.content" placeholder="What does this character know? (e.g., 'Remembers the secret password to the vault')"
+                                    class="input-field w-full px-3 py-2 text-sm rounded-lg" rows="3"></textarea>
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-1">
+                                        <select v-model="newKnowledge.chapter_id" class="input-field w-full px-3 py-1.5 text-xs rounded-lg">
+                                            <option :value="0">Global (Whole Story)</option>
+                                            <option v-for="c in chapters" :key="c.id" :value="c.id">Chapter {{ c.number }}: {{ c.title }}</option>
+                                        </select>
+                                    </div>
+                                    <button @click="addKnowledge" class="btn-primary px-4 py-1.5 text-xs rounded-lg">Save</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="characterKnowledge.length === 0" class="text-center py-10 text-slate-500 italic text-sm">
+                            No knowledge tracked for this character yet.
+                        </div>
+                        <div v-for="k in characterKnowledge" :key="k.id" 
+                             class="relative pl-6 pb-6 border-l border-white/10 last:border-l-0">
+                            <div class="absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full bg-violet-500 glow"></div>
+                            <div class="flex justify-between items-center mb-1">
+                                <div class="text-[10px] font-bold text-violet-400 uppercase">
+                                    {{ k.chapter_id === 0 ? 'Global' : 'Chapter ' + k.chapter_id }}
+                                </div>
+                                <div class="text-[9px] text-slate-500">{{ formatDate(k.created_at) }}</div>
+                            </div>
+                            <div class="p-3 bg-white/5 rounded-xl border border-white/5 text-sm text-slate-300 leading-relaxed group relative">
+                                {{ k.knowledge }}
+                                <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button @click="copyToClipboard(k.knowledge)" class="text-slate-600 hover:text-violet-400" title="Copy">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button @click="deleteKnowledge(k.id)" class="text-slate-600 hover:text-red-400" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Relationship Form -->
                     <form v-if="modalType === 'relationship'" @submit.prevent="saveRelationship" class="space-y-4">
@@ -855,7 +982,14 @@
                         ],
                         architectExtractions: [],
                         rippleStatus: 'Stable',
-                        rippleReport: null
+                        rippleReport: null,
+                        
+                        // v3.0 Distributed System
+                        workerStatus: [],
+                        characterKnowledge: [],
+                        entityModalTab: 'info',
+                        showAddKnowledgeForm: false,
+                        newKnowledge: { content: '', chapter_id: 0 }
                     }
                 },
                 computed: {
@@ -912,8 +1046,57 @@
                 async mounted() {
                     await this.loadData();
                     await this.fetchChatHistory();
+                    
+                    // Poll worker status
+                    this.fetchWorkerStatus();
+                    setInterval(() => this.fetchWorkerStatus(), 2000);
                 },
                 methods: {
+                    async fetchWorkerStatus() {
+                        try {
+                            const res = await fetch('http://localhost:8000/api/system/workers');
+                            this.workerStatus = await res.json();
+                        } catch (e) { console.error("Worker fetch failed", e); }
+                    },
+                    async fetchCharacterKnowledge(entity_id) {
+                        try {
+                            const res = await fetch(`http://localhost:8000/api/character-knowledge/${entity_id}`);
+                            this.characterKnowledge = await res.json();
+                        } catch (e) { console.error("Knowledge fetch failed", e); }
+                    },
+                    async addKnowledge() {
+                        if (!this.newKnowledge.content || !this.form.id) return;
+                        try {
+                            await fetch('http://localhost:8000/api/character-knowledge', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    entity_id: this.form.id,
+                                    chapter_id: this.newKnowledge.chapter_id,
+                                    knowledge: this.newKnowledge.content
+                                })
+                            });
+                            this.newKnowledge.content = '';
+                            this.showAddKnowledgeForm = false;
+                            await this.fetchCharacterKnowledge(this.form.id);
+                        } catch (e) { console.error("Knowledge add failed", e); }
+                    },
+                    async deleteKnowledge(id) {
+                        if (!confirm('Delete this knowledge point?')) return;
+                        try {
+                            await fetch(`http://localhost:8000/api/character-knowledge/${id}`, { method: 'DELETE' });
+                            await this.fetchCharacterKnowledge(this.form.id);
+                        } catch (e) { console.error("Knowledge delete failed", e); }
+                    },
+                    formatDate(dateStr) {
+                        if (!dateStr) return '';
+                        const date = new Date(dateStr);
+                        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+                    },
+                    copyToClipboard(text) {
+                        navigator.clipboard.writeText(text);
+                        // Optional: Show a toast/alert
+                    },
                     navClass(view) {
                         return this.currentView === view ? 'bg-violet-500/20 text-violet-400' : 'text-slate-400 hover:text-white';
                     },
@@ -987,14 +1170,21 @@
                                     }
                                 })
                             });
+                            if (!res.ok) {
+                                const errData = await res.json().catch(() => ({ detail: "Server error" }));
+                                throw new Error(errData.detail || `HTTP ${res.status}`);
+                            }
+
                             const data = await res.json();
 
-                            // Push AI response to chat history (if it's not already in there from a sync)
-                            // The backend saves to DB, so we'll just push the immediate response
+                            // Push AI response to chat history
+                            // Backend might return 'message', 'response', or 'prose'
+                            const assistantMsg = data.message || data.response || data.prose || "No response content received.";
+                            
                             this.architectHistory.push({ 
                                 role: 'assistant', 
-                                content: data.message,
-                                actions: data.actions,
+                                content: assistantMsg,
+                                actions: data.actions || [],
                                 timestamp: new Date().toISOString()
                             });
 
@@ -1021,6 +1211,11 @@
                             this.scrollChat();
                         } catch (e) {
                             console.error("Chat failed", e);
+                            this.architectHistory.push({
+                                role: 'assistant',
+                                content: `⚠️ **Error:** ${e.message}. Please ensure the backend is running and has internet access to reach the AI models.`,
+                                timestamp: new Date().toISOString()
+                            });
                         } finally {
                             this.loading = false;
                         }
@@ -1193,6 +1388,7 @@
                     },
                     closeModal() {
                         this.showAddModal = false;
+                        this.entityModalTab = 'info';
                         this.form = { name: '', entity_type: 'character', description: '', current_location: '', is_alive: true, from_entity_id: null, to_entity_id: null, relationship_type: '', strength: 0.5, number: 1, title: '', content: '', planted_chapter: null, importance: 'normal', category: '', rule: '', exceptions: '' };
                     },
                     async saveEntity() {
@@ -1234,8 +1430,15 @@
                     },
                     editEntity(entity) {
                         this.form = { ...entity };
+                        this.form.entity_type = entity.type || entity.entity_type; // Ensure compatibility
                         this.modalType = 'entity';
+                        this.entityModalTab = 'info';
                         this.showAddModal = true;
+                        if (entity.type === 'character') {
+                            this.fetchCharacterKnowledge(entity.id);
+                        } else {
+                            this.characterKnowledge = [];
+                        }
                     },
                     selectChapter(chapter) {
                         this.selectedChapter = { ...chapter };

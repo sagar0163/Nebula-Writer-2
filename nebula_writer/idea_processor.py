@@ -24,7 +24,7 @@ class StoryArchitect:
         """
         self.ai = ai_writer
 
-    def process_chat(self, history: List[Dict], current_state: Dict) -> Dict:
+    async def process_chat(self, history: List[Dict], current_state: Dict) -> Dict:
         """
         Process the ongoing conversation history and identify new story elements.
 
@@ -71,7 +71,8 @@ class StoryArchitect:
         try:
             # Generate the response and extractions
             # Temperature is set to 0.5 for a balance between creativity and structural consistency.
-            response_text = self.ai._generate(system_prompt, user_message, temperature=0.5)
+            # Use the dedicated 'architect' agent space
+            response_text = await self.ai._generate(system_prompt, user_message, role="architect", temperature=0.5)
 
             # Clean and parse the JSON from the AI output
             start = response_text.find("{")

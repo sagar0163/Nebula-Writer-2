@@ -45,23 +45,24 @@ class NarrativeOrchestrator:
         self.conv = ConversationEngine(self.db, self.ai)
 
     async def handle_chat(self, message: str) -> Dict:
-        """Standard chat flow with state awareness."""
+        """Standard chat flow routed through ConversationEngine."""
         snapshot = self.nse.get_snapshot()
-        context = self.memory.build_context(snapshot, user_input=message)
-        
-        classification = self.conv.classify_intent(message)
-        if classification.intent.value == "write_chapter":
-            return await self.handle_write_scene(message)
-
-        # Default: General Chat
-        system_prompt = f"You are AutoNovelist in {snapshot.phase.value} phase. Context: {context}"
-        response = self.ai._generate(system_prompt, message)
-
-        return {
-            "response": response,
-            "intent": classification.intent.value,
-            "phase": snapshot.phase.value
+        project_state = {
+            "phase": snapshot.phase.value,
+            "momentum": snapshot.momentum_score,
+            "chapters_count": len(self.db.get_chapters())
         }
+        
+        # Use the conversation engine to process the message
+        result = await self.conv.process_message(message, project_state=project_state)
+        
+        # Add phase/context info for the UI
+        result["phase"] = snapshot.phase.value
+        
+        # Note: If intent was write_chapter, result will contain message about starting generation
+        # The frontend handles triggering the actual generation if needed, or we could handle it here.
+        
+        return result
 
     async def handle_write_scene(self, beat: str) -> Dict:
         """
@@ -106,16 +107,17 @@ class NarrativeOrchestrator:
 
         # 8. AI Generation
         system_prompt = constraints.to_system_prompt()
-        prose = self.ai._generate(system_prompt, f"Write the scene for this beat: {beat}", max_tokens=4000)
+        prose = await self.ai._generate(system_prompt, f"Write the scene for this beat: {beat}", role='writer', max_tokens=4000)
 
         # 9. Active Integrity Check (Ripple Checker)
         validation = self.ripple.validate_scene_integrity(prose, directive)
         
         # 10. Auto-Correction Loop (One Retry)
         if not validation["is_valid"]:
-            prose = self.ai._generate(
+            prose = await self.ai._generate(
                 f"{system_prompt}\n\nCRITICAL CORRECTION: {validation['correction_prompt']}", 
                 f"Rewrite the scene: {beat}", 
+                role='writer',
                 max_tokens=4000
             )
             # Final validation after retry

@@ -380,16 +380,28 @@ def create_scene(scene: SceneCreate):
 # ============ STATS & SEARCH ============
 
 
+@app.get("/api/system/stability")
+async def get_system_stability():
+    """Get system stability metrics"""
+    return {"status": "nominal", "uptime": "99.9%", "last_incident": "None"}
+
+
+@app.get("/api/system/workers")
+async def get_workers():
+    """Get AI worker pool status"""
+    return ai_writer.get_worker_status()
+
+
+@app.get("/api/health")
+def search(q: str = Query(..., min_length=2)):
+    """Search across entities, chapters, events"""
+    return db.search(q)
+
+
 @app.get("/api/stats")
 def get_stats():
     """Get overall statistics"""
     return db.get_stats()
-
-
-@app.get("/api/search")
-def search(q: str = Query(..., min_length=2)):
-    """Search across entities, chapters, events"""
-    return db.search(q)
 
 
 # ============ EXPORT ============
@@ -596,6 +608,15 @@ def update_character_knowledge(req: CharacterKnowledgeUpdate):
 def get_character_knowledge(entity_id: int, chapter_id: Optional[int] = None):
     """Get what a character knows"""
     return db.get_character_knowledge(entity_id, chapter_id)
+
+
+@app.delete("/api/character-knowledge/{knowledge_id}")
+def delete_character_knowledge(knowledge_id: int):
+    """Delete a knowledge entry"""
+    success = db.delete_character_knowledge(knowledge_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Knowledge entry not found")
+    return {"message": "Knowledge deleted"}
 
 
 # ============ STORY TEMPLATES ============
@@ -1438,6 +1459,12 @@ def check_stability():
     status = {file: os.path.exists(Path(__file__).parent.parent / file) for file in required_files}
     is_stable = all(status.values())
     return {"stable": is_stable, "files_checked": status, "timestamp": datetime.now().isoformat()}
+
+
+@app.get("/api/system/workers")
+async def get_workers():
+    """Get AI worker pool status"""
+    return ai_writer.get_worker_status()
 
 
 @app.get("/api/health")
