@@ -861,6 +861,15 @@ class CodexDatabase:
             conn.close()
             return knowledge_id
 
+    def delete_character_knowledge(self, knowledge_id: int) -> bool:
+        """Delete a specific knowledge entry"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM character_knowledge WHERE id = ?", (knowledge_id,))
+        conn.commit()
+        conn.close()
+        return cursor.rowcount > 0
+
     def get_character_knowledge(self, entity_id: int, chapter_id: int = None) -> List[Dict]:
         """Get what a character knows"""
         conn = self._get_connection()
