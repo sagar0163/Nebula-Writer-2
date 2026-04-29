@@ -122,18 +122,44 @@ class MemorySystem:
         return summary
 
     def rebuild_index(self, db):
-        """Rebuild entire index from database"""
-        # Index all chapters
+        """Rebuild entire index from database using batch upserts"""
+        # 1. Batch Index Chapters
         chapters = db.get_chapters()
+        chapter_docs = []
+        chapter_ids = []
+        chapter_metas = []
+
         for ch in chapters:
             summary = ch.get("summary") or f"Chapter {ch['number']}: {ch.get('title', 'Untitled')}"
-            self.index_chapter(ch["id"], summary, ch.get("content", ""))
+            content = ch.get("content", "")
+            doc = f"{summary}\n\n{content[:1000]}" if content else summary
+            
+            chapter_docs.append(doc)
+            chapter_ids.append(str(ch["id"]))
+            chapter_metas.append({"chapter_id": ch["id"]})
 
-        # Index all entities
+        if chapter_ids:
+            self.chapters.upsert(ids=chapter_ids, documents=chapter_docs, metadatas=chapter_metas)
+
+        # 2. Batch Index Entities
         entities = db.get_entities()
+        entity_docs = []
+        entity_ids = []
+        entity_metas = []
+
         for e in entities:
             attrs = db.get_attributes(e["id"])
-            self.index_entity(e["id"], e["name"], e.get("description", ""), attrs)
+            attr_str = ", ".join([f"{a['key']}: {a['value']}" for a in attrs])
+            doc = f"{e['name']}: {e.get('description', '')}"
+            if attr_str:
+                doc += f" | {attr_str}"
+            
+            entity_docs.append(doc)
+            entity_ids.append(str(e["id"]))
+            entity_metas.append({"entity_id": e["id"], "name": e["name"]})
+
+        if entity_ids:
+            self.entities.upsert(ids=entity_ids, documents=entity_docs, metadatas=entity_metas)
 
         return {"indexed_chapters": len(chapters), "indexed_entities": len(entities)}
 

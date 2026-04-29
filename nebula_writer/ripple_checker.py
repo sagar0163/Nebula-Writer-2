@@ -4,7 +4,7 @@ Detects narrative inconsistencies and cascading effects of story changes.
 """
 
 import json
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from nebula_writer.audit import StoryAuditor
 
@@ -20,7 +20,7 @@ class RippleChecker:
         self.ai = ai_writer
         self.auditor = StoryAuditor(db)
 
-    def analyze_change(self, change_description: str, context: Dict = None) -> Dict:
+    async def analyze_change(self, change_description: str, context: Dict = None) -> Dict:
         """
         Analyze a proposed change for ripple effects.
         :param change_description: Natural language description of the change.
@@ -28,7 +28,7 @@ class RippleChecker:
         :return: Ripple report dictionary.
         """
         # 1. AI Prediction of affected areas
-        prediction = self._predict_ripples(change_description, context)
+        prediction = await self._predict_ripples(change_description, context)
 
         # 2. Structural Audit (immediate contradictions)
         structural_issues = self._audit_for_change(change_description)
@@ -42,7 +42,7 @@ class RippleChecker:
             "requires_manual_review": True,
         }
 
-    def _predict_ripples(self, change: str, context: Dict = None) -> Dict:
+    async def _predict_ripples(self, change: str, context: Dict = None) -> Dict:
         """Use AI to predict narrative ripple effects"""
         system_prompt = """You are a Narrative Consistency Expert.
         Analyze the proposed story change and predict how it will ripple through the existing world, character arcs, and plot threads.
@@ -68,7 +68,7 @@ class RippleChecker:
         prompt = f"CHANGE: {change}\nCONTEXT: {json.dumps(context or {})}\nSTORY STATE: {json.dumps(story_state)}"
 
         try:
-            response = self.ai.generate(prompt, system_prompt=system_prompt)
+            response = await self.ai.generate(prompt, system_prompt=system_prompt, role="ripple")
             # Find JSON
             start = response.find("{")
             end = response.rfind("}") + 1

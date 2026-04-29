@@ -1,10 +1,11 @@
+import asyncio
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from nebula_writer.ai_client import AIClient
+from nebula_writer.ai_writer import AIWriter
 
 
 class IntentType(Enum):
@@ -21,6 +22,7 @@ class IntentType(Enum):
     ADD_COMMENT = "add_comment"
     PLOT_DIRECTION = "plot_direction"
     GENERAL_CHAT = "general_chat"
+    CONSISTENCY_CHECK = "consistency_check"
     UNKNOWN = "unknown"
 
 
@@ -41,9 +43,9 @@ class ConversationEngine:
     Understands user intent and routes to appropriate subsystem
     """
 
-    def __init__(self, db, ai_client=None):
+    def __init__(self, db, ai_writer=None):
         self.db = db
-        self.ai = ai_client or AIClient()
+        self.ai = ai_writer or AIWriter()
         # Load history from DB on init
         self.conversation_history: List[Dict] = self.db.load_conversation()
         self.current_focus: Optional[Dict] = None  # What we're currently working on
@@ -104,6 +106,10 @@ class ConversationEngine:
                 r"(comment|note|feedback|suggestion)",
                 r"(should be|would be better if)",
             ],
+            IntentType.CONSISTENCY_CHECK: [
+                r"(audit|consistency|conflict|contradiction|check|verify|logic|issue)",
+                r"(is it consistent|any issues|check for conflicts)",
+            ],
         }
 
         # Check each intent
@@ -114,13 +120,7 @@ class ConversationEngine:
                         intent=intent_type, confidence=0.8, extracted_info=self._extract_info(message, intent_type)
                     )
 
-        # Use AI for ambiguous cases
-        if project_state and len(self.conversation_history) > 2:
-            # Use AI classification for complex queries
-            intent = self._ai_classify_intent(message, project_state)
-            if intent.confidence > 0.6:
-                return intent
-
+        # Use AI for ambiguous cases (Moved to process_message for async support)
         return ClassifiedIntent(intent=IntentType.GENERAL_CHAT, confidence=0.5, extracted_info={})
 
     def _extract_info(self, message: str, intent: IntentType) -> Dict:
@@ -157,7 +157,7 @@ class ConversationEngine:
 
         return info
 
-    def _ai_classify_intent(self, message: str, project_state: Dict) -> ClassifiedIntent:
+    async def _ai_classify_intent(self, message: str, project_state: Dict) -> ClassifiedIntent:
         """Use AI to classify ambiguous intent"""
         prompt = f"""
 Classify this user message into one intent type:
@@ -175,6 +175,7 @@ Available intents:
 - approve_chapter: Approving current chapter
 - plot_direction: Changing story direction
 - add_comment: Leaving feedback/comment
+- consistency_check: Auditing story for contradictions
 - general_chat: Everything else
 
 Also extract any relevant info (entity names, attributes, etc.) in JSON format.
@@ -183,13 +184,15 @@ Respond as: intent|confidence|{{"key": "value"}}
         """
 
         try:
-            response = self.ai.generate(prompt, temperature=0.3)
+            # Use 'architect' agent for intent classification
+            response = await self.ai.generate(prompt, system_prompt="You are a story project assistant. Classify the user intent.", role="architect", temperature=0.1)
             parts = response.strip().split("|")
             if len(parts) >= 2:
                 intent_name = parts[0].strip()
                 confidence = float(parts[1])
                 try:
-                    extracted = eval(parts[2]) if len(parts) > 2 else {}
+                    import json
+                    extracted = json.loads(parts[2]) if len(parts) > 2 else {}
                 except:
                     extracted = {}
 
@@ -204,7 +207,7 @@ Respond as: intent|confidence|{{"key": "value"}}
 
         return ClassifiedIntent(IntentType.UNKNOWN, 0.3, {})
 
-    def process_message(self, message: str, project_state: Dict = None) -> Dict:
+    async def process_message(self, message: str, project_state: Dict = None) -> Dict:
         """
         Main entry point - process user message
         Returns AI response and any actions taken
@@ -213,14 +216,17 @@ Respond as: intent|confidence|{{"key": "value"}}
         # Add to history
         self.conversation_history.append({"role": "user", "content": message, "timestamp": datetime.now().isoformat()})
 
-        # Classify intent (deterministic - no AI needed)
+        # Classify intent (deterministic)
         intent = self.classify_intent(message, project_state)
-
-        # Build minimal context for AI generation later
-        # Don't build full context yet - only when needed
+        
+        # If unknown, try AI classification
+        if intent.intent == IntentType.GENERAL_CHAT and project_state:
+             ai_intent = await self._ai_classify_intent(message, project_state)
+             if ai_intent.confidence > 0.6:
+                 intent = ai_intent
 
         # Route to appropriate handler
-        response = self.route_intent(intent, message, project_state)
+        response = await self.route_intent(intent, message, project_state)
 
         # Add AI response to history (truncated for token savings)
         self.conversation_history.append(
@@ -237,7 +243,7 @@ Respond as: intent|confidence|{{"key": "value"}}
 
         return response
 
-    def route_intent(self, intent: ClassifiedIntent, message: str, state: Dict) -> Dict:
+    async def route_intent(self, intent: ClassifiedIntent, message: str, state: Dict) -> Dict:
         """Route to appropriate handler"""
         handlers = {
             IntentType.NEW_PROJECT: self._handle_new_project,
@@ -250,10 +256,13 @@ Respond as: intent|confidence|{{"key": "value"}}
             IntentType.APPROVE_CHAPTER: self._handle_approve,
             IntentType.PLOT_DIRECTION: self._handle_plot_direction,
             IntentType.ADD_COMMENT: self._handle_comment,
+            IntentType.CONSISTENCY_CHECK: self._handle_consistency_check,
             IntentType.GENERAL_CHAT: self._handle_general_chat,
         }
 
         handler = handlers.get(intent.intent, self._handle_unknown)
+        if asyncio.iscoroutinefunction(handler):
+            return await handler(message, intent, state)
         return handler(message, intent, state)
 
     def _handle_new_project(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
@@ -326,27 +335,49 @@ Respond as: intent|confidence|{{"key": "value"}}
             "ui_update": {"show_revision": True},
         }
 
-    def _handle_question(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
-        """Answer question about story"""
-        # Query Codex and provide answer
-        from nebula_writer.plot_manager import create_plot_manager
+    async def _handle_question(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
+        """Answer question about story using RAG and AI"""
+        # 1. Semantic search for context
+        from nebula_writer.memory import MemorySystem
+        memory = MemorySystem()
+        
+        # Search entities and chapters
+        entity_context = memory.search_entities(message, n_results=3)
+        chapter_context = memory.search_chapters(message, n_results=2)
+        
+        context_str = "RELEVANT CONTEXT:\n"
+        for e in entity_context:
+            context_str += f"- Entity: {e['metadata'].get('name')} ({e['metadata'].get('type')}): {e['document']}\n"
+        for c in chapter_context:
+            context_str += f"- Chapter {c['metadata'].get('chapter_id')} Summary: {c['document']}\n"
 
-        create_plot_manager()
+        # 2. Generate response with AI
+        system_prompt = f"""You are the Nebula-Writer Story Oracle. 
+Your goal is to answer questions about the user's novel based on the provided context.
+If the information is not in the context, say you don't know yet, but offer to help brainstorm it.
 
-        # Simple keyword search
-        entities = self.db.get_entities()
-        for e in entities:
-            if e["name"].lower() in message.lower():
-                attrs = self.db.get_attributes(e["id"])
-                return {
-                    "message": f"{e['name']}: {e.get('description', '')}\nKey attributes: {', '.join([a['key'] + ': ' + a['value'] for a in attrs[:5]])}",
-                    "actions": [{"type": "codex_query", "entity_id": e["id"]}],
-                }
-
-        return {
-            "message": "I can look that up in the Codex. Could you be more specific about what you want to know?",
-            "actions": [],
-        }
+{context_str}
+"""
+        try:
+            response = await self.ai.generate(message, system_prompt=system_prompt, role="architect", temperature=0.3)
+            return {
+                "message": response,
+                "actions": [{"type": "rag_query", "context_used": True}],
+            }
+        except Exception as e:
+            # Fallback to simple matching if AI fails
+            entities = self.db.get_entities()
+            for e in entities:
+                if e["name"].lower() in message.lower():
+                    attrs = self.db.get_attributes(e["id"])
+                    return {
+                        "message": f"[Fallback] {e['name']}: {e.get('description', 'No description')}\nAttributes: {', '.join([a['key'] + ': ' + a['value'] for a in attrs])}",
+                        "actions": [],
+                    }
+            return {
+                "message": "I'm having trouble accessing my creative core right now, but I'm here to help with your novel! You can ask me about characters, plot, or say 'write the next chapter'.",
+                "actions": [],
+            }
 
     def _handle_research_query(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
         """Handle research query"""
@@ -401,17 +432,61 @@ Respond as: intent|confidence|{{"key": "value"}}
             "actions": [{"type": "comment_received", "comment": message}],
             "ui_update": {"needs_revision": True},
         }
+    
+    async def _handle_consistency_check(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
+        """Audit the story for consistency issues using AI and structural audit"""
+        from nebula_writer.ripple_checker import create_ripple_checker
+        checker = create_ripple_checker(self.db, self.ai)
+        
+        # Get last chapter
+        chapters = self.db.get_chapters()
+        last_chapter_content = chapters[-1]['content'] if chapters else ""
+        
+        # Perform deeper analysis
+        # We'll ask the ripple checker to analyze the "consistency of the latest manuscript"
+        report = await checker.analyze_change("Verify consistency of current manuscript against the Codex facts.", context={"manuscript": last_chapter_content[:2000]})
+        
+        issues = report.get("structural_contradictions", [])
+        ripples = report.get("predicted_ripples", [])
+        
+        if not issues and not ripples:
+            return {
+                "message": "I've analyzed the story elements. Everything aligns with the Codex facts! No contradictions or logic gaps detected.",
+                "actions": [{"type": "consistency_audit_completed", "status": "clear"}]
+            }
+        
+        # Combine issues and ripples into a helpful response
+        message_out = "I've performed a Narrative Ripple Analysis. Here's what I found:\n\n"
+        
+        if issues:
+            message_out += "**Contradictions Found:**\n"
+            for issue in issues[:3]:
+                # Format from StoryAuditor result
+                msg = issue.get('message') or issue.get('description') or "General conflict"
+                message_out += f"- {msg}\n"
+        
+        if ripples:
+            message_out += "\n**Potential Narrative Gaps:**\n"
+            for ripple in ripples[:3]:
+                message_out += f"- {ripple['target']}: {ripple['effect']} (Severity: {ripple['severity']})\n"
 
-    def _handle_general_chat(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
+        return {
+            "message": message_out + "\nWould you like me to help you resolve these conflicts?",
+            "actions": [{"type": "consistency_audit_completed", "status": "issues_found", "report": report}],
+            "ui_update": {"show_consistency_modal": True}
+        }
+
+    async def _handle_general_chat(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
         """General conversation"""
         prompt = f"You are AutoNovelist AI assistant. User says: '{message}'. Provide helpful, conversational response about their novel project."
 
         try:
-            response = self.ai.generate(prompt, temperature=0.7)
+            # Use 'writer' agent for general chat
+            response = await self.ai.generate(prompt, role="writer", temperature=0.7)
             return {"message": response, "actions": []}
         except:
             return {
-                "message": "I'm here to help with your novel. You can ask me about characters, plot, or say 'write the next chapter'.",
+                "message": "I'm your creative co-pilot for this novel. I can help with character profiles, plot brainstorming, and identifying consistency issues. What's on your mind?",
                 "actions": [],
             }
 
