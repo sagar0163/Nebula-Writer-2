@@ -4,7 +4,7 @@ import torch
 import os
 
 # Optimization: Contextual Intelligence with Memory Offloading
-model_id = "google/gemma-4-E2B"
+model_id = "google/gemma-4-E2B-it"
 token = os.environ.get("HUGGINGFACE_TOKEN")
 
 print("BOOT: Starting Gemma 4-E2B (Text-Optimized Mode)...")
@@ -31,11 +31,19 @@ except Exception as e:
 else:
     def chat(message, history):
         try:
-            prompt = ""
+            messages = []
             for user_msg, bot_msg in history:
-                prompt += f"<start_of_turn>user\n{user_msg}<end_of_turn>\n"
-                prompt += f"<start_of_turn>model\n{bot_msg}<end_of_turn>\n"
-            prompt += f"<start_of_turn>user\n{message}<end_of_turn>\n<start_of_turn>model\n"
+                messages.append({"role": "user", "content": user_msg})
+                messages.append({"role": "assistant", "content": bot_msg})
+            messages.append({"role": "user", "content": message})
+            
+            # Use the instruct model's built-in chat template
+            prompt = processor.apply_chat_template(
+                messages, 
+                tokenize=False, 
+                add_generation_prompt=True,
+                enable_thinking=False
+            )
                 
             inputs = processor(text=prompt, return_tensors="pt")
             
