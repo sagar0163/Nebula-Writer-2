@@ -1,4 +1,5 @@
 # Python
+.venv/
 venv/
 env/
 __pycache__/
@@ -34,6 +35,7 @@ data/
 *.swp
 *.swo
 *~
+scratch/
 
 # OS
 .DS_Store
