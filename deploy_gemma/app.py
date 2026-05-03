@@ -31,19 +31,11 @@ except Exception as e:
 else:
     def chat(message, history):
         try:
-            messages = []
+            prompt = ""
             for user_msg, bot_msg in history:
-                messages.append({"role": "user", "content": user_msg})
-                messages.append({"role": "assistant", "content": bot_msg})
-            messages.append({"role": "user", "content": message})
-            
-            # Apply Gemma's chat template
-            if hasattr(processor, "apply_chat_template"):
-                prompt = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-            elif hasattr(processor, "tokenizer") and hasattr(processor.tokenizer, "apply_chat_template"):
-                prompt = processor.tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
-            else:
-                prompt = message
+                prompt += f"<start_of_turn>user\n{user_msg}<end_of_turn>\n"
+                prompt += f"<start_of_turn>model\n{bot_msg}<end_of_turn>\n"
+            prompt += f"<start_of_turn>user\n{message}<end_of_turn>\n<start_of_turn>model\n"
                 
             inputs = processor(text=prompt, return_tensors="pt")
             
