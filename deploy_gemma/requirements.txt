@@ -1,0 +1,9 @@
+transformers>=4.45.0
+torch
+torchvision
+accelerate
+huggingface-hub
+gradio>=4.0.0
+bitsandbytes
+sentencepiece
+protobuf
