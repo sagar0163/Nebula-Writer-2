@@ -65,8 +65,8 @@ class LookaheadEngine:
                 prompt, system_prompt="You are an expert novelist planning the next steps of a story.", role="architect"
             )
         except AttributeError:
-             # Fallback
-             response = await self.ai.generate(
+            # Fallback
+            response = await self.ai.generate(
                 prompt, system_prompt="You are an expert novelist planning the next steps of a story.", role="architect"
             )
 
