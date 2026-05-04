@@ -3,8 +3,6 @@ Nebula-Writer Audit Module
 Detects contradictions in story chapters
 """
 
-import sys
-from pathlib import Path
 from typing import Dict, List
 
 from nebula_writer.codex import CodexDatabase
