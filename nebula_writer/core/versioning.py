@@ -66,28 +66,24 @@ class VersioningService:
         """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
+
         cursor.execute("SELECT data FROM codex_snapshots WHERE id = ?", (snapshot_id_a,))
         data_a = json.loads(cursor.fetchone()[0])
-        
+
         cursor.execute("SELECT data FROM codex_snapshots WHERE id = ?", (snapshot_id_b,))
         data_b = json.loads(cursor.fetchone()[0])
         conn.close()
 
-        diff = {
-            "entity_changes": [],
-            "relationship_changes": [],
-            "narrative_drift_detected": False
-        }
+        diff = {"entity_changes": [], "relationship_changes": [], "narrative_drift_detected": False}
 
         # Compare entities
-        entities_a = {e['id']: e for e in data_a['entities']}
-        entities_b = {e['id']: e for e in data_b['entities']}
+        entities_a = {e["id"]: e for e in data_a["entities"]}
+        entities_b = {e["id"]: e for e in data_b["entities"]}
 
         for eid, e_b in entities_b.items():
             if eid not in entities_a:
                 diff["entity_changes"].append(f"Added character: {e_b['name']}")
-            elif e_b['description'] != entities_a[eid]['description']:
+            elif e_b["description"] != entities_a[eid]["description"]:
                 diff["entity_changes"].append(f"Modified character: {e_b['name']} (Potential drift in motivation)")
                 diff["narrative_drift_detected"] = True
 
