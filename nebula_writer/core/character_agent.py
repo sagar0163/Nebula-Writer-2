@@ -40,18 +40,18 @@ class CharacterAgent:
         Calculates resistance levels and conflict stances.
         """
         persona = self.derive_persona()
-        
+
         # 1. Determine Emotional State
         emotional_state = "anxious" if persona.get("fears") else "neutral"
-        
+
         # 2. Determine Conflict Stance & Resistance
         resistance = 0.7 if "goal" in scene_context.lower() else 0.3
         stance = "resistant" if resistance > 0.5 else "cooperative"
-        
+
         # 3. Intended Action
         goals = persona.get("goals", [])
         intended_action = f"Protect {goals[0] if goals else 'self'}"
-        
+
         return {
             "entity_id": self.entity_id,
             "name": persona.get("name", "Unknown"),
@@ -59,7 +59,7 @@ class CharacterAgent:
             "conflict_stance": stance,
             "resistance_level": resistance,
             "intended_actions": [intended_action],
-            "voice_directive": persona.get("voice", "Neutral")
+            "voice_directive": persona.get("voice", "Neutral"),
         }
 
     def simulate_action(self, scenario: str) -> str:
