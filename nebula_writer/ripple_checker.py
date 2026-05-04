@@ -94,7 +94,7 @@ class RippleChecker:
         Returns a detailed report of any violations.
         """
         violations = []
-        
+
         # 1. Check constraints
         for constraint in directive.constraints:
             # Simple keyword matching for demo; real version uses semantic scoring
@@ -104,12 +104,14 @@ class RippleChecker:
         # 2. Check Anchor Consistency
         for anchor in directive.active_anchors:
             # Check if prose contradicts major anchors
-            pass 
+            pass
 
         return {
             "is_valid": len(violations) == 0,
             "violations": violations,
-            "correction_prompt": f"The following narrative constraints were violated: {', '.join(violations)}. Please rewrite the scene to adhere to these rules." if violations else None
+            "correction_prompt": f"The following narrative constraints were violated: {', '.join(violations)}. Please rewrite the scene to adhere to these rules."
+            if violations
+            else None,
         }
 
 
