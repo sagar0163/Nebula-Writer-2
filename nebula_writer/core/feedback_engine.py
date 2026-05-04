@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List
+from typing import Dict
 
 
 class FeedbackType(Enum):
@@ -30,13 +30,13 @@ class FeedbackEngine:
     def parse_feedback(self, feedback_text: str) -> Dict:
         """Classifies feedback and returns suggested bias updates."""
         feedback_text = feedback_text.lower()
-        
+
         updates = {}
         if "too slow" in feedback_text or "faster" in feedback_text:
             updates["pacing_bias"] = "fast"
         elif "too fast" in feedback_text or "slower" in feedback_text:
             updates["pacing_bias"] = "slow"
-            
+
         if "darker" in feedback_text or "grim" in feedback_text:
             updates["tone_bias"] = "dark"
         elif "lighter" in feedback_text or "funny" in feedback_text:
@@ -49,7 +49,7 @@ class FeedbackEngine:
         for key, value in updates.items():
             if hasattr(self.profile, key):
                 setattr(self.profile, key, value)
-        
+
         # In a real implementation, this would persist to the DB per project
         # self.db.update_style_profile(self.profile.__dict__)
 
