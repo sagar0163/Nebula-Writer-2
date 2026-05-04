@@ -31,4 +31,4 @@ python-multipart>=0.0.6
 rich>=13.7.0
 
 # Export (optional - uncomment if needed)
-# reportlab>=4.0  # Pure Python PDF generation
+reportlab>=4.0  # Pure Python PDF generation
