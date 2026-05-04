@@ -185,13 +185,19 @@ Respond as: intent|confidence|{{"key": "value"}}
 
         try:
             # Use 'architect' agent for intent classification
-            response = await self.ai.generate(prompt, system_prompt="You are a story project assistant. Classify the user intent.", role="architect", temperature=0.1)
+            response = await self.ai.generate(
+                prompt,
+                system_prompt="You are a story project assistant. Classify the user intent.",
+                role="architect",
+                temperature=0.1,
+            )
             parts = response.strip().split("|")
             if len(parts) >= 2:
                 intent_name = parts[0].strip()
                 confidence = float(parts[1])
                 try:
                     import json
+
                     extracted = json.loads(parts[2]) if len(parts) > 2 else {}
                 except:
                     extracted = {}
@@ -218,12 +224,12 @@ Respond as: intent|confidence|{{"key": "value"}}
 
         # Classify intent (deterministic)
         intent = self.classify_intent(message, project_state)
-        
+
         # If unknown, try AI classification
         if intent.intent == IntentType.GENERAL_CHAT and project_state:
-             ai_intent = await self._ai_classify_intent(message, project_state)
-             if ai_intent.confidence > 0.6:
-                 intent = ai_intent
+            ai_intent = await self._ai_classify_intent(message, project_state)
+            if ai_intent.confidence > 0.6:
+                intent = ai_intent
 
         # Route to appropriate handler
         response = await self.route_intent(intent, message, project_state)
@@ -339,12 +345,13 @@ Respond as: intent|confidence|{{"key": "value"}}
         """Answer question about story using RAG and AI"""
         # 1. Semantic search for context
         from nebula_writer.memory import MemorySystem
+
         memory = MemorySystem()
-        
+
         # Search entities and chapters
         entity_context = memory.search_entities(message, n_results=3)
         chapter_context = memory.search_chapters(message, n_results=2)
-        
+
         context_str = "RELEVANT CONTEXT:\n"
         for e in entity_context:
             context_str += f"- Entity: {e['metadata'].get('name')} ({e['metadata'].get('type')}): {e['document']}\n"
@@ -352,7 +359,7 @@ Respond as: intent|confidence|{{"key": "value"}}
             context_str += f"- Chapter {c['metadata'].get('chapter_id')} Summary: {c['document']}\n"
 
         # 2. Generate response with AI
-        system_prompt = f"""You are the Nebula-Writer Story Oracle. 
+        system_prompt = f"""You are the Nebula-Writer Story Oracle.
 Your goal is to answer questions about the user's novel based on the provided context.
 If the information is not in the context, say you don't know yet, but offer to help brainstorm it.
 
@@ -432,39 +439,43 @@ If the information is not in the context, say you don't know yet, but offer to h
             "actions": [{"type": "comment_received", "comment": message}],
             "ui_update": {"needs_revision": True},
         }
-    
+
     async def _handle_consistency_check(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
         """Audit the story for consistency issues using AI and structural audit"""
         from nebula_writer.ripple_checker import create_ripple_checker
+
         checker = create_ripple_checker(self.db, self.ai)
-        
+
         # Get last chapter
         chapters = self.db.get_chapters()
-        last_chapter_content = chapters[-1]['content'] if chapters else ""
-        
+        last_chapter_content = chapters[-1]["content"] if chapters else ""
+
         # Perform deeper analysis
         # We'll ask the ripple checker to analyze the "consistency of the latest manuscript"
-        report = await checker.analyze_change("Verify consistency of current manuscript against the Codex facts.", context={"manuscript": last_chapter_content[:2000]})
-        
+        report = await checker.analyze_change(
+            "Verify consistency of current manuscript against the Codex facts.",
+            context={"manuscript": last_chapter_content[:2000]},
+        )
+
         issues = report.get("structural_contradictions", [])
         ripples = report.get("predicted_ripples", [])
-        
+
         if not issues and not ripples:
             return {
                 "message": "I've analyzed the story elements. Everything aligns with the Codex facts! No contradictions or logic gaps detected.",
-                "actions": [{"type": "consistency_audit_completed", "status": "clear"}]
+                "actions": [{"type": "consistency_audit_completed", "status": "clear"}],
             }
-        
+
         # Combine issues and ripples into a helpful response
         message_out = "I've performed a Narrative Ripple Analysis. Here's what I found:\n\n"
-        
+
         if issues:
             message_out += "**Contradictions Found:**\n"
             for issue in issues[:3]:
                 # Format from StoryAuditor result
-                msg = issue.get('message') or issue.get('description') or "General conflict"
+                msg = issue.get("message") or issue.get("description") or "General conflict"
                 message_out += f"- {msg}\n"
-        
+
         if ripples:
             message_out += "\n**Potential Narrative Gaps:**\n"
             for ripple in ripples[:3]:
@@ -473,7 +484,7 @@ If the information is not in the context, say you don't know yet, but offer to h
         return {
             "message": message_out + "\nWould you like me to help you resolve these conflicts?",
             "actions": [{"type": "consistency_audit_completed", "status": "issues_found", "report": report}],
-            "ui_update": {"show_consistency_modal": True}
+            "ui_update": {"show_consistency_modal": True},
         }
 
     async def _handle_general_chat(self, message: str, intent: ClassifiedIntent, state: Dict) -> Dict:
