@@ -133,7 +133,7 @@ class MemorySystem:
             summary = ch.get("summary") or f"Chapter {ch['number']}: {ch.get('title', 'Untitled')}"
             content = ch.get("content", "")
             doc = f"{summary}\n\n{content[:1000]}" if content else summary
-            
+
             chapter_docs.append(doc)
             chapter_ids.append(str(ch["id"]))
             chapter_metas.append({"chapter_id": ch["id"]})
@@ -153,7 +153,7 @@ class MemorySystem:
             doc = f"{e['name']}: {e.get('description', '')}"
             if attr_str:
                 doc += f" | {attr_str}"
-            
+
             entity_docs.append(doc)
             entity_ids.append(str(e["id"]))
             entity_metas.append({"entity_id": e["id"], "name": e["name"]})
