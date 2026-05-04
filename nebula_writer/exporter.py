@@ -4,7 +4,6 @@ Export story to various formats (JSON, Markdown, HTML, ePub)
 """
 
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
@@ -256,6 +255,97 @@ p.first { text-indent: 0; }
             .replace('"', "&quot;")
             .replace("'", "&apos;")
         )
+
+    def to_pdf(self) -> bytes:
+        """Generate actual PDF using reportlab"""
+        from io import BytesIO
+
+        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import inch
+        from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
+
+        chapters = self.db.get_chapters()
+        entities = self.db.get_entities()
+
+        # Create buffer
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+
+        # Container for the 'Flowable' objects
+        elements = []
+
+        # Define styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "CustomTitle", parent=styles["Heading1"], fontSize=24, spaceAfter=30, alignment=TA_CENTER
+        )
+        heading_style = ParagraphStyle(
+            "CustomHeading", parent=styles["Heading2"], fontSize=18, spaceAfter=12, alignment=TA_LEFT
+        )
+        subheading_style = ParagraphStyle(
+            "CustomSubheading", parent=styles["Heading3"], fontSize=16, spaceAfter=12, alignment=TA_LEFT
+        )
+        normal_style = ParagraphStyle(
+            "CustomNormal",
+            parent=styles["Normal"],
+            fontSize=12,
+            spaceAfter=12,
+            alignment=TA_JUSTIFY,
+            firstLineIndent=24,
+        )
+        character_style = ParagraphStyle(
+            "CharacterStyle", parent=styles["Normal"], fontSize=12, spaceAfter=6, alignment=TA_LEFT, leftIndent=24
+        )
+
+        # Title page
+        elements.append(Paragraph("MANUSCRIPT", title_style))
+        elements.append(Paragraph("A Novel", styles["Italic"]))
+        elements.append(Spacer(1, 2 * inch))
+
+        # Characters section
+        elements.append(Paragraph("CHARACTERS", heading_style))
+        elements.append(Spacer(1, 0.2 * inch))
+
+        character_entities = [e for e in entities if e.get("type") == "character"]
+        for e in character_entities:
+            elements.append(Paragraph(f"<b>{e['name']}</b>", character_style))
+            if e.get("description"):
+                elements.append(Paragraph(e["description"], normal_style))
+            # Add attributes
+            attrs = self.db.get_attributes(e["id"])
+            if attrs:
+                attr_text = ", ".join([f"{a['key']}: {a['value']}" for a in attrs])
+                elements.append(Paragraph(f"<i>{attr_text}</i>", normal_style))
+            elements.append(Spacer(1, 0.1 * inch))
+
+        elements.append(PageBreak())
+
+        # Chapters
+        elements.append(Paragraph("CHAPTERS", heading_style))
+        elements.append(Spacer(1, 0.2 * inch))
+
+        for ch in sorted(chapters, key=lambda x: x["number"]):
+            elements.append(Paragraph(f"Chapter {ch['number']}: {ch.get('title', 'Untitled')}", subheading_style))
+            if ch.get("summary"):
+                elements.append(Paragraph(f"<i>{ch['summary']}</i>", normal_style))
+
+            content = ch.get("content", "")
+            if content:
+                # Split into paragraphs and add them
+                paragraphs = content.split("\n\n")
+                for para in paragraphs:
+                    if para.strip():
+                        elements.append(Paragraph(para, normal_style))
+            elements.append(Spacer(1, 0.2 * inch))
+
+        # Build PDF
+        doc.build(elements)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+
+        return pdf_bytes
 
     def to_pdf_html(self) -> str:
         """Generate HTML optimized for PDF conversion"""
