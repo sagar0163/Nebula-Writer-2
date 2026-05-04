@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List
-from nebula_writer.core.narrative_state_engine import NarrativeSnapshot, NarrativePhase
+from typing import List
+
+from nebula_writer.core.narrative_state_engine import NarrativePhase, NarrativeSnapshot
 
 
 class ScenePurpose(Enum):
@@ -67,7 +68,7 @@ class NarrativeIntentEngine:
             return ScenePurpose.INTRODUCE_CONFLICT
         if snapshot.phase == NarrativePhase.CLIMAX:
             return ScenePurpose.REVEAL
-        
+
         # Mid-story escalation logic
         if snapshot.momentum_score < 0.5:
             return ScenePurpose.ESCALATE
