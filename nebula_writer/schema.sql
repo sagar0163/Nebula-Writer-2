@@ -173,6 +173,22 @@ CREATE TABLE IF NOT EXISTS research_citations (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Inline Comments (NEW)
+CREATE TABLE IF NOT EXISTS inline_comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    context_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    user_comment TEXT NOT NULL,
+    highlighted_text TEXT,
+    start_offset INTEGER,
+    end_offset INTEGER,
+    status TEXT DEFAULT 'open',
+    ai_response TEXT,
+    resolution_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ========== INDEXES ==========
 
 CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type);
@@ -210,6 +226,7 @@ ALTER TABLE foreshadowing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE world_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE voice_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE research_citations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inline_comments ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read/write (for demo - in production, restrict to authenticated users)
 CREATE POLICY "Allow all for entities" ON entities FOR ALL USING (true);
@@ -227,3 +244,4 @@ CREATE POLICY "Allow all for foreshadowing" ON foreshadowing FOR ALL USING (true
 CREATE POLICY "Allow all for world_rules" ON world_rules FOR ALL USING (true);
 CREATE POLICY "Allow all for voice_profiles" ON voice_profiles FOR ALL USING (true);
 CREATE POLICY "Allow all for research_citations" ON research_citations FOR ALL USING (true);
+CREATE POLICY "Allow all for inline_comments" ON inline_comments FOR ALL USING (true);
