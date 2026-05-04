@@ -9,16 +9,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# Import Subsystems
-from nebula_writer.codex import CodexDatabase
-from nebula_writer.comment_system import create_comment_engine, create_quality_layer
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
+
+# Import Subsystems
+from nebula_writer.codex import CodexDatabase
+from nebula_writer.comment_system import create_comment_engine, create_quality_layer
 from nebula_writer.idea_processor import create_story_architect
 from nebula_writer.lookahead_engine import LookaheadEngine
-from pydantic import BaseModel
 
 load_dotenv()
 
@@ -38,6 +39,7 @@ def main():
     import uvicorn
 
     uvicorn.run("nebula_writer.main:app", host="0.0.0.0", port=8000, reload=True)
+
 
 # CORS
 app.add_middleware(
@@ -392,12 +394,6 @@ async def get_workers():
     return ai_writer.get_worker_status()
 
 
-@app.get("/api/health")
-def search(q: str = Query(..., min_length=2)):
-    """Search across entities, chapters, events"""
-    return db.search(q)
-
-
 @app.get("/api/stats")
 def get_stats():
     """Get overall statistics"""
@@ -447,6 +443,10 @@ class AIWriteRequest(BaseModel):
     word_count: int = 500
     entity_ids: Optional[List[int]] = None
     chapter: Optional[int] = None
+    # v2.1 Enhanced Controls
+    pacing: Optional[str] = None  # e.g., "slow", "steady", "fast", "breakneck"
+    pov: Optional[str] = None  # e.g., "first_person", "third_person_limited", "third_person_omniscient"
+    tone: Optional[str] = None  # e.g., "dark", "hopeful", "suspenseful", "melancholic"
 
 
 class AIRewriteRequest(BaseModel):
@@ -470,7 +470,14 @@ def ai_write_scene(req: AIWriteRequest):
 
         ai = AIWriter()
         result = ai.write_scene(
-            db=db, beat=req.beat, word_count=req.word_count, entity_ids=req.entity_ids, chapter=req.chapter
+            db=db,
+            beat=req.beat,
+            word_count=req.word_count,
+            entity_ids=req.entity_ids,
+            chapter=req.chapter,
+            pacing=req.pacing,
+            pov=req.pov,
+            tone=req.tone,
         )
         return {"text": result}
     except Exception as e:
@@ -760,11 +767,14 @@ def export_epub():
 
 @app.get("/api/export/pdf")
 def export_pdf():
-    """Export story as HTML optimized for PDF"""
+    """Export story as PDF (returns base64)"""
+    import base64
+
     from nebula_writer.exporter import StoryExporter
 
     exporter = StoryExporter(db)
-    return {"content": exporter.to_pdf_html()}
+    pdf_bytes = exporter.to_pdf()
+    return {"content": base64.b64encode(pdf_bytes).decode(), "type": "pdf"}
 
 
 # ============ RESEARCH ENGINE ============
@@ -1452,19 +1462,13 @@ def clear_chat_history():
 def check_stability():
     """Verify core narrative engine integrity"""
     required_files = [
-        "backend/core/narrative_state_engine.py",
-        "backend/core/memory_manager.py",
-        "backend/services/orchestrator.py",
+        "nebula_writer/core/narrative_state_engine.py",
+        "nebula_writer/core/memory_manager.py",
+        "nebula_writer/services/orchestrator.py",
     ]
     status = {file: os.path.exists(Path(__file__).parent.parent / file) for file in required_files}
     is_stable = all(status.values())
     return {"stable": is_stable, "files_checked": status, "timestamp": datetime.now().isoformat()}
-
-
-@app.get("/api/system/workers")
-async def get_workers():
-    """Get AI worker pool status"""
-    return ai_writer.get_worker_status()
 
 
 @app.get("/api/health")
