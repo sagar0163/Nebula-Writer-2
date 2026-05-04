@@ -9,9 +9,15 @@ class CodexDatabase:
 
     def __init__(self, db_path: str = "data/codex.db"):
         self.db_path = db_path
+        self._conn = None
+        if db_path == ":memory:":
+            self._conn = sqlite3.connect(db_path)
+            self._conn.row_factory = sqlite3.Row
         self._init_db()
 
     def _get_connection(self):
+        if self._conn:
+            return self._conn
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         return conn
@@ -232,7 +238,9 @@ class CodexDatabase:
         """)
 
         conn.commit()
-        conn.close()
+        if not self._conn:
+            if not self._conn:
+                conn.close()
 
         # Insert default story templates
         self._insert_default_templates()
@@ -250,7 +258,9 @@ class CodexDatabase:
         if cursor.fetchone()[0] == 0:
             cursor.execute("INSERT INTO story_compass (momentum_score) VALUES (0.0)")
             conn.commit()
-        conn.close()
+        if not self._conn:
+            if not self._conn:
+                conn.close()
 
     def _insert_default_templates(self):
         """Insert default story structure templates"""
@@ -394,7 +404,9 @@ class CodexDatabase:
             )
 
         conn.commit()
-        conn.close()
+        if not self._conn:
+            if not self._conn:
+                conn.close()
 
     # ============ ENTITY OPERATIONS ============
 
@@ -419,7 +431,8 @@ class CodexDatabase:
         )
         entity_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return entity_id
 
     def get_entities(self, entity_type: str = None) -> List[Dict]:
@@ -432,7 +445,8 @@ class CodexDatabase:
             cursor.execute("SELECT * FROM entities ORDER BY type, name")
 
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def get_entity(self, entity_id: int) -> Optional[Dict]:
@@ -441,7 +455,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM entities WHERE id = ?", (entity_id,))
         row = cursor.fetchone()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return dict(row) if row else None
 
     def update_entity(self, entity_id: int, **kwargs) -> bool:
@@ -459,7 +474,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute(f"UPDATE entities SET {set_clause} WHERE id = ?", values)
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     def delete_entity(self, entity_id: int) -> bool:
@@ -468,7 +484,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM entities WHERE id = ?", (entity_id,))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     # ============ ATTRIBUTE OPERATIONS ============
@@ -486,7 +503,8 @@ class CodexDatabase:
         )
         attr_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return attr_id
 
     def get_attributes(self, entity_id: int) -> List[Dict]:
@@ -495,7 +513,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM attributes WHERE entity_id = ? ORDER BY key", (entity_id,))
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def delete_attribute(self, attr_id: int) -> bool:
@@ -504,7 +523,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM attributes WHERE id = ?", (attr_id,))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     # ============ RELATIONSHIP OPERATIONS ============
@@ -524,7 +544,8 @@ class CodexDatabase:
         )
         rel_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return rel_id
 
     def get_relationships(self, entity_id: int = None) -> List[Dict]:
@@ -556,7 +577,8 @@ class CodexDatabase:
                 ORDER BY r.strength DESC
             """)
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def delete_relationship(self, rel_id: int) -> bool:
@@ -565,7 +587,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM relationships WHERE id = ?", (rel_id,))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     # ============ EVENT OPERATIONS ============
@@ -585,7 +608,8 @@ class CodexDatabase:
         )
         event_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return event_id
 
     def get_events(self, chapter: int = None) -> List[Dict]:
@@ -597,7 +621,8 @@ class CodexDatabase:
         else:
             cursor.execute("SELECT * FROM events ORDER BY timestamp DESC")
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     # ============ CHAPTER OPERATIONS ============
@@ -616,7 +641,8 @@ class CodexDatabase:
         )
         chapter_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return chapter_id
 
     def get_chapters(self) -> List[Dict]:
@@ -625,7 +651,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM chapters ORDER BY number")
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def get_chapter(self, chapter_id: int = None, number: int = None) -> Optional[Dict]:
@@ -637,7 +664,8 @@ class CodexDatabase:
         else:
             cursor.execute("SELECT * FROM chapters WHERE number = ?", (number,))
         row = cursor.fetchone()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return dict(row) if row else None
 
     def update_chapter(self, chapter_id: int, content: str = None, title: str = None, summary: str = None) -> bool:
@@ -662,7 +690,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute(f"UPDATE chapters SET {set_clause} WHERE id = ?", values)
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     def delete_chapter(self, chapter_id: int) -> bool:
@@ -671,7 +700,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM chapters WHERE id = ?", (chapter_id,))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     # ============ SCENE OPERATIONS ============
@@ -689,7 +719,8 @@ class CodexDatabase:
         )
         scene_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return scene_id
 
     def get_scenes(self, chapter_id: int) -> List[Dict]:
@@ -698,7 +729,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM scenes WHERE chapter_id = ? ORDER BY number", (chapter_id,))
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     # ============ STATISTICS ============
@@ -728,7 +760,8 @@ class CodexDatabase:
         cursor.execute("SELECT COUNT(*) FROM events")
         stats["total_events"] = cursor.fetchone()[0]
 
-        conn.close()
+        if not self._conn:
+            conn.close()
         return stats
 
     # ============ SEARCH ============
@@ -774,7 +807,8 @@ class CodexDatabase:
         )
         results["events"] = [dict(row) for row in cursor.fetchall()]
 
-        conn.close()
+        if not self._conn:
+            conn.close()
         return results
 
     # ============ VERSION HISTORY ============
@@ -793,7 +827,8 @@ class CodexDatabase:
         )
         version_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return version_id
 
     def get_versions(self, chapter_id: int) -> List[Dict]:
@@ -809,7 +844,8 @@ class CodexDatabase:
             (chapter_id,),
         )
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def get_version(self, version_id: int) -> Optional[Dict]:
@@ -818,7 +854,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM chapter_versions WHERE id = ?", (version_id,))
         row = cursor.fetchone()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return dict(row) if row else None
 
     # ============ CHARACTER KNOWLEDGE ============
@@ -846,7 +883,8 @@ class CodexDatabase:
                 (knowledge, existing[0]),
             )
             conn.commit()
-            conn.close()
+            if not self._conn:
+                conn.close()
             return existing[0]
         else:
             cursor.execute(
@@ -858,7 +896,8 @@ class CodexDatabase:
             )
             knowledge_id = cursor.lastrowid
             conn.commit()
-            conn.close()
+            if not self._conn:
+                conn.close()
             return knowledge_id
 
     def delete_character_knowledge(self, knowledge_id: int) -> bool:
@@ -867,7 +906,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM character_knowledge WHERE id = ?", (knowledge_id,))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     def get_character_knowledge(self, entity_id: int, chapter_id: int = None) -> List[Dict]:
@@ -895,7 +935,8 @@ class CodexDatabase:
             )
 
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     # ============ STORY TEMPLATES ============
@@ -906,7 +947,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM story_templates ORDER BY name")
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def get_template(self, template_id: int) -> Optional[Dict]:
@@ -915,7 +957,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM story_templates WHERE id = ?", (template_id,))
         row = cursor.fetchone()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return dict(row) if row else None
 
     # ============ CONSISTENCY CHECKING ============
@@ -940,7 +983,8 @@ class CodexDatabase:
         )
         issue_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return issue_id
 
     def get_consistency_issues(self, chapter_id: int = None, unresolved_only: bool = False) -> List[Dict]:
@@ -960,7 +1004,8 @@ class CodexDatabase:
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def resolve_consistency_issue(self, issue_id: int) -> bool:
@@ -969,7 +1014,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("UPDATE consistency_issues SET resolved = 1 WHERE id = ?", (issue_id,))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     def run_consistency_check(self) -> List[Dict]:
@@ -1066,7 +1112,8 @@ class CodexDatabase:
         )
         anchor_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return anchor_id
 
     def get_story_anchors(self) -> List[Dict]:
@@ -1075,7 +1122,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM story_anchors")
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def update_story_anchor(self, anchor_id: int, description: str) -> bool:
@@ -1091,7 +1139,8 @@ class CodexDatabase:
             (description, anchor_id),
         )
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     def add_open_tension(self, description: str, priority: str = "normal") -> int:
@@ -1107,7 +1156,8 @@ class CodexDatabase:
         )
         tension_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return tension_id
 
     def get_open_tensions(self, status: str = "open") -> List[Dict]:
@@ -1116,7 +1166,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM open_tensions WHERE status = ? ORDER BY created_at DESC", (status,))
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def resolve_tension(self, tension_id: int, resolved_chapter: int) -> bool:
@@ -1132,7 +1183,8 @@ class CodexDatabase:
             (resolved_chapter, tension_id),
         )
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     def update_narrative_momentum(self, score: float) -> bool:
@@ -1157,7 +1209,8 @@ class CodexDatabase:
             cursor.execute("INSERT INTO story_compass (momentum_score) VALUES (?)", (score,))
 
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return True
 
     def get_narrative_momentum(self) -> float:
@@ -1166,7 +1219,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT momentum_score FROM story_compass ORDER BY last_updated DESC LIMIT 1")
         row = cursor.fetchone()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return row[0] if row else 0.0
 
     def add_lookahead_card(
@@ -1192,7 +1246,8 @@ class CodexDatabase:
         )
         card_id = cursor.lastrowid
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return card_id
 
     def get_lookahead_cards(self, status: str = "draft") -> List[Dict]:
@@ -1201,7 +1256,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM lookahead_cards WHERE status = ? ORDER BY chapter_number", (status,))
         rows = cursor.fetchall()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return [dict(row) for row in rows]
 
     def update_lookahead_card_status(self, card_id: int, status: str) -> bool:
@@ -1210,7 +1266,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("UPDATE lookahead_cards SET status = ? WHERE id = ?", (status, card_id))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return cursor.rowcount > 0
 
     def clear_lookahead_cards(self, status: str = "draft"):
@@ -1219,7 +1276,8 @@ class CodexDatabase:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM lookahead_cards WHERE status = ?", (status,))
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
 
         # Common patterns for names (capitalized words)
         potential_names = re.findall(r"\b([A-Z][a-z]+)\b", text)
@@ -1294,7 +1352,8 @@ class CodexDatabase:
             conversation_id = cursor.lastrowid
 
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return conversation_id
 
     def load_conversation(self, user_id: str = "default") -> List[Dict]:
@@ -1305,7 +1364,8 @@ class CodexDatabase:
             "SELECT messages FROM conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1", (user_id,)
         )
         row = cursor.fetchone()
-        conn.close()
+        if not self._conn:
+            conn.close()
 
         if row:
             return json.loads(row[0])
@@ -1346,27 +1406,29 @@ if __name__ == "__main__":
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM story_plan ORDER BY updated_at DESC LIMIT 1")
         row = cursor.fetchone()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return dict(row) if row else None
 
     def update_story_plan(self, plan: Dict) -> bool:
         """Update or create the long-term story plan."""
         conn = self._get_connection()
         cursor = conn.cursor()
-        
+
         # Check if plan exists
         cursor.execute("SELECT id FROM story_plan LIMIT 1")
         row = cursor.fetchone()
-        
+
         if row:
             set_clause = ", ".join([f"{k} = ?" for k in plan.keys()])
-            values = list(plan.values()) + [row['id']]
+            values = list(plan.values()) + [row["id"]]
             cursor.execute(f"UPDATE story_plan SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", values)
         else:
             cols = ", ".join(plan.keys())
             placeholders = ", ".join(["?" for _ in plan])
             cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(plan.values()))
-            
+
         conn.commit()
-        conn.close()
+        if not self._conn:
+            conn.close()
         return True
