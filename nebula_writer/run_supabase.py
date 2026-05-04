@@ -1,6 +1,4 @@
 import os
-import sys
-from pathlib import Path
 
 # Set environment
 os.environ["SUPABASE_URL"] = "https://slovnfrjidipspogvktb.supabase.co"
