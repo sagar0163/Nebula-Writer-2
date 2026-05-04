@@ -59,17 +59,17 @@ class MemoryManager:
 
     def _format_hard_constraints(self, snapshot: NarrativeSnapshot) -> str:
         """Story anchors and critical world rules - MUST NOT BE PRUNED."""
-        anchors = "\n".join([f"- {a['description']}" for a in getattr(snapshot, 'anchors', [])])
-        critical_rules = "\n".join([f"- {r['rule']}" for r in snapshot.world_rules if r.get('critical')])
+        anchors = "\n".join([f"- {a['description']}" for a in getattr(snapshot, "anchors", [])])
+        critical_rules = "\n".join([f"- {r['rule']}" for r in snapshot.world_rules if r.get("critical")])
         return f"### STORY ANCHORS (NON-NEGOTIABLE)\n{anchors}\n\n### CRITICAL RULES\n{critical_rules}"
 
     def _trigger_recall(self, snapshot: NarrativeSnapshot, user_input: str) -> str:
         """Dynamic recall based on triggers in the input."""
         recalled = []
         for entity in snapshot.key_entities:
-            if entity['name'].lower() in user_input.lower():
+            if entity["name"].lower() in user_input.lower():
                 recalled.append(f"RECALLED PROFILE [{entity['name']}]: {entity.get('description', '')}")
-        
+
         return "\n".join(recalled) if recalled else ""
 
     def _format_core_memory(self, snapshot: NarrativeSnapshot) -> str:
