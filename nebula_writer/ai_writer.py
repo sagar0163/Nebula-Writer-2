@@ -55,7 +55,8 @@ class AIWriter:
         space_configs = [
             ("Writer-Brain", os.environ.get("HF_WRITER_URL")),
             ("Ripple-Check", os.environ.get("HF_RIPPLE_URL")),
-            ("Architect-Bot", os.environ.get("HF_ARCHITECT_URL"))
+            ("Architect-Bot", os.environ.get("HF_ARCHITECT_URL")),
+            ("Gemma-Lead", os.environ.get("HF_GEMMA_URL"))
         ]
 
         for name, url in space_configs:
