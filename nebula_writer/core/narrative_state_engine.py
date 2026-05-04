@@ -66,7 +66,7 @@ class NarrativeStateEngine:
             current_chapter_summary=last_chapter.get("summary", ""),
             key_entities=entities[:10],
             world_rules=rules,
-            anchors=self.pm.get_plot_threads(status="anchor") if hasattr(self.pm, "get_plot_threads") else []
+            anchors=self.pm.get_plot_threads(status="anchor") if hasattr(self.pm, "get_plot_threads") else [],
         )
 
     def _compute_phase(self) -> NarrativePhase:
