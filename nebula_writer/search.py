@@ -3,8 +3,6 @@ Nebula-Writer Search & Filter Module
 Advanced search and filtering capabilities
 """
 
-import sys
-from pathlib import Path
 from typing import Dict, List
 
 from nebula_writer.codex import CodexDatabase
