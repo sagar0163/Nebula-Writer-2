@@ -1,6 +1,7 @@
 """
 Tests for CodexDatabase
 """
+
 import pytest
 
 from nebula_writer.codex import CodexDatabase
@@ -12,6 +13,7 @@ def db():
     database = CodexDatabase(":memory:")
     return database
 
+
 def test_add_get_entity(db):
     entity_id = db.add_entity("Test Character", "character", "A test description")
     assert entity_id is not None
@@ -20,6 +22,7 @@ def test_add_get_entity(db):
     assert entity["name"] == "Test Character"
     assert entity["type"] == "character"
     assert entity["description"] == "A test description"
+
 
 def test_update_entity(db):
     entity_id = db.add_entity("Old Name", "character")
@@ -30,6 +33,7 @@ def test_update_entity(db):
     assert entity["name"] == "New Name"
     assert entity["description"] == "New description"
 
+
 def test_delete_entity(db):
     entity_id = db.add_entity("To Be Deleted", "character")
     success = db.delete_entity(entity_id)
@@ -37,6 +41,7 @@ def test_delete_entity(db):
 
     entity = db.get_entity(entity_id)
     assert entity is None
+
 
 def test_add_get_attribute(db):
     entity_id = db.add_entity("Attr Test", "character")
@@ -47,6 +52,7 @@ def test_add_get_attribute(db):
     assert len(attrs) == 1
     assert attrs[0]["key"] == "age"
     assert attrs[0]["value"] == "25"
+
 
 def test_add_get_relationship(db):
     id1 = db.add_entity("Person A", "character")
@@ -59,6 +65,7 @@ def test_add_get_relationship(db):
     assert len(rels) == 1
     assert rels[0]["relationship_type"] == "friends"
     assert rels[0]["to_entity_id"] == id2
+
 
 def test_chapter_management(db):
     ch_id = db.add_chapter(1, "First Chapter", "It begins.")
@@ -76,6 +83,7 @@ def test_chapter_management(db):
     db.delete_chapter(ch_id)
     assert len(db.get_chapters()) == 0
 
+
 def test_scene_management(db):
     ch_id = db.add_chapter(1, "Chapter 1", "Content")
     scene_id = db.add_scene(ch_id, 1, "Action beat", "Scene content")
@@ -85,6 +93,7 @@ def test_scene_management(db):
     assert len(scenes) == 1
     assert scenes[0]["beat"] == "Action beat"
     assert scenes[0]["content"] == "Scene content"
+
 
 def test_event_management(db):
     event_id = db.add_event("Big Event", "Something happened", 1)

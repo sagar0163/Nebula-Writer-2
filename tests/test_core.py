@@ -32,6 +32,7 @@ def db():
 
     return database
 
+
 def test_codex(db):
     """Test Codex database stats"""
     stats = db.get_stats()
@@ -39,12 +40,14 @@ def test_codex(db):
     assert stats["total_chapters"] == 1
     assert stats["total_words"] == 7  # "It was a dark night in Mumbai..."
 
+
 def test_audit(db):
     """Test Story Auditor"""
     auditor = StoryAuditor(db)
     results = auditor.audit_all_chapters()
     assert "total_issues" in results
     assert results["total_issues"] >= 0
+
 
 def test_search(db):
     """Test Search Engine"""
@@ -57,6 +60,7 @@ def test_search(db):
     stats = search.get_story_stats()
     assert "writing_progress" in stats
     assert stats["writing_progress"]["total_words"] == 7
+
 
 def test_export(db):
     """Test Exporter"""
