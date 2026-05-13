@@ -2,15 +2,17 @@
 Tests for StoryExporter
 """
 import pytest
+
 from nebula_writer.codex import CodexDatabase
 from nebula_writer.exporter import StoryExporter
+
 
 @pytest.fixture
 def db():
     """Fixture for Codex database in memory"""
     database = CodexDatabase(":memory:")
 
-    ravi_id = database.add_entity("Ravi", "character", "Protagonist detective")
+    database.add_entity("Ravi", "character", "Protagonist detective")
     database.add_chapter(1, "The Beginning", "It was a dark night in Mumbai...")
 
     return database

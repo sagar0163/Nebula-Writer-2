@@ -2,7 +2,9 @@
 Tests for CodexDatabase
 """
 import pytest
+
 from nebula_writer.codex import CodexDatabase
+
 
 @pytest.fixture
 def db():
