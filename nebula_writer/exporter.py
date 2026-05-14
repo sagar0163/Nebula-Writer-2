@@ -473,7 +473,7 @@ p.first { text-indent: 0; }
 
     def to_epub_bytes(self, title: str = "My Novel", author: str = "Author") -> bytes:
         """Export as EPUB bytes"""
-        return self.to_epub(title, author)[0]
+        return self.to_epub(title, author)
 
     def save(self, format: str, filepath: str):
         """Save to file"""
