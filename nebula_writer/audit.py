@@ -19,6 +19,8 @@ class StoryAuditor:
         """Check if mentioned entities behave consistently"""
         issues = []
         entities = self.db.get_entities()
+        # Optimization: cache lowercase chapter content outside loop to avoid O(n) string lowercasing inside iteration
+        chapter_content_lower = chapter_content.lower()
 
         for entity in entities:
             name = entity["name"]
@@ -29,7 +31,7 @@ class StoryAuditor:
 
             # Check if entity is mentioned with different location in same chapter
             # This is a simple heuristic - could be enhanced with NLP
-            if name.lower() in chapter_content.lower():
+            if name.lower() in chapter_content_lower:
                 # Entity is in this chapter
                 pass
 
@@ -39,7 +41,7 @@ class StoryAuditor:
             # Simple death check
             death_phrases = ["died", "dead", "killed", "death"]
             for phrase in death_phrases:
-                if f"{name.lower()} {phrase}" in chapter_content.lower() and is_alive:
+                if f"{name.lower()} {phrase}" in chapter_content_lower and is_alive:
                     issues.append(
                         {
                             "type": "contradiction",
@@ -56,6 +58,8 @@ class StoryAuditor:
         """Check if relationships are respected"""
         issues = []
         relationships = self.db.get_relationships()
+        # Optimization: cache lowercase chapter content outside loop to avoid O(n) string lowercasing inside iteration
+        chapter_content_lower = chapter_content.lower()
 
         for rel in relationships:
             from_name = rel["from_name"]
@@ -64,7 +68,7 @@ class StoryAuditor:
             strength = rel.get("strength", 0.5)
 
             # Check for contradiction in relationship portrayal
-            if from_name.lower() in chapter_content.lower() and to_name.lower() in chapter_content.lower():
+            if from_name.lower() in chapter_content_lower and to_name.lower() in chapter_content_lower:
                 # Both entities in same chapter - check for contradiction
                 if strength > 0.7 and rel_type in ["hates", "enemy", "rivals"]:
                     issues.append(
