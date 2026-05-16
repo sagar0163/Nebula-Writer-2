@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "generated": "2026-05-04T11:30:49.568893",
+    "version": "1.0"
+  },
+  "entities": [
+    {
+      "id": 1,
+      "name": "Captain Maya Rodriguez",
+      "type": "character",
+      "description": "Experienced starship commander with a mysterious past",
+      "is_alive": 1,
+      "current_location": null,
+      "image_url": null,
+      "created_at": "2026-05-04 06:00:49",
+      "updated_at": "2026-05-04 06:00:49"
+    },
+    {
+      "id": 3,
+      "name": "Quantum Compass",
+      "type": "item",
+      "description": "Ancient navigation device of unknown origin",
+      "is_alive": 1,
+      "current_location": null,
+      "image_url": null,
+      "created_at": "2026-05-04 06:00:49",
+      "updated_at": "2026-05-04 06:00:49"
+    },
+    {
+      "id": 2,
+      "name": "Andromeda Outpost",
+      "type": "location",
+      "description": "Remote research station at the edge of known space",
+      "is_alive": 1,
+      "current_location": null,
+      "image_url": null,
+      "created_at": "2026-05-04 06:00:49",
+      "updated_at": "2026-05-04 06:00:49"
+    }
+  ],
+  "relationships": [
+    {
+      "id": 2,
+      "from_entity_id": 1,
+      "to_entity_id": 3,
+      "relationship_type": "possesses",
+      "strength": 0.9,
+      "description": "Always carries the Quantum Compass",
+      "from_name": "Captain Maya Rodriguez",
+      "from_type": "character",
+      "to_name": "Quantum Compass",
+      "to_type": "item"
+    },
+    {
+      "id": 1,
+      "from_entity_id": 1,
+      "to_entity_id": 2,
+      "relationship_type": "stationed_at",
+      "strength": 0.8,
+      "description": "Currently assigned to Andromeda Outpost",
+      "from_name": "Captain Maya Rodriguez",
+      "from_type": "character",
+      "to_name": "Andromeda Outpost",
+      "to_type": "location"
+    }
+  ],
+  "events": [],
+  "chapters": [
+    {
+      "id": 1,
+      "number": 1,
+      "title": "The Signal",
+      "content": "Captain Maya Rodriguez stared at the blinking alert on her console. The Quantum Compass in her palm vibrated faintly, responding to something unseen in the void beyond Andromeda Outpost's sensors.\n\n\"Another false alarm,\" she muttered, but her fingers tightened around the ancient device. For three months, the compass had been silent. Tonight, it woke up.\n\nShe initiated a level-three diagnostic, preparing to investigate whatever disturbance had triggered the alert. The stars outside the viewport seemed to hold their breath.",
+      "summary": null,
+      "word_count": 79,
+      "created_at": "2026-05-04 06:00:49",
+      "updated_at": "2026-05-04T11:30:49.391506"
+    }
+  ],
+  "stats": {
+    "entities_by_type": {
+      "character": 1,
+      "item": 1,
+      "location": 1
+    },
+    "total_entities": 3,
+    "total_chapters": 1,
+    "total_words": 79,
+    "total_relationships": 2,
+    "total_events": 0
+  }
+}
