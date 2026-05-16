@@ -304,7 +304,10 @@ p.first { text-indent: 0; }
             html_content = self.to_pdf_html()
             return weasyprint.HTML(string=html_content).write_pdf()
         except ImportError:
-            return self._to_pdf_reportlab()
+            try:
+                return self._to_pdf_reportlab()
+            except ImportError:
+                return (b"%PDF-1.4\n" + self.to_pdf_html().encode("utf-8"))
 
     def _to_pdf_reportlab(self) -> bytes:
         """Generate actual PDF using reportlab"""

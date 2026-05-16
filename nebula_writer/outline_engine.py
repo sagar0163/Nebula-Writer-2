@@ -370,9 +370,16 @@ class EvolvingOutlineEngine:
                         self.add_planted_seed(sentence.strip()[:100], self.current_chapter)
 
 
+_evolving_engine_instance: Optional[EvolvingOutlineEngine] = None
+
+
 def create_evolution_engine() -> EvolvingOutlineEngine:
-    """Create a new Evolving Outline Engine"""
-    return EvolvingOutlineEngine()
+    """Get or create Evolving Outline Engine singleton"""
+    global _evolving_engine_instance
+    if _evolving_engine_instance is None:
+        _evolving_engine_instance = EvolvingOutlineEngine()
+        _evolving_engine_instance.initialize()
+    return _evolving_engine_instance
 
 
 if __name__ == "__main__":

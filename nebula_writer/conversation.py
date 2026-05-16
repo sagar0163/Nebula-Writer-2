@@ -208,7 +208,6 @@ Respond as: intent|confidence|{{"key": "value"}}
             response = await self.ai.generate(
                 prompt,
                 system_prompt="You are a story project assistant. Classify the user intent.",
-                role="architect",
                 temperature=0.1,
             )
             parts = response.strip().split("|")
@@ -253,6 +252,7 @@ Respond as: intent|confidence|{{"key": "value"}}
 
         # Route to appropriate handler
         response = await self.route_intent(intent, message, project_state)
+        response["intent"] = intent.intent.value
 
         # Add AI response to history (truncated for token savings)
         self.conversation_history.append(
@@ -386,7 +386,7 @@ If the information is not in the context, say you don't know yet, but offer to h
 {context_str}
 """
         try:
-            response = await self.ai.generate(message, system_prompt=system_prompt, role="architect", temperature=0.3)
+            response = await self.ai.generate(message, system_prompt=system_prompt, temperature=0.3)
             return {
                 "message": response,
                 "actions": [{"type": "rag_query", "context_used": True}],
@@ -513,7 +513,7 @@ If the information is not in the context, say you don't know yet, but offer to h
 
         try:
             # Use 'writer' agent for general chat
-            response = await self.ai.generate(prompt, role="writer", temperature=0.7)
+            response = await self.ai.generate(prompt, temperature=0.7)
             return {"message": response, "actions": []}
         except:
             return {

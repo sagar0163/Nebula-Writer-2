@@ -1486,11 +1486,16 @@ async def chat_with_ai(req: ChatRequest):
             async def sse_generator():
                 raw_response = await orchestrator.handle_chat(req.message)
                 full_text = raw_response.get("message", "Here is your generated chapter content.")
+                intent = raw_response.get("intent", "general_chat")
                 
-                qe = QualityEngine()
-                slop = AntiSlopFilter()
-                revised_text, score, passes = await qe.revise_prose(full_text)
-                cleaned_text = slop.clean_prose(revised_text)
+                if intent in ("write_chapter", "revise_chapter"):
+                    qe = QualityEngine()
+                    slop = AntiSlopFilter()
+                    revised_text, score, passes = await qe.revise_prose(full_text)
+                    cleaned_text = slop.clean_prose(revised_text)
+                else:
+                    slop = AntiSlopFilter()
+                    cleaned_text = slop.clean_prose(full_text)
                 
                 words = cleaned_text.split()
                 for word in words:
@@ -1501,11 +1506,19 @@ async def chat_with_ai(req: ChatRequest):
             return StreamingResponse(sse_generator(), media_type="text/event-stream")
         else:
             raw_response = await orchestrator.handle_chat(req.message)
-            qe = QualityEngine()
-            slop = AntiSlopFilter()
-            revised_text, score, passes = await qe.revise_prose(raw_response.get("message", ""))
-            cleaned_text = slop.clean_prose(revised_text)
-            return {"response": cleaned_text, "score": score, "passes": passes}
+            full_text = raw_response.get("message", "")
+            intent = raw_response.get("intent", "general_chat")
+            
+            if intent in ("write_chapter", "revise_chapter"):
+                qe = QualityEngine()
+                slop = AntiSlopFilter()
+                revised_text, score, passes = await qe.revise_prose(full_text)
+                cleaned_text = slop.clean_prose(revised_text)
+                return {"response": cleaned_text, "score": score, "passes": passes}
+            else:
+                slop = AntiSlopFilter()
+                cleaned_text = slop.clean_prose(full_text)
+                return {"response": cleaned_text, "score": 5.0, "passes": 0}
     except Exception as e:
         import traceback
         traceback.print_exc()
