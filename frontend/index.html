@@ -388,6 +388,7 @@
                                                 @keydown.enter.prevent="sendArchitectMessage"
                                                 :disabled="loading"></textarea>
                                             <button type="submit"
+                                                aria-label="Send message"
                                                 class="absolute right-3 top-3 p-2 bg-violet-600 hover:bg-violet-500 rounded-xl transition-colors shadow-lg disabled:opacity-50 disabled:hover:bg-violet-600"
                                                 :disabled="loading || !architectInput">
                                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor"
@@ -445,6 +446,7 @@
                                                 <div
                                                     class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button @click="approveExtraction(idx)"
+                                                        aria-label="Approve extraction"
                                                         class="p-1 hover:text-emerald-400 text-slate-500"
                                                         title="Add to Project">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
@@ -454,6 +456,7 @@
                                                         </svg>
                                                     </button>
                                                     <button @click="removeExtraction(idx)"
+                                                        aria-label="Discard extraction"
                                                         class="p-1 hover:text-red-400 text-slate-500" title="Discard">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -735,6 +738,7 @@
                                             @keydown.enter.prevent="sendArchitectMessage"
                                             :disabled="loading"></textarea>
                                         <button type="submit"
+                                            aria-label="Send message"
                                             class="absolute right-2 top-2 p-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg shadow-lg disabled:opacity-50"
                                             :disabled="loading || !architectInput">
                                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor"
@@ -773,7 +777,7 @@
                 <div class="glass rounded-2xl p-8 w-full max-w-lg">
                     <div class="flex justify-between mb-6">
                         <h3 class="text-xl font-semibold">{{ modalTitle }}</h3>
-                        <button @click="showAddModal = false" class="text-slate-400 hover:text-white">X</button>
+                        <button @click="showAddModal = false" aria-label="Close modal" class="text-slate-400 hover:text-white">X</button>
                     </div>
 
                     <div v-if="modalType === 'entity' && (form.entity_type === 'character' || form.type === 'character')" class="flex gap-4 mb-4 border-b border-white/10">
@@ -812,7 +816,7 @@
                             <div v-else class="p-4 bg-white/5 rounded-xl border border-white/10 space-y-3 animate-in fade-in slide-in-from-top-2">
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">New Knowledge Point</span>
-                                    <button @click="showAddKnowledgeForm = false" class="text-slate-500 hover:text-white">
+                                    <button @click="showAddKnowledgeForm = false" aria-label="Close form" class="text-slate-500 hover:text-white">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
@@ -845,10 +849,10 @@
                             <div class="p-3 bg-white/5 rounded-xl border border-white/5 text-sm text-slate-300 leading-relaxed group relative">
                                 {{ k.knowledge }}
                                 <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button @click="copyToClipboard(k.knowledge)" class="text-slate-600 hover:text-violet-400" title="Copy">
+                                    <button @click="copyToClipboard(k.knowledge)" aria-label="Copy knowledge point" class="text-slate-600 hover:text-violet-400" title="Copy">
                                         <i class="fas fa-copy"></i>
                                     </button>
-                                    <button @click="deleteKnowledge(k.id)" class="text-slate-600 hover:text-red-400" title="Delete">
+                                    <button @click="deleteKnowledge(k.id)" aria-label="Delete knowledge point" class="text-slate-600 hover:text-red-400" title="Delete">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
