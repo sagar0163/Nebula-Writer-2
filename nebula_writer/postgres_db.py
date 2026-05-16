@@ -19,10 +19,6 @@ class PostgresDB:
         if not connection_string:
             connection_string = os.environ.get("POSTGRES_CONNECTION_STRING")
 
-            # Fallback for old explicit password mode
-            if not connection_string and password:
-                connection_string = f"postgresql://postgres.slovnfrjidipspogvktb:{password}@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
-
         if not connection_string:
             raise ValueError("POSTGRES_CONNECTION_STRING environment variable is required")
 
