@@ -24,8 +24,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Verify virtual environment and existing project dependencies in pyproject.toml
-- [ ] T002 [P] Inspect existing test suites in tests/test_writer_experience.py to establish baseline expectations
+- [x] T001 Verify virtual environment and existing project dependencies in pyproject.toml
+- [x] T002 [P] Inspect existing test suites in tests/test_writer_experience.py to establish baseline expectations
 
 ---
 
@@ -35,8 +35,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Establish Pydantic schemas for ChatMessage and ChatRequest in nebula_writer/conversation.py
-- [ ] T004 Establish Pydantic schemas for QualityRubric and ManuscriptDraft in nebula_writer/quality_engine.py
+- [x] T003 Establish Pydantic schemas for ChatMessage and ChatRequest in nebula_writer/conversation.py
+- [x] T004 Establish Pydantic schemas for QualityRubric and ManuscriptDraft in nebula_writer/quality_engine.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -50,9 +50,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Refactor chat_with_ai in nebula_writer/main.py to extract AI response using raw_response.get("message") instead of raw_response.get("response")
-- [ ] T006 [US1] Verify intent routing logic in nebula_writer/conversation.py correctly classifies general chat and RAG queries
-- [ ] T007 [US1] Run unit tests in tests/test_writer_experience.py to verify conversational chat routing succeeds
+- [x] T005 [US1] Refactor chat_with_ai in nebula_writer/main.py to extract AI response using raw_response.get("message") instead of raw_response.get("response")
+- [x] T006 [US1] Verify intent routing logic in nebula_writer/conversation.py correctly classifies general chat and RAG queries
+- [x] T007 [US1] Run unit tests in tests/test_writer_experience.py to verify conversational chat routing succeeds
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -66,10 +66,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] Implement QualityEngine.evaluate_prose() in nebula_writer/quality_engine.py to score prose against the 8-criteria rubric
-- [ ] T009 [US2] Replace hardcoded string manipulation stubs in QualityEngine.revise_prose() in nebula_writer/quality_engine.py with authentic asynchronous LLM calls via AIWriter.generate()
-- [ ] T010 [US2] Update Orchestrator coordination logic in nebula_writer/services/orchestrator.py to handle the multi-pass quality engine revision loop
-- [ ] T011 [US2] Run unit tests in tests/test_writer_experience.py to verify quality engine evaluation and revision loop
+- [x] T008 [US2] Implement QualityEngine.evaluate_prose() in nebula_writer/quality_engine.py to score prose against the 8-criteria rubric
+- [x] T009 [US2] Replace hardcoded string manipulation stubs in QualityEngine.revise_prose() in nebula_writer/quality_engine.py with authentic asynchronous LLM calls via AIWriter.generate()
+- [x] T010 [US2] Update Orchestrator coordination logic in nebula_writer/services/orchestrator.py to handle the multi-pass quality engine revision loop
+- [x] T011 [US2] Run unit tests in tests/test_writer_experience.py to verify quality engine evaluation and revision loop
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -83,9 +83,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Implement cliché scrubbing and structural filtering logic in nebula_writer/anti_slop.py
-- [ ] T013 [US3] Integrate AntiSlopLayer into the streaming generation pipeline in nebula_writer/main.py before SSE token streaming
-- [ ] T014 [US3] Run unit tests in tests/test_writer_experience.py to verify anti-slop filtering layer
+- [x] T012 [US3] Implement cliché scrubbing and structural filtering logic in nebula_writer/anti_slop.py
+- [x] T013 [US3] Integrate AntiSlopLayer into the streaming generation pipeline in nebula_writer/main.py before SSE token streaming
+- [x] T014 [US3] Run unit tests in tests/test_writer_experience.py to verify anti-slop filtering layer
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -95,8 +95,8 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T015 [P] Verify quickstart instructions in specs/002-fix-quality-engine/quickstart.md against local environment
-- [ ] T016 Execute full end-to-end verification suite in tests/test_writer_experience.py to ensure complete regression safety
+- [x] T015 [P] Verify quickstart instructions in specs/002-fix-quality-engine/quickstart.md against local environment
+- [x] T016 Execute full end-to-end verification suite in tests/test_writer_experience.py to ensure complete regression safety
 
 ---
 

@@ -72,6 +72,27 @@ class NarrativeOrchestrator:
 
         return result
 
+    async def execute_quality_revision_loop(self, text: str, target_score: float = 8.5) -> Dict:
+        """
+        Coordinates the multi-pass quality engine revision loop and anti-slop filtering.
+        """
+        from nebula_writer.quality_engine import QualityEngine
+        from nebula_writer.anti_slop import AntiSlopFilter
+
+        qe = QualityEngine()
+        slop = AntiSlopFilter()
+
+        revised_text, score, passes = await qe.revise_prose(text, target_score=target_score)
+        cleaned_text = slop.clean_prose(revised_text)
+
+        return {
+            "original_text": text,
+            "revised_text": cleaned_text,
+            "quality_score": score,
+            "passes_used": passes,
+            "is_approved": score >= target_score
+        }
+
     async def handle_write_scene(self, beat: str) -> Dict:
         """
         The 10-Step Directive Writing Pipeline.

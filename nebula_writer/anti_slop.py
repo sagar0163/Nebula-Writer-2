@@ -23,9 +23,17 @@ class AntiSlopFilter:
 
     def clean_prose(self, text: str) -> str:
         """
-        Scans prose for AI cliches and replaces them with stronger, natural phrasing.
+        Scans prose for AI cliches and replaces them with stronger, natural phrasing,
+        including structural filtering for redundant adverbs and spacing.
         """
         cleaned = text
         for pattern, replacement in self.cliche_map:
             cleaned = pattern.sub(replacement, cleaned)
-        return cleaned
+            
+        # Structural filtering: remove redundant filler adverbs
+        cleaned = re.sub(r'\b(very|extremely|absolutely|completely|totally|utterly)\b\s+', '', cleaned, flags=re.I)
+        
+        # Structural filtering: fix repetitive whitespace
+        cleaned = re.sub(r'\s{2,}', ' ', cleaned)
+        
+        return cleaned.strip()

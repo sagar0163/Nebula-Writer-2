@@ -1485,11 +1485,11 @@ async def chat_with_ai(req: ChatRequest):
         if req.stream:
             async def sse_generator():
                 raw_response = await orchestrator.handle_chat(req.message)
-                full_text = raw_response.get("response", "Here is your generated chapter content.")
+                full_text = raw_response.get("message", "Here is your generated chapter content.")
                 
                 qe = QualityEngine()
                 slop = AntiSlopFilter()
-                revised_text, score, passes = qe.revise_prose(full_text)
+                revised_text, score, passes = await qe.revise_prose(full_text)
                 cleaned_text = slop.clean_prose(revised_text)
                 
                 words = cleaned_text.split()
@@ -1503,7 +1503,7 @@ async def chat_with_ai(req: ChatRequest):
             raw_response = await orchestrator.handle_chat(req.message)
             qe = QualityEngine()
             slop = AntiSlopFilter()
-            revised_text, score, passes = qe.revise_prose(raw_response.get("response", ""))
+            revised_text, score, passes = await qe.revise_prose(raw_response.get("message", ""))
             cleaned_text = slop.clean_prose(revised_text)
             return {"response": cleaned_text, "score": score, "passes": passes}
     except Exception as e:

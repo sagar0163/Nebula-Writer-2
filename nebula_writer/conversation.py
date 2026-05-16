@@ -3,9 +3,29 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
+import uuid
+from pydantic import BaseModel, Field
 
 from nebula_writer.ai_writer import AIWriter
+
+class ChatMessage(BaseModel):
+    message_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str = "default_project"
+    raw_prompt: str
+    intent: Any
+    confidence: float
+    extracted_info: Dict[str, Any] = Field(default_factory=dict)
+    response_text: str = ""
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+class ChatRequest(BaseModel):
+    message: str
+    project_id: Optional[str] = "default_project"
+    chapter_id: Optional[str] = None
+    stream: bool = True
+    project_state: Optional[Dict[str, Any]] = None
+
 
 
 class IntentType(Enum):
