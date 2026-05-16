@@ -189,6 +189,79 @@ CREATE TABLE IF NOT EXISTS inline_comments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Projects (Vision Gap Plan)
+CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL DEFAULT 'Untitled Novel',
+    author TEXT NOT NULL DEFAULT 'Unknown',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    settings TEXT DEFAULT '{}'
+);
+
+-- Characters (Vision Gap Plan)
+CREATE TABLE IF NOT EXISTS characters (
+    id SERIAL PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'major',
+    core_desire TEXT NOT NULL DEFAULT '',
+    arc_current_state TEXT NOT NULL DEFAULT '',
+    relationships TEXT DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Research Nodes (Vision Gap Plan)
+CREATE TABLE IF NOT EXISTS research_nodes (
+    id SERIAL PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    topic TEXT NOT NULL,
+    queries_used TEXT NOT NULL DEFAULT '[]',
+    sources TEXT NOT NULL DEFAULT '[]',
+    confidence TEXT NOT NULL DEFAULT 'medium',
+    verification_status TEXT NOT NULL DEFAULT 'unverified',
+    summary TEXT NOT NULL,
+    linked_entity_ids TEXT DEFAULT '[]',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_used_in_chapter UUID REFERENCES chapters(id) ON DELETE SET NULL
+);
+
+-- Lookahead Cards (Vision Gap Plan)
+CREATE TABLE IF NOT EXISTS lookahead_cards (
+    id SERIAL PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    card_index INTEGER NOT NULL,
+    certainty TEXT NOT NULL DEFAULT 'medium',
+    chapter_number INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    scene_intention TEXT NOT NULL,
+    opening_image TEXT NOT NULL,
+    character_focus TEXT NOT NULL,
+    story_questions_open TEXT NOT NULL DEFAULT '[]',
+    story_questions_close TEXT NOT NULL DEFAULT '[]',
+    tension_targeted TEXT NOT NULL,
+    seeds_to_advance TEXT NOT NULL DEFAULT '[]',
+    is_approved BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(project_id, card_index)
+);
+
+-- Comments (Vision Gap Plan)
+CREATE TABLE IF NOT EXISTS comments (
+    id SERIAL PRIMARY KEY,
+    chapter_id UUID NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+    anchor_start INTEGER NOT NULL,
+    anchor_end INTEGER NOT NULL,
+    anchor_text TEXT NOT NULL,
+    comment_text TEXT NOT NULL,
+    ai_response TEXT DEFAULT '',
+    revised_text TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ========== INDEXES ==========
 
 CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type);

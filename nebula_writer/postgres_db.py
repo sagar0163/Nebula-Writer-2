@@ -348,6 +348,113 @@ class PostgresDB:
             (title, description, chapter, scene, significance),
         )
 
+    # ============ VISION GAP PLAN ENTITIES ============
+
+    def get_projects(self) -> List[Dict]:
+        return self._query("SELECT * FROM projects")
+
+    def get_project(self, project_id: str) -> Optional[Dict]:
+        result = self._query("SELECT * FROM projects WHERE id = %s", (project_id,))
+        return dict(result[0]) if result else None
+
+    def add_project(self, project_id: str, title: str = "Untitled Novel", author: str = "Unknown") -> str:
+        return self._execute(
+            "INSERT INTO projects (id, title, author) VALUES (%s, %s, %s)",
+            (project_id, title, author)
+        )
+
+    def get_characters(self, project_id: str) -> List[Dict]:
+        return self._query("SELECT * FROM characters WHERE project_id = %s", (project_id,))
+
+    def add_character(self, project_id: str, name: str, role: str = "major", core_desire: str = "", arc_current_state: str = "") -> str:
+        return self._execute(
+            """
+            INSERT INTO characters (project_id, name, role, core_desire, arc_current_state)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (project_id, name, role, core_desire, arc_current_state)
+        )
+
+    def update_character(self, character_id: int, core_desire: str = None, arc_current_state: str = None) -> bool:
+        updates = []
+        params = []
+        if core_desire is not None:
+            updates.append("core_desire = %s")
+            params.append(core_desire)
+        if arc_current_state is not None:
+            updates.append("arc_current_state = %s")
+            params.append(arc_current_state)
+        if not updates:
+            return True
+        updates.append("updated_at = %s")
+        params.append(datetime.now().isoformat())
+        params.append(character_id)
+        self._query(f"UPDATE characters SET {', '.join(updates)} WHERE id = %s", tuple(params))
+        return True
+
+    def get_research_nodes(self, project_id: str) -> List[Dict]:
+        return self._query("SELECT * FROM research_nodes WHERE project_id = %s", (project_id,))
+
+    def add_research_node(self, project_id: str, topic: str, summary: str, queries_used: str = "[]", sources: str = "[]", confidence: str = "medium") -> str:
+        return self._execute(
+            """
+            INSERT INTO research_nodes (project_id, topic, summary, queries_used, sources, confidence)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (project_id, topic, summary, queries_used, sources, confidence)
+        )
+
+    def get_lookahead_cards(self, project_id: str) -> List[Dict]:
+        return self._query("SELECT * FROM lookahead_cards WHERE project_id = %s ORDER BY card_index", (project_id,))
+
+    def add_lookahead_card(self, project_id: str, card_index: int, chapter_number: int, title: str, scene_intention: str, opening_image: str, character_focus: str, tension_targeted: str) -> str:
+        return self._execute(
+            """
+            INSERT INTO lookahead_cards (project_id, card_index, chapter_number, title, scene_intention, opening_image, character_focus, tension_targeted)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (project_id, card_index) DO UPDATE SET
+                chapter_number = EXCLUDED.chapter_number,
+                title = EXCLUDED.title,
+                scene_intention = EXCLUDED.scene_intention,
+                opening_image = EXCLUDED.opening_image,
+                character_focus = EXCLUDED.character_focus,
+                tension_targeted = EXCLUDED.tension_targeted
+            """,
+            (project_id, card_index, chapter_number, title, scene_intention, opening_image, character_focus, tension_targeted)
+        )
+
+    def get_comments(self, chapter_id: str) -> List[Dict]:
+        return self._query("SELECT * FROM comments WHERE chapter_id = %s", (chapter_id,))
+
+    def add_comment(self, chapter_id: str, anchor_start: int, anchor_end: int, anchor_text: str, comment_text: str) -> str:
+        return self._execute(
+            """
+            INSERT INTO comments (chapter_id, anchor_start, anchor_end, anchor_text, comment_text)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (chapter_id, anchor_start, anchor_end, anchor_text, comment_text)
+        )
+
+    def update_comment(self, comment_id: int, ai_response: str = None, revised_text: str = None, status: str = None) -> bool:
+        updates = []
+        params = []
+        if ai_response is not None:
+            updates.append("ai_response = %s")
+            params.append(ai_response)
+        if revised_text is not None:
+            updates.append("revised_text = %s")
+            params.append(revised_text)
+        if status is not None:
+            updates.append("status = %s")
+            params.append(status)
+        if not updates:
+            return True
+        updates.append("updated_at = %s")
+        params.append(datetime.now().isoformat())
+        params.append(comment_id)
+        self._query(f"UPDATE comments SET {', '.join(updates)} WHERE id = %s", tuple(params))
+        return True
+
     def close(self):
         if self.conn:
             self.conn.close()

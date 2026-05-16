@@ -65,6 +65,35 @@ http://localhost:8000/api
 |--------|----------|-------------|
 | GET | `/export/mermaid` | Mermaid diagram |
 | GET | `/export/json` | Full JSON export |
+| GET | `/export/markdown` | Export story as Markdown |
+| GET | `/export/html` | Export story as HTML |
+| GET | `/export/text` | Export story as Plain Text |
+| GET | `/export/epub` | Export story as EPUB 3.0 (base64) |
+| GET | `/export/docx` | Export story as Manuscript DOCX (base64) |
+| GET | `/export/pdf` | Export story as Print-Ready PDF (base64) |
+
+### Real-time & Synchronization
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| WS | `/ws/sync/{project_id}` | Real-time WebSocket live collaboration & event broadcasting |
+| GET | `/api/lookahead/stream` | SSE stream for real-time lookahead forecasting cards |
+| GET | `/api/chapters/{id}/stream` | SSE stream for real-time chapter prose generation |
+
+### Research Engine
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/research/search` | Search the web for research using Brave Search API |
+| POST | `/research/store` | Store a research result as a persistent research node |
+| GET | `/research/nodes` | List stored research nodes |
+
+### Inline Comments & Targeted Revision
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/comments` | List inline comments by context/target |
+| POST | `/comments` | Create inline comment with character-offset anchoring |
+| POST | `/comments/{id}/ai-respond` | AI responds to a specific comment |
+| POST | `/comments/{id}/resolve` | Resolve comment & trigger post-revision ripple check |
+| POST | `/comments/{id}/pushback` | Push back on AI response |
 
 ## Example Usage
 

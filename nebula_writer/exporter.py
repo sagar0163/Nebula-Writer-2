@@ -106,10 +106,51 @@ class StoryExporter:
             "stats": self.db.get_stats(),
         }
 
-    def to_epub(self, title: str = "My Novel", author: str = "Author", description: str = "") -> tuple:
+    def to_epub(self, title: str = "My Novel", author: str = "Author", description: str = "") -> bytes:
+        """Export story as proper EPUB 3.0 using ebooklib (with fallback to zipfile)"""
+        try:
+            import ebooklib
+            from ebooklib import epub
+            import uuid
+            
+            book = epub.EpubBook()
+            book.set_identifier("nebula_writer_epub_" + str(uuid.uuid4()))
+            book.set_title(title)
+            book.set_language("en")
+            book.add_author(author)
+            
+            chapters = self.db.get_chapters()
+            spine = ['nav']
+            toc = []
+            
+            for i, ch in enumerate(sorted(chapters, key=lambda x: x["number"])):
+                ch_title = ch.get("title", f"Chapter {ch['number']}")
+                c = epub.EpubHtml(title=ch_title, file_name=f"chapter_{i+1}.xhtml", lang="en")
+                
+                content = ch.get("content", "")
+                para_html = "".join([f"<p>{self._escape_xml(p)}</p>" for p in content.split("\n\n") if p.strip()])
+                c.content = f"<h2>{self._escape_xml(ch_title)}</h2>{para_html}"
+                
+                book.add_item(c)
+                spine.append(c)
+                toc.append(c)
+                
+            book.toc = tuple(toc)
+            book.add_item(epub.EpubNcx())
+            book.add_item(epub.EpubNav())
+            book.spine = spine
+            
+            from io import BytesIO
+            buffer = BytesIO()
+            epub.write_epub(buffer, book)
+            return buffer.getvalue()
+        except ImportError:
+            return self._to_epub_manual(title, author, description)
+
+    def _to_epub_manual(self, title: str = "My Novel", author: str = "Author", description: str = "") -> bytes:
         """
         Export story as proper EPUB 3.0
-        Returns tuple of (container_xml, content_opf, content_html_list)
+        Returns EPUB bytes
         """
         import uuid
         import zipfile
@@ -257,6 +298,15 @@ p.first { text-indent: 0; }
         )
 
     def to_pdf(self) -> bytes:
+        """Export print-ready PDF using weasyprint (with fallback to reportlab)"""
+        try:
+            import weasyprint
+            html_content = self.to_pdf_html()
+            return weasyprint.HTML(string=html_content).write_pdf()
+        except ImportError:
+            return self._to_pdf_reportlab()
+
+    def _to_pdf_reportlab(self) -> bytes:
         """Generate actual PDF using reportlab"""
         from io import BytesIO
 
@@ -401,6 +451,37 @@ p.first { text-indent: 0; }
         return html
 
     def to_docx(self) -> bytes:
+        """Export story as DOCX using python-docx (with fallback to RTF)"""
+        try:
+            import docx
+            from io import BytesIO
+            
+            doc = docx.Document()
+            doc.add_heading("My Novel", 0)
+            doc.add_heading("Characters", 1)
+            
+            for e in self.db.get_entities():
+                if e.get("type") == "character":
+                    p = doc.add_paragraph()
+                    p.add_run(e["name"]).bold = True
+                    if e.get("description"):
+                        p.add_run(f": {e['description']}")
+                        
+            chapters = self.db.get_chapters()
+            for ch in sorted(chapters, key=lambda x: x["number"]):
+                doc.add_heading(f"Chapter {ch['number']}: {ch.get('title', 'Untitled')}", 1)
+                content = ch.get("content", "")
+                for para in content.split("\n\n"):
+                    if para.strip():
+                        doc.add_paragraph(para.strip())
+                        
+            buffer = BytesIO()
+            doc.save(buffer)
+            return buffer.getvalue()
+        except ImportError:
+            return self._to_docx_rtf()
+
+    def _to_docx_rtf(self) -> bytes:
         """Export story as DOCX (simplified RTF that Word can open)"""
         chapters = self.db.get_chapters()
         entities = self.db.get_entities()
@@ -473,7 +554,7 @@ p.first { text-indent: 0; }
 
     def to_epub_bytes(self, title: str = "My Novel", author: str = "Author") -> bytes:
         """Export as EPUB bytes"""
-        return self.to_epub(title, author)[0]
+        return self.to_epub(title, author)
 
     def save(self, format: str, filepath: str):
         """Save to file"""

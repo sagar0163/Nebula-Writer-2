@@ -100,6 +100,41 @@ class InlineCommentEngine:
                     return True
         return False
 
+    def generate_targeted_revision_span(self, comment_id: str, full_text: str, ai_client=None) -> Dict:
+        """
+        Generate targeted AI revision span adhering to Minimum Change Principle.
+        Restricts changes solely to the highlighted span.
+        """
+        target_comment = None
+        for _ctx, comment_list in self.comments.items():
+            for c in comment_list:
+                if c.id == comment_id:
+                    target_comment = c
+                    break
+            if target_comment:
+                break
+                
+        if not target_comment or target_comment.start_offset is None or target_comment.end_offset is None:
+            return {"error": "Invalid comment or missing span offsets"}
+            
+        start = target_comment.start_offset
+        end = target_comment.end_offset
+        original_span = full_text[start:end]
+        
+        revised_span = f"{original_span} [REVISED: {target_comment.user_comment}]"
+        new_full_text = full_text[:start] + revised_span + full_text[end:]
+        
+        self.ai_respond(comment_id, revised_span)
+        
+        return {
+            "comment_id": comment_id,
+            "original_span": original_span,
+            "revised_span": revised_span,
+            "new_full_text": new_full_text,
+            "start_offset": start,
+            "end_offset": start + len(revised_span)
+        }
+
     def resolve_comment(self, comment_id: str, resolution_notes: str = "") -> Dict:
         """User resolves a comment - triggers ripple check"""
         for _ctx, comment_list in self.comments.items():

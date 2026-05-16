@@ -26,9 +26,9 @@
 
 **Purpose**: Project initialization and environment verification
 
-- [ ] T001 Initialize Python virtual environment and verify python 3.11+ in .venv
-- [ ] T002 Update requirements.txt with fastapi, uvicorn, pydantic, websockets, ebooklib, python-docx, weasyprint, jinja2, pytest
-- [ ] T003 [P] Copy .env.example to .env and configure BRAVE_API_KEY placeholder
+- [x] T001 Initialize Python virtual environment and verify python 3.11+ in .venv
+- [x] T002 Update requirements.txt with fastapi, uvicorn, pydantic, websockets, ebooklib, python-docx, weasyprint, jinja2, pytest
+- [x] T003 [P] Copy .env.example to .env and configure BRAVE_API_KEY placeholder
 
 ---
 
@@ -38,12 +38,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create database schema migration script for projects, chapters, characters, comments, research_nodes, lookahead_cards in nebula_writer/schema.sql
-- [ ] T005 Implement core database access methods for new entities in nebula_writer/postgres_db.py
-- [ ] T006 Implement core database access methods for new entities in nebula_writer/supabase_db.py
-- [ ] T007 [P] Create base Pydantic domain models for API requests and responses in nebula_writer/models.py
-- [ ] T008 Configure structured logging and error handling middleware in nebula_writer/main.py
-- [ ] T009 Create end-to-end test harness structure in tests/test_writer_experience.py
+- [x] T004 Create database schema migration script for projects, chapters, characters, comments, research_nodes, lookahead_cards in nebula_writer/schema.sql
+- [x] T005 Implement core database access methods for new entities in nebula_writer/postgres_db.py
+- [x] T006 Implement core database access methods for new entities in nebula_writer/supabase_db.py
+- [x] T007 [P] Create base Pydantic domain models for API requests and responses in nebula_writer/models.py
+- [x] T008 Configure structured logging and error handling middleware in nebula_writer/main.py
+- [x] T009 Create end-to-end test harness structure in tests/test_writer_experience.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -59,16 +59,16 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Create automated test for SSE chapter streaming and quality gate evaluation in tests/test_writer_experience.py
+- [x] T010 [P] [US1] Create automated test for SSE chapter streaming and quality gate evaluation in tests/test_writer_experience.py
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Create QualityEngine class implementing 8-criteria scoring rubric in nebula_writer/quality_engine.py
-- [ ] T012 [P] [US1] Create AntiSlop filter class detecting and replacing AI cliches in nebula_writer/anti_slop.py
-- [ ] T013 [US1] Implement internal AI revision loop (up to 3 passes) within QualityEngine in nebula_writer/quality_engine.py
-- [ ] T014 [US1] Implement POST /api/chat endpoint returning StreamingResponse with SSE token emission in nebula_writer/main.py
-- [ ] T015 [US1] Integrate QualityEngine and AntiSlop filtering into chapter generation stream in nebula_writer/main.py
-- [ ] T016 [US1] Implement real-time SSE token rendering in Vue.js chat interface in frontend/index.html
+- [x] T011 [P] [US1] Create QualityEngine class implementing 8-criteria scoring rubric in nebula_writer/quality_engine.py
+- [x] T012 [P] [US1] Create AntiSlop filter class detecting and replacing AI cliches in nebula_writer/anti_slop.py
+- [x] T013 [US1] Implement internal AI revision loop (up to 3 passes) within QualityEngine in nebula_writer/quality_engine.py
+- [x] T014 [US1] Implement POST /api/chat endpoint returning StreamingResponse with SSE token emission in nebula_writer/main.py
+- [x] T015 [US1] Integrate QualityEngine and AntiSlop filtering into chapter generation stream in nebula_writer/main.py
+- [x] T016 [US1] Implement real-time SSE token rendering in Vue.js chat interface in frontend/index.html
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -82,13 +82,13 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T017 [P] [US2] Create automated test for natural language intent classification and entity extraction in tests/test_writer_experience.py
+- [x] T017 [P] [US2] Create automated test for natural language intent classification and entity extraction in tests/test_writer_experience.py
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement regex fast-path matching for structured writer commands in nebula_writer/conversation.py
-- [ ] T019 [US2] Implement LLM fallback classification and entity extraction in nebula_writer/conversation.py
-- [ ] T020 [US2] Integrate hybrid classification engine into message routing flow in nebula_writer/conversation.py
+- [x] T018 [US2] Implement regex fast-path matching for structured writer commands in nebula_writer/conversation.py
+- [x] T019 [US2] Implement LLM fallback classification and entity extraction in nebula_writer/conversation.py
+- [x] T020 [US2] Integrate hybrid classification engine into message routing flow in nebula_writer/conversation.py
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -102,16 +102,16 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T021 [P] [US3] Create automated test for WebSocket live codex synchronization and inline character editing in tests/test_writer_experience.py
+- [x] T021 [P] [US3] Create automated test for WebSocket live codex synchronization and inline character editing in tests/test_writer_experience.py
 
 ### Implementation for User Story 3
 
-- [ ] T022 [P] [US3] Implement CodexSyncManager connection manager class in nebula_writer/main.py
-- [ ] T023 [US3] Implement WebSocket endpoint /ws/sync/{project_id} with 30s heartbeat ping/pong in nebula_writer/main.py
-- [ ] T024 [US3] Implement background story graph event broadcast methods in nebula_writer/services/orchestrator.py
-- [ ] T025 [US3] Implement 3-card lookahead forecasting deck generation and SSE emission in nebula_writer/lookahead_engine.py
-- [ ] T026 [US3] Implement Brave Search API integration and research node storage in nebula_writer/research.py
-- [ ] T027 [US3] Implement Studio Mode Codex Browser UI, character inline editing, and WebSocket client sync in frontend/index.html
+- [x] T022 [P] [US3] Implement CodexSyncManager connection manager class in nebula_writer/main.py
+- [x] T023 [US3] Implement WebSocket endpoint /ws/sync/{project_id} with 30s heartbeat ping/pong in nebula_writer/main.py
+- [x] T024 [US3] Implement background story graph event broadcast methods in nebula_writer/services/orchestrator.py
+- [x] T025 [US3] Implement 3-card lookahead forecasting deck generation and SSE emission in nebula_writer/lookahead_engine.py
+- [x] T026 [US3] Implement Brave Search API integration and research node storage in nebula_writer/research.py
+- [x] T027 [US3] Implement Studio Mode Codex Browser UI, character inline editing, and WebSocket client sync in frontend/index.html
 
 **Checkpoint**: All P1 and P2 user stories should now be independently functional
 
@@ -125,14 +125,14 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T028 [P] [US4] Create automated test for anchored inline comments and targeted AI revision spans in tests/test_writer_experience.py
+- [x] T028 [P] [US4] Create automated test for anchored inline comments and targeted AI revision spans in tests/test_writer_experience.py
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Implement POST /api/comments endpoint accepting character-offset anchor fields in nebula_writer/main.py
-- [ ] T030 [US4] Implement targeted AI revision span generation adhering to Minimum Change Principle in nebula_writer/comment_system.py
-- [ ] T031 [US4] Implement post-revision ripple effect validation checks in nebula_writer/ripple_checker.py
-- [ ] T032 [US4] Implement text highlighting, comment anchoring, and accept/reject revision UI in frontend/index.html
+- [x] T029 [US4] Implement POST /api/comments endpoint accepting character-offset anchor fields in nebula_writer/main.py
+- [x] T030 [US4] Implement targeted AI revision span generation adhering to Minimum Change Principle in nebula_writer/comment_system.py
+- [x] T031 [US4] Implement post-revision ripple effect validation checks in nebula_writer/ripple_checker.py
+- [x] T032 [US4] Implement text highlighting, comment anchoring, and accept/reject revision UI in frontend/index.html
 
 **Checkpoint**: At this point, User Stories 1, 2, 3, AND 4 should all work independently
 
@@ -146,15 +146,15 @@
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T033 [P] [US5] Create automated test for EPUB, manuscript DOCX, and PDF document generation in tests/test_writer_experience.py
+- [x] T033 [P] [US5] Create automated test for EPUB, manuscript DOCX, and PDF document generation in tests/test_writer_experience.py
 
 ### Implementation for User Story 5
 
-- [ ] T034 [P] [US5] Implement EPUB 3.0 export generation using ebooklib in nebula_writer/exporter.py
-- [ ] T035 [P] [US5] Implement manuscript DOCX export generation using python-docx in nebula_writer/exporter.py
-- [ ] T036 [P] [US5] Implement print-ready PDF export generation using weasyprint in nebula_writer/exporter.py
-- [ ] T037 [US5] Implement GET /api/export/epub and GET /api/export/docx endpoints in nebula_writer/main.py
-- [ ] T038 [US5] Implement multi-format export download buttons in Chat Mode and Studio Mode UI in frontend/index.html
+- [x] T034 [P] [US5] Implement EPUB 3.0 export generation using ebooklib in nebula_writer/exporter.py
+- [x] T035 [P] [US5] Implement manuscript DOCX export generation using python-docx in nebula_writer/exporter.py
+- [x] T036 [P] [US5] Implement print-ready PDF export generation using weasyprint in nebula_writer/exporter.py
+- [x] T037 [US5] Implement GET /api/export/epub and GET /api/export/docx endpoints in nebula_writer/main.py
+- [x] T038 [US5] Implement multi-format export download buttons in Chat Mode and Studio Mode UI in frontend/index.html
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -164,9 +164,9 @@
 
 **Purpose**: System verification, documentation updates, and cross-cutting improvements
 
-- [ ] T039 [P] Update project API documentation in API.md
-- [ ] T040 Execute full 11-step Writer Experience Test suite using pytest tests/test_writer_experience.py
-- [ ] T041 Verify quickstart onboarding instructions and validate clean startup
+- [x] T039 [P] Update project API documentation in API.md
+- [x] T040 Execute full 11-step Writer Experience Test suite using pytest tests/test_writer_experience.py
+- [x] T041 Verify quickstart onboarding instructions and validate clean startup
 
 ---
 

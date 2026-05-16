@@ -147,3 +147,11 @@ class NarrativeOrchestrator:
         """Invalidate the narrative cache."""
         NarrativeCache.clear()
         return {"status": "cache_cleared"}
+
+    async def broadcast_story_graph_event(self, event_type: str, data: dict, project_id: str = "default_project"):
+        """Broadcast story graph events to connected WebSocket clients."""
+        try:
+            from nebula_writer.main import sync_manager
+            await sync_manager.broadcast({"type": event_type, "data": data}, project_id)
+        except Exception:
+            pass

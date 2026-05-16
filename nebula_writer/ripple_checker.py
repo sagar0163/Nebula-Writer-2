@@ -42,6 +42,18 @@ class RippleChecker:
             "requires_manual_review": True,
         }
 
+    async def validate_post_revision_ripple(self, original_text: str, revised_text: str, context: Dict = None) -> Dict:
+        """
+        Perform post-revision ripple effect validation checks.
+        Analyzes the exact delta between original and revised text to detect cascading inconsistencies.
+        """
+        change_desc = f"Revised text from '{original_text[:50]}...' to '{revised_text[:50]}...'"
+        report = await self.analyze_change(change_desc, context)
+        
+        report["revision_valid"] = len(report.get("structural_contradictions", [])) == 0
+        report["delta_analyzed"] = True
+        return report
+
     async def _predict_ripples(self, change: str, context: Dict = None) -> Dict:
         """Use AI to predict narrative ripple effects"""
         system_prompt = """You are a Narrative Consistency Expert.

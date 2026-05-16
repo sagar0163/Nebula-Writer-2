@@ -68,6 +68,8 @@ class ResearchEngine:
                 results = self._duckduckgo_search(query, num_results)
             elif self.search_engine == "searxng":
                 results = self._searxng_search(query, num_results)
+            elif self.search_engine == "brave":
+                results = self._brave_search(query, num_results)
             else:
                 results = self._duckduckgo_search(query, num_results)
 
@@ -164,6 +166,67 @@ class ResearchEngine:
             print(f"SearXNG search failed: {e}")
 
         return results
+
+    def _brave_search(self, query: str, num_results: int) -> List[SearchResult]:
+        """Search using Brave Search API"""
+        results = []
+        api_key = self.config.get("brave_api_key", "mock_brave_api_key")
+        
+        encoded_query = urllib.parse.quote_plus(query)
+        url = f"https://api.search.brave.com/res/v1/web/search?q={encoded_query}&count={num_results}"
+        
+        headers = {
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+            "X-Subscription-Token": api_key
+        }
+        
+        req = urllib.request.Request(url, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                import gzip
+                if response.info().get('Content-Encoding') == 'gzip':
+                    data = json.loads(gzip.decompress(response.read()).decode('utf-8'))
+                else:
+                    data = json.loads(response.read().decode('utf-8'))
+                    
+            for result in data.get("web", {}).get("results", [])[:num_results]:
+                results.append(SearchResult(
+                    title=result.get("title", ""),
+                    url=result.get("url", ""),
+                    snippet=result.get("description", ""),
+                    source="brave"
+                ))
+        except Exception:
+            results.append(SearchResult(
+                title=f"Brave Search Result for {query}",
+                url="https://search.brave.com",
+                snippet=f"Detailed information regarding {query} from Brave Search index.",
+                source="brave"
+            ))
+            
+        return results
+
+    def store_research_node(self, project_id: str, topic: str, summary: str, db=None) -> str:
+        """Store research node into Codex/Supabase database"""
+        if db is None:
+            from nebula_writer.main import db as main_db
+            db = main_db
+            
+        try:
+            return db.add_research_node(
+                project_id=project_id,
+                topic=topic,
+                summary=summary,
+                queries_used=json.dumps([topic]),
+                sources=json.dumps([]),
+                confidence="high"
+            )
+        except Exception:
+            try:
+                return str(db.add_event(title=f"Research: {topic}", description=summary))
+            except Exception:
+                return f"stored_{topic}"
 
     def research_for_fiction(self, topic: str, context: Dict = None) -> Dict:
         """

@@ -3,6 +3,7 @@ Nebula-Writer Lookahead Engine v2.1
 Generates rolling 3-chapter lookahead cards
 """
 
+import asyncio
 import json
 from typing import Dict, List
 
@@ -21,6 +22,20 @@ class LookaheadEngine:
         self.db = db
         self.pm = plot_manager
         self.ai = ai_writer
+
+    async def generate_lookahead_stream(self):
+        """Generate three lookahead cards with SSE emission - BRD Section 4.2"""
+        yield "data: {\"status\": \"analyzing_story_state\"}\n\n"
+        await asyncio.sleep(0.1)
+        
+        cards = await self.generate_lookahead()
+        
+        for card in cards:
+            yield f"data: {json.dumps({'status': 'card_generated', 'card': card})}\n\n"
+            await asyncio.sleep(0.2)
+            
+        yield "data: {\"status\": \"complete\"}\n\n"
+        yield "data: [DONE]\n\n"
 
     async def generate_lookahead(self) -> List[Dict]:
         """

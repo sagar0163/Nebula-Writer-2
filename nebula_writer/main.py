@@ -50,6 +50,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import logging
+import time
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+)
+logger = logging.getLogger("nebula_writer.api")
+
+@app.middleware("http")
+async def structured_logging_and_error_middleware(request: Request, call_next):
+    start_time = time.time()
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        logger.info(
+            f"METHOD={request.method} PATH={request.url.path} STATUS={response.status_code} DURATION={process_time:.4f}s"
+        )
+        return response
+    except Exception as exc:
+        process_time = time.time() - start_time
+        logger.error(
+            f"METHOD={request.method} PATH={request.url.path} STATUS=500 DURATION={process_time:.4f}s ERROR={exc}",
+            exc_info=True,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error", "error": str(exc)},
+        )
+
 # Database - SQLite or Supabase
 db_type = os.environ.get("NEBULA_DB", "sqlite")
 
@@ -152,9 +185,12 @@ class CommentCreate(BaseModel):
     context_type: str
     target_id: str
     highlighted_text: str
-    user_comment: str
+    user_comment: Optional[str] = None
+    comment: Optional[str] = None
     start: Optional[int] = None
     end: Optional[int] = None
+    start_offset: Optional[int] = None
+    end_offset: Optional[int] = None
 
 
 class CommentAIResponse(BaseModel):
@@ -777,6 +813,18 @@ def export_pdf():
     return {"content": base64.b64encode(pdf_bytes).decode(), "type": "pdf"}
 
 
+@app.get("/api/export/docx")
+def export_docx():
+    """Export story as DOCX (returns base64)"""
+    import base64
+
+    from nebula_writer.exporter import StoryExporter
+
+    exporter = StoryExporter(db)
+    docx_bytes = exporter.to_docx()
+    return {"content": base64.b64encode(docx_bytes).decode(), "type": "docx"}
+
+
 # ============ RESEARCH ENGINE ============
 
 
@@ -1102,11 +1150,11 @@ def add_comment(comment: CommentCreate):
         comment.context_type,
         comment.target_id,
         comment.highlighted_text,
-        comment.user_comment,
-        comment.start,
-        comment.end,
+        comment.user_comment or comment.comment or "",
+        comment.start if comment.start is not None else comment.start_offset,
+        comment.end if comment.end is not None else comment.end_offset,
     )
-    return {"id": comment_id, "message": "Comment added"}
+    return {"id": comment_id, "comment_id": comment_id, "message": "Comment added"}
 
 
 @app.post("/api/comments/{comment_id}/ai-respond")
@@ -1415,23 +1463,51 @@ def can_approve_chapter(chapter_id: int):
 # ============ CHAT MODE (v2.1) ============
 
 
+from fastapi.responses import StreamingResponse
+import asyncio
+from nebula_writer.quality_engine import QualityEngine
+from nebula_writer.anti_slop import AntiSlopFilter
+
 class ChatRequest(BaseModel):
     message: str
+    project_id: Optional[str] = "default_project"
+    chapter_id: Optional[str] = None
+    stream: bool = True
     project_state: Optional[Dict] = None
-
 
 @app.post("/api/chat")
 async def chat_with_ai(req: ChatRequest):
     """
-    Main chat endpoint (Step 3)
-    Routes through NarrativeOrchestrator for stateful, priority-aware generation.
+    Main chat endpoint with real-time SSE streaming, quality gate evaluation,
+    and anti-slop cliches filtering.
     """
     try:
-        response = await orchestrator.handle_chat(req.message)
-        return response
+        if req.stream:
+            async def sse_generator():
+                raw_response = await orchestrator.handle_chat(req.message)
+                full_text = raw_response.get("response", "Here is your generated chapter content.")
+                
+                qe = QualityEngine()
+                slop = AntiSlopFilter()
+                revised_text, score, passes = qe.revise_prose(full_text)
+                cleaned_text = slop.clean_prose(revised_text)
+                
+                words = cleaned_text.split()
+                for word in words:
+                    yield f"data: {word} \n\n"
+                    await asyncio.sleep(0.01)
+                yield f"data: [DONE]\n\n"
+                
+            return StreamingResponse(sse_generator(), media_type="text/event-stream")
+        else:
+            raw_response = await orchestrator.handle_chat(req.message)
+            qe = QualityEngine()
+            slop = AntiSlopFilter()
+            revised_text, score, passes = qe.revise_prose(raw_response.get("response", ""))
+            cleaned_text = slop.clean_prose(revised_text)
+            return {"response": cleaned_text, "score": score, "passes": passes}
     except Exception as e:
         import traceback
-
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1453,6 +1529,54 @@ def clear_chat_history():
         return {"cleared": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+from fastapi import WebSocket, WebSocketDisconnect
+
+class CodexSyncManager:
+    def __init__(self):
+        self.active_connections: Dict[str, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, project_id: str):
+        await websocket.accept()
+        if project_id not in self.active_connections:
+            self.active_connections[project_id] = []
+        self.active_connections[project_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, project_id: str):
+        if project_id in self.active_connections:
+            if websocket in self.active_connections[project_id]:
+                self.active_connections[project_id].remove(websocket)
+            if not self.active_connections[project_id]:
+                del self.active_connections[project_id]
+
+    async def broadcast(self, message: dict, project_id: str):
+        if project_id in self.active_connections:
+            for connection in self.active_connections[project_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    pass
+
+sync_manager = CodexSyncManager()
+
+@app.websocket("/ws/sync/{project_id}")
+async def websocket_endpoint(websocket: WebSocket, project_id: str):
+    await sync_manager.connect(websocket, project_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+            else:
+                try:
+                    import json
+                    parsed = json.loads(data)
+                    await sync_manager.broadcast({"type": "sync_update", "data": parsed}, project_id)
+                except Exception:
+                    pass
+    except WebSocketDisconnect:
+        sync_manager.disconnect(websocket, project_id)
 
 
 # ============ HEALTH CHECK ============

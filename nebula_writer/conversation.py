@@ -525,7 +525,7 @@ def get_conversation_engine() -> ConversationEngine:
     """Get or create conversation engine"""
     global _conversation_engine
     if _conversation_engine is None:
-        from main import db  # Import from main
+        from nebula_writer.main import db  # Import from main
 
         _conversation_engine = ConversationEngine(db)
     return _conversation_engine

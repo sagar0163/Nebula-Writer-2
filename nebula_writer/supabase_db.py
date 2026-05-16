@@ -335,6 +335,114 @@ class SupabaseDB:
         result = self._request("POST", "events", data=data)
         return result.get("id", "0")
 
+    # ============ VISION GAP PLAN ENTITIES ============
+
+    def get_projects(self) -> List[Dict]:
+        result = self._request("GET", "projects")
+        return result if isinstance(result, list) else []
+
+    def get_project(self, project_id: str) -> Optional[Dict]:
+        result = self._request("GET", "projects", filters={"id": project_id})
+        return result[0] if isinstance(result, list) and result else None
+
+    def add_project(self, project_id: str, title: str = "Untitled Novel", author: str = "Unknown") -> str:
+        data = {"id": project_id, "title": title, "author": author}
+        result = self._request("POST", "projects", data=data)
+        return result.get("id", project_id) if isinstance(result, dict) else project_id
+
+    def get_characters(self, project_id: str) -> List[Dict]:
+        result = self._request("GET", "characters", filters={"project_id": project_id})
+        return result if isinstance(result, list) else []
+
+    def add_character(self, project_id: str, name: str, role: str = "major", core_desire: str = "", arc_current_state: str = "") -> str:
+        data = {
+            "project_id": project_id,
+            "name": name,
+            "role": role,
+            "core_desire": core_desire,
+            "arc_current_state": arc_current_state
+        }
+        result = self._request("POST", "characters", data=data)
+        return str(result.get("id", "0")) if isinstance(result, dict) else "0"
+
+    def update_character(self, character_id: int, core_desire: str = None, arc_current_state: str = None) -> bool:
+        data = {}
+        if core_desire is not None:
+            data["core_desire"] = core_desire
+        if arc_current_state is not None:
+            data["arc_current_state"] = arc_current_state
+        if not data:
+            return True
+        data["updated_at"] = datetime.now().isoformat()
+        self._request("PATCH", "characters", data=data, filters={"id": character_id})
+        return True
+
+    def get_research_nodes(self, project_id: str) -> List[Dict]:
+        result = self._request("GET", "research_nodes", filters={"project_id": project_id})
+        return result if isinstance(result, list) else []
+
+    def add_research_node(self, project_id: str, topic: str, summary: str, queries_used: str = "[]", sources: str = "[]", confidence: str = "medium") -> str:
+        data = {
+            "project_id": project_id,
+            "topic": topic,
+            "summary": summary,
+            "queries_used": queries_used,
+            "sources": sources,
+            "confidence": confidence
+        }
+        result = self._request("POST", "research_nodes", data=data)
+        return str(result.get("id", "0")) if isinstance(result, dict) else "0"
+
+    def get_lookahead_cards(self, project_id: str) -> List[Dict]:
+        result = self._request("GET", "lookahead_cards", filters={"project_id": project_id})
+        if isinstance(result, list):
+            return sorted(result, key=lambda x: x.get("card_index", 0))
+        return []
+
+    def add_lookahead_card(self, project_id: str, card_index: int, chapter_number: int, title: str, scene_intention: str, opening_image: str, character_focus: str, tension_targeted: str) -> str:
+        data = {
+            "project_id": project_id,
+            "card_index": card_index,
+            "chapter_number": chapter_number,
+            "title": title,
+            "scene_intention": scene_intention,
+            "opening_image": opening_image,
+            "character_focus": character_focus,
+            "tension_targeted": tension_targeted
+        }
+        # Supabase upsert equivalent
+        result = self._request("POST", "lookahead_cards", data=data)
+        return str(result.get("id", "0")) if isinstance(result, dict) else "0"
+
+    def get_comments(self, chapter_id: str) -> List[Dict]:
+        result = self._request("GET", "comments", filters={"chapter_id": chapter_id})
+        return result if isinstance(result, list) else []
+
+    def add_comment(self, chapter_id: str, anchor_start: int, anchor_end: int, anchor_text: str, comment_text: str) -> str:
+        data = {
+            "chapter_id": chapter_id,
+            "anchor_start": anchor_start,
+            "anchor_end": anchor_end,
+            "anchor_text": anchor_text,
+            "comment_text": comment_text
+        }
+        result = self._request("POST", "comments", data=data)
+        return str(result.get("id", "0")) if isinstance(result, dict) else "0"
+
+    def update_comment(self, comment_id: int, ai_response: str = None, revised_text: str = None, status: str = None) -> bool:
+        data = {}
+        if ai_response is not None:
+            data["ai_response"] = ai_response
+        if revised_text is not None:
+            data["revised_text"] = revised_text
+        if status is not None:
+            data["status"] = status
+        if not data:
+            return True
+        data["updated_at"] = datetime.now().isoformat()
+        self._request("PATCH", "comments", data=data, filters={"id": comment_id})
+        return True
+
 
 def create_supabase_db() -> SupabaseDB:
     """Create Supabase database instance"""
