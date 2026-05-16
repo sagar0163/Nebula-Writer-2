@@ -1,4 +1,4 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan: specs/001-vision-gap-plan/plan.md
+shell commands, and other important information, read the current plan: specs/002-fix-quality-engine/plan.md
 <!-- SPECKIT END -->
