@@ -773,7 +773,13 @@
                 <div class="glass rounded-2xl p-8 w-full max-w-lg">
                     <div class="flex justify-between mb-6">
                         <h3 class="text-xl font-semibold">{{ modalTitle }}</h3>
-                        <button @click="showAddModal = false" class="text-slate-400 hover:text-white">X</button>
+                        <button @click="showAddModal = false"
+                                class="text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded p-1 transition-colors"
+                                aria-label="Close modal">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
 
                     <div v-if="modalType === 'entity' && (form.entity_type === 'character' || form.type === 'character')" class="flex gap-4 mb-4 border-b border-white/10">
