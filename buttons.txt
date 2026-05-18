@@ -1,0 +1,39 @@
+202:                        <button @click="viewMode = 'chat'"
+207:                        <button @click="viewMode = 'studio'"
+245:                    <button @click="currentView = 'export'"
+257:                        <button @click="currentView = 'dashboard'" :class="navClass('dashboard')"
+262:                        <button @click="currentView = 'chapters'" :class="navClass('chapters')"
+264:                        <button @click="currentView = 'lookahead'" :class="navClass('lookahead')"
+269:                        <button @click="currentView = 'compass'" :class="navClass('compass')"
+272:                        <button @click="currentView = 'entities'" :class="navClass('entities')"
+274:                        <button @click="currentView = 'research'" :class="navClass('research')"
+279:                        <button @click="currentView = 'visualize'" :class="navClass('visualize')"
+320:                                            <button @click="clearChat" class="text-[10px] text-slate-500 hover:text-slate-300 uppercase tracking-widest font-bold">Clear Chat</button>
+359:                                                <button @click="executeChapter(msg.data)" class="btn-primary w-full py-2 rounded-xl text-xs font-bold">WRITE IT</button>
+390:                                            <button type="submit"
+403:                                            <button
+407:                                            <button
+449:                                                    <button @click="approveExtraction(idx)"
+459:                                                    <button @click="removeExtraction(idx)"
+515:                                        <button @click="currentView = 'chapters'" class="btn-primary px-6 py-3 rounded-xl shadow-lg shadow-violet-500/20 font-semibold tracking-wide">
+571:                                        <button @click="generateLookahead"
+581:                                                <button @click="approveCard(card.id)"
+583:                                                <button @click="discardCard(card.id)"
+594:                                        <button @click="modalType = 'entity'; showAddModal = true"
+633:                                                <button @click="saveChapterContent"
+635:                                                <button @click="selectedChapter = null"
+653:                                            <button @click="performResearch"
+742:                                        <button type="submit"
+783:                        <button @click="showAddModal = false" class="text-slate-400 hover:text-white transition-colors" aria-label="Close modal" title="Close">
+791:                        <button @click="entityModalTab = 'info'"
+794:                        <button @click="entityModalTab = 'knowledge'"
+812:                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+819:                            <button v-if="!showAddKnowledgeForm" @click="showAddKnowledgeForm = true"
+826:                                    <button @click="showAddKnowledgeForm = false" class="text-slate-500 hover:text-white transition-colors" aria-label="Cancel" title="Cancel">
+839:                                    <button @click="addKnowledge" class="btn-primary px-4 py-1.5 text-xs rounded-lg">Save</button>
+859:                                    <button @click="copyToClipboard(k.knowledge)" class="text-slate-600 hover:text-violet-400 transition-colors" title="Copy" aria-label="Copy to clipboard">
+862:                                    <button @click="deleteKnowledge(k.id)" class="text-slate-600 hover:text-red-400 transition-colors" title="Delete" aria-label="Delete knowledge point">
+884:                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+894:                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+911:                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
+924:                        <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
