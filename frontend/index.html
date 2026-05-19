@@ -611,13 +611,29 @@
                                 </div>
 
                                 <div v-if="currentView === 'chapters'" class="h-full animate-in slide-in-from-right-4">
-                                    <div v-if="!selectedChapter" class="grid grid-cols-3 gap-4">
-                                        <div v-for="chapter in chapters" :key="chapter.id"
-                                            @click="selectChapter(chapter)"
-                                            class="glass rounded-xl p-6 border border-space-600 cursor-pointer hover:border-violet-500/50">
-                                            <div class="text-xs text-violet-400 font-mono mb-2">CHAPTER {{
-                                                chapter.number }}</div>
-                                            <h4 class="font-bold">{{ chapter.title || 'Untitled' }}</h4>
+                                    <div v-if="!selectedChapter">
+                                        <div class="flex justify-between items-center mb-6">
+                                            <h3 class="text-lg font-semibold">Manuscript Chapters</h3>
+                                            <button @click="modalType = 'chapter'; showAddModal = true"
+                                                class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add Chapter</button>
+                                        </div>
+                                        <div v-if="chapters.length === 0" class="flex flex-col items-center justify-center p-12 glass rounded-2xl border border-space-600 text-center">
+                                            <div class="w-16 h-16 bg-space-800 rounded-full flex items-center justify-center mb-4 border border-space-600">
+                                                <svg class="w-8 h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                            </div>
+                                            <h4 class="text-lg font-bold text-slate-200 mb-2">No chapters yet</h4>
+                                            <p class="text-sm text-slate-400 max-w-md">Start writing your manuscript by adding your first chapter, or chat with the Story Architect to generate one.</p>
+                                        </div>
+                                        <div v-else class="grid grid-cols-3 gap-4">
+                                            <div v-for="chapter in chapters" :key="chapter.id"
+                                                @click="selectChapter(chapter)"
+                                                class="glass rounded-xl p-6 border border-space-600 cursor-pointer hover:border-violet-500/50">
+                                                <div class="text-xs text-violet-400 font-mono mb-2">CHAPTER {{
+                                                    chapter.number }}</div>
+                                                <h4 class="font-bold">{{ chapter.title || 'Untitled' }}</h4>
+                                            </div>
                                         </div>
                                     </div>
                                     <div v-else
