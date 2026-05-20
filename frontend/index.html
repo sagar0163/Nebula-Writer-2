@@ -1055,8 +1055,14 @@
                     }
                 },
                 async mounted() {
-                    await this.loadData();
-                    await this.fetchChatHistory();
+                    // ⚡ Bolt Performance Optimization:
+                    // What: Eliminated network waterfalls by fetching independent initial data concurrently using Promise.all
+                    // Why: this.loadData() and this.fetchChatHistory() are independent but were being awaited sequentially, increasing load time.
+                    // Impact: Reduces initial page load time by eliminating sequential fetch waterfalls.
+                    await Promise.all([
+                        this.loadData(),
+                        this.fetchChatHistory()
+                    ]);
                     
                     // Poll worker status
                     this.fetchWorkerStatus();
@@ -1376,14 +1382,20 @@
                     },
                     async loadData() {
                         try {
-                            const [ent, chap, thr, rules, stats, rels, fore] = await Promise.all([
+                            // ⚡ Bolt Performance Optimization:
+                            // What: Moved fetchCompass() and fetchLookahead() into the initial Promise.all array.
+                            // Why: They do not depend on the results of the other fetch requests and were previously awaited after the initial batch.
+                            // Impact: Saves up to two round-trip network delays during loadData execution.
+                            const [ent, chap, thr, rules, stats, rels, fore, _, __] = await Promise.all([
                                 fetch('http://localhost:8000/api/entities').then(r => r.json()),
                                 fetch('http://localhost:8000/api/chapters').then(r => r.json()),
                                 fetch('http://localhost:8000/api/plot-threads').then(r => r.json()),
                                 fetch('http://localhost:8000/api/world-rules').then(r => r.json()),
                                 fetch('http://localhost:8000/api/stats').then(r => r.json()),
                                 fetch('http://localhost:8000/api/relationships').then(r => r.json()),
-                                fetch('http://localhost:8000/api/foreshadowing').then(r => r.json())
+                                fetch('http://localhost:8000/api/foreshadowing').then(r => r.json()),
+                                this.fetchCompass(),
+                                this.fetchLookahead()
                             ]);
                             this.entities = ent;
                             this.chapters = chap;
@@ -1392,9 +1404,6 @@
                             this.stats = stats;
                             this.relationships = rels;
                             this.foreshadowing = fore;
-
-                            await this.fetchCompass();
-                            await this.fetchLookahead();
                         } catch (e) { console.error("Load failed", e); }
                     },
                     closeModal() {

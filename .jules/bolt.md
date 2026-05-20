@@ -1,3 +1,7 @@
 ## 2024-05-18 - Avoid repeated O(N) string processing in iteration loops
 **Learning:** Found an inefficiency in `nebula_writer/audit.py` where long chapter text strings were repeatedly lowercased `chapter_content.lower()` inside a large iteration loop over entities and relationships. This created unnecessary and repetitive overhead for an operation that produces an identical output each time.
 **Action:** When performing substring searches against a potentially long block of text across an iteration set, lowercase the text once before entering the loop to ensure O(1) text processing overhead instead of O(N).
+
+## 2026-05-20 - [Promise.all Data Fetching Bottleneck in Vanilla Vue]
+**Learning:** [In a frontend app utilizing vanilla Vue via CDN (without a build step or reactive setup methods), independent `async` lifecycle methods or fetches often result in sequential network waterfalls if not explicitly combined. Here, `loadData()` and `fetchChatHistory()` were independently awaited in `mounted()`, and within `loadData()`, several endpoints were awaited sequentially after the initial batch despite having no cross-dependencies. This pattern artificially slowed down the initial render.]
+**Action:** [Always audit `mounted()` hooks and any initialization data loading functions for independent fetch calls. Group them together using `Promise.all` to fetch concurrently and eliminate network waterfalls during the application's critical loading path.]
