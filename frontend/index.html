@@ -382,7 +382,7 @@
                                     <!-- Input Bar -->
                                     <div class="p-6 border-t border-space-600 bg-space-900/80 backdrop-blur-md">
                                         <form @submit.prevent="sendArchitectMessage" class="relative group">
-                                            <textarea v-model="architectInput"
+                                            <textarea v-model="architectInput" aria-label="Message for AI Architect"
                                                 placeholder="Give feedback, redirect the story, or describe a new character..."
                                                 class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-2xl px-6 py-4 pr-16 text-sm transition-all resize-none overflow-hidden h-14 hover:bg-space-800"
                                                 @keydown.enter.prevent="sendArchitectMessage"
@@ -468,9 +468,9 @@
                                                     </button>
                                                 </div>
                                             </div>
-                                            <input v-model="ext.name"
+                                            <input v-model="ext.name" aria-label="Extraction Name"
                                                 class="bg-transparent border-none font-bold text-sm focus:ring-0 p-0 w-full mb-1 text-slate-200">
-                                            <textarea v-model="ext.description"
+                                            <textarea v-model="ext.description" aria-label="Extraction Description"
                                                 class="bg-transparent border-none text-[11px] text-slate-400 focus:ring-0 p-0 w-full resize-none leading-relaxed"
                                                 rows="2"></textarea>
                                         </div>
@@ -626,7 +626,7 @@
                                             <div class="flex items-center gap-4">
                                                 <span class="text-violet-400 font-mono">CH {{ selectedChapter.number
                                                     }}</span>
-                                                <input v-model="selectedChapter.title"
+                                                <input v-model="selectedChapter.title" aria-label="Chapter Title"
                                                     class="bg-transparent border-none text-xl font-bold focus:ring-0">
                                             </div>
                                             <div class="flex gap-2">
@@ -636,7 +636,7 @@
                                                     class="btn-secondary px-4 py-2 rounded-lg text-xs">Close</button>
                                             </div>
                                         </div>
-                                        <textarea v-model="selectedChapter.content"
+                                        <textarea v-model="selectedChapter.content" aria-label="Chapter Content"
                                             class="flex-1 p-8 bg-transparent border-none focus:ring-0 font-serif text-lg leading-relaxed resize-none"></textarea>
                                     </div>
                                 </div>
@@ -647,7 +647,7 @@
                                     <div class="glass rounded-2xl p-8 border border-space-600">
                                         <h3 class="text-xl font-bold mb-4">Web Research</h3>
                                         <div class="flex gap-3 mb-6">
-                                            <input v-model="researchQuery"
+                                            <input v-model="researchQuery" aria-label="Research Query"
                                                 placeholder="Search for historical facts, settings, or details..."
                                                 class="flex-1 bg-space-800 border border-space-600 rounded-xl px-4 py-3">
                                             <button @click="performResearch"
@@ -734,7 +734,7 @@
 
                                 <div class="p-3 border-t border-space-600 bg-space-900/80">
                                     <form @submit.prevent="sendArchitectMessage" class="relative group">
-                                        <textarea v-model="architectInput"
+                                        <textarea v-model="architectInput" aria-label="Message for AI Architect"
                                             placeholder="Talk to the AI while you edit..."
                                             class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 rounded-xl px-3 py-2 pr-10 text-xs resize-none overflow-hidden h-10 hover:bg-space-800"
                                             @keydown.enter.prevent="sendArchitectMessage"
@@ -798,16 +798,16 @@
 
                     <!-- Entity Form -->
                     <form v-if="modalType === 'entity' && entityModalTab === 'info'" @submit.prevent="saveEntity" class="space-y-4">
-                        <input v-model="form.name" placeholder="Name" class="input-field w-full px-4 py-2 rounded-xl"
+                        <input v-model="form.name" placeholder="Name" aria-label="Name" class="input-field w-full px-4 py-2 rounded-xl"
                             required>
-                        <select v-model="form.entity_type" class="input-field w-full px-4 py-2 rounded-xl">
+                        <select v-model="form.entity_type" aria-label="Entity Type" class="input-field w-full px-4 py-2 rounded-xl">
                             <option value="character">Character</option>
                             <option value="location">Location</option>
                             <option value="item">Item</option>
                         </select>
-                        <textarea v-model="form.description" placeholder="Description"
+                        <textarea v-model="form.description" placeholder="Description" aria-label="Description"
                             class="input-field w-full px-4 py-2 rounded-xl" rows="3"></textarea>
-                        <input v-model="form.current_location" placeholder="Current Location"
+                        <input v-model="form.current_location" placeholder="Current Location" aria-label="Current Location"
                             class="input-field w-full px-4 py-2 rounded-xl">
                         <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
                     </form>
@@ -827,7 +827,7 @@
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
-                                <textarea v-model="newKnowledge.content" placeholder="What does this character know? (e.g., 'Remembers the secret password to the vault')"
+                                <textarea v-model="newKnowledge.content" placeholder="What does this character know? (e.g., 'Remembers the secret password to the vault')" aria-label="Knowledge content"
                                     class="input-field w-full px-3 py-2 text-sm rounded-lg" rows="3"></textarea>
                                 <div class="flex items-center gap-3">
                                     <div class="flex-1">
@@ -869,40 +869,40 @@
 
                     <!-- Relationship Form -->
                     <form v-if="modalType === 'relationship'" @submit.prevent="saveRelationship" class="space-y-4">
-                        <select v-model="form.from_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
+                        <select v-model="form.from_entity_id" aria-label="From Entity" class="input-field w-full px-4 py-2 rounded-xl">
                             <option v-for="e in entities" :key="e.id" :value="e.id">{{ e.name }}</option>
                         </select>
-                        <input v-model="form.relationship_type" placeholder="e.g. loves, works_with"
+                        <input v-model="form.relationship_type" placeholder="e.g. loves, works_with" aria-label="Relationship Type"
                             class="input-field w-full px-4 py-2 rounded-xl" required>
-                        <select v-model="form.to_entity_id" class="input-field w-full px-4 py-2 rounded-xl">
+                        <select v-model="form.to_entity_id" aria-label="To Entity" class="input-field w-full px-4 py-2 rounded-xl">
                             <option v-for="e in entities" :key="e.id" :value="e.id">{{ e.name }}</option>
                         </select>
                         <div class="flex items-center gap-2">
                             <span class="text-sm text-slate-400">Strength: {{ form.strength }}</span>
-                            <input v-model="form.strength" type="range" min="0" max="1" step="0.1" class="flex-1">
+                            <input v-model="form.strength" aria-label="Strength" type="range" min="0" max="1" step="0.1" class="flex-1">
                         </div>
                         <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
                     </form>
 
                     <!-- Chapter Form -->
                     <form v-if="modalType === 'chapter'" @submit.prevent="saveChapter" class="space-y-4">
-                        <input v-model="form.number" type="number" placeholder="Chapter #"
+                        <input v-model="form.number" type="number" placeholder="Chapter #" aria-label="Chapter Number"
                             class="input-field w-full px-4 py-2 rounded-xl" required>
-                        <input v-model="form.title" placeholder="Title" class="input-field w-full px-4 py-2 rounded-xl">
-                        <textarea v-model="form.content" placeholder="Content..."
+                        <input v-model="form.title" placeholder="Title" aria-label="Title" class="input-field w-full px-4 py-2 rounded-xl">
+                        <textarea v-model="form.content" placeholder="Content..." aria-label="Content"
                             class="input-field w-full px-4 py-2 rounded-xl" rows="6"></textarea>
                         <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
                     </form>
 
                     <!-- Plot Thread Form -->
                     <form v-if="modalType === 'plot-thread'" @submit.prevent="savePlotThread" class="space-y-4">
-                        <input v-model="form.title" placeholder="Thread Title"
+                        <input v-model="form.title" placeholder="Thread Title" aria-label="Thread Title"
                             class="input-field w-full px-4 py-2 rounded-xl" required>
-                        <textarea v-model="form.description" placeholder="Description"
+                        <textarea v-model="form.description" placeholder="Description" aria-label="Description"
                             class="input-field w-full px-4 py-2 rounded-xl" rows="2"></textarea>
-                        <input v-model="form.planted_chapter" type="number" placeholder="Planted in Chapter"
+                        <input v-model="form.planted_chapter" type="number" placeholder="Planted in Chapter" aria-label="Planted in Chapter Number"
                             class="input-field w-full px-4 py-2 rounded-xl">
-                        <select v-model="form.importance" class="input-field w-full px-4 py-2 rounded-xl">
+                        <select v-model="form.importance" aria-label="Importance" class="input-field w-full px-4 py-2 rounded-xl">
                             <option value="minor">Minor</option>
                             <option value="normal">Normal</option>
                             <option value="major">Major</option>
@@ -913,13 +913,13 @@
 
                     <!-- World Rule Form -->
                     <form v-if="modalType === 'world-rule'" @submit.prevent="saveWorldRule" class="space-y-4">
-                        <input v-model="form.category" placeholder="Category (e.g., magic, technology)"
+                        <input v-model="form.category" placeholder="Category (e.g., magic, technology)" aria-label="Category"
                             class="input-field w-full px-4 py-2 rounded-xl" required>
-                        <input v-model="form.rule" placeholder="The Rule"
+                        <input v-model="form.rule" placeholder="The Rule" aria-label="Rule"
                             class="input-field w-full px-4 py-2 rounded-xl" required>
-                        <textarea v-model="form.description" placeholder="Description"
+                        <textarea v-model="form.description" placeholder="Description" aria-label="Description"
                             class="input-field w-full px-4 py-2 rounded-xl" rows="2"></textarea>
-                        <input v-model="form.exceptions" placeholder="Exceptions (optional)"
+                        <input v-model="form.exceptions" placeholder="Exceptions (optional)" aria-label="Exceptions"
                             class="input-field w-full px-4 py-2 rounded-xl">
                         <button type="submit" class="btn-primary w-full py-3 rounded-xl">Save</button>
                     </form>
