@@ -258,6 +258,9 @@ class AntiSlopQualityLayer:
         # Continuity - basic check
         scores["continuity"] = 8
 
+        # Cache content.lower() to avoid redundant work in loops
+        content_lower = content.lower()
+
         # Originality - cliche detection (simplified)
         cliches = [
             "suddenly",
@@ -266,7 +269,7 @@ class AntiSlopQualityLayer:
             "she knew in her heart",
             "as luck would have it",
         ]
-        has_cliche = any(c in content.lower() for c in cliches)
+        has_cliche = any(c in content_lower for c in cliches)
         scores["originality"] = 4 if has_cliche else 7
 
         # Dialogue - check for dialogue markers
@@ -280,12 +283,12 @@ class AntiSlopQualityLayer:
 
         # Tension - check for tension words
         tension_words = ["fear", "worry", "danger", "threat", "urgent", "quickly", "run"]
-        tension_score = sum(1 for w in tension_words if w in content.lower())
+        tension_score = sum(1 for w in tension_words if w in content_lower)
         scores["tension"] = min(10, 5 + tension_score)
 
         # Show Not Tell - sensory words
         sensory = ["saw", "heard", "smelled", "felt", "tasted", "touch"]
-        sensory_score = sum(1 for w in sensory if w in content.lower())
+        sensory_score = sum(1 for w in sensory if w in content_lower)
         scores["show_not_tell"] = min(10, 5 + sensory_score)
 
         # Calculate overall score
