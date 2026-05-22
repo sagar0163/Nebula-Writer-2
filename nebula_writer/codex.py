@@ -163,6 +163,9 @@ class CodexDatabase:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_attributes_entity ON attributes(entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_relationships_from ON relationships(from_entity_id)")
+        # Performance: Added index on to_entity_id to enable SQLite Multi-Index OR strategy
+        # This speeds up get_relationships which filters by both from and to entity IDs.
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_relationships_to ON relationships(to_entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chapters_number ON chapters(number)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chapter_versions_chapter ON chapter_versions(chapter_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_character_knowledge_entity ON character_knowledge(entity_id)")
