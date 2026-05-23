@@ -596,8 +596,11 @@
                                     </div>
                                     <div class="grid grid-cols-3 gap-4">
                                         <div v-for="entity in entities" :key="entity.id"
-                                            class="glass rounded-xl p-4 border border-space-600 hover:border-violet-500/50 transition-all cursor-pointer"
-                                            @click="editEntity(entity)">
+                                            class="glass rounded-xl p-4 border border-space-600 hover:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all cursor-pointer"
+                                            tabindex="0"
+                                            @click="editEntity(entity)"
+                                            @keydown.enter="editEntity(entity)"
+                                            @keydown.space.prevent="editEntity(entity)">
                                             <div class="flex justify-between items-start mb-2">
                                                 <span
                                                     class="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-400">{{
