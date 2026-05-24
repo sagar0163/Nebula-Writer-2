@@ -1415,18 +1415,27 @@ if __name__ == "__main__":
         conn = self._get_connection()
         cursor = conn.cursor()
 
+        # Security: Prevent SQL Injection by explicitly filtering keys against an allowlist
+        allowed_columns = {"target_ending", "major_milestones", "thematic_focus", "arc_targets"}
+        filtered_plan = {k: v for k, v in plan.items() if k in allowed_columns}
+
+        if not filtered_plan:
+            if not self._conn:
+                conn.close()
+            return False
+
         # Check if plan exists
         cursor.execute("SELECT id FROM story_plan LIMIT 1")
         row = cursor.fetchone()
 
         if row:
-            set_clause = ", ".join([f"{k} = ?" for k in plan.keys()])
-            values = list(plan.values()) + [row["id"]]
+            set_clause = ", ".join([f"{k} = ?" for k in filtered_plan.keys()])
+            values = list(filtered_plan.values()) + [row["id"]]
             cursor.execute(f"UPDATE story_plan SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", values)
         else:
-            cols = ", ".join(plan.keys())
-            placeholders = ", ".join(["?" for _ in plan])
-            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(plan.values()))
+            cols = ", ".join(filtered_plan.keys())
+            placeholders = ", ".join(["?" for _ in filtered_plan])
+            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(filtered_plan.values()))
 
         conn.commit()
         if not self._conn:
