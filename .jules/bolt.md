@@ -1,3 +1,6 @@
 ## 2024-05-18 - Avoid repeated O(N) string processing in iteration loops
 **Learning:** Found an inefficiency in `nebula_writer/audit.py` where long chapter text strings were repeatedly lowercased `chapter_content.lower()` inside a large iteration loop over entities and relationships. This created unnecessary and repetitive overhead for an operation that produces an identical output each time.
 **Action:** When performing substring searches against a potentially long block of text across an iteration set, lowercase the text once before entering the loop to ensure O(1) text processing overhead instead of O(N).
+## 2026-05-26 - Precompute string lowercasing in iteration loops
+**Learning:** Found another inefficiency in `nebula_writer/codex.py` (`run_consistency_check`) where large string payloads (chapter content) were repeatedly lowercased `chapter["content"].lower()` inside a double iteration loop. Precomputing lists of derived fields outside main iteration loops reduces N*M redundant operations.
+**Action:** When performing substring matching inside nested iteration sets over collections of strings (like chapters and entities), precompute the lowercased strings in a separate list or dictionary before entering the loop to ensure O(1) text processing overhead inside the loop.

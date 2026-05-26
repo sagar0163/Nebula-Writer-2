@@ -1031,11 +1031,15 @@ class CodexDatabase:
         # Get all relationships
         self.get_relationships()
 
+        # Precompute lowercased chapter contents to avoid O(N*M) string operations
+        lower_chapter_contents = [c.get("content", "").lower() if c.get("content") else "" for c in chapters]
+
         # Check for orphan entities (referenced but never in scene)
         for entity in entities.values():
             found = False
-            for chapter in chapters:
-                if chapter.get("content") and entity["name"].lower() in chapter["content"].lower():
+            entity_name_lower = entity["name"].lower()
+            for content_lower in lower_chapter_contents:
+                if content_lower and entity_name_lower in content_lower:
                     found = True
                     break
             if not found and len(chapters) > 0:
