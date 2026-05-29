@@ -1412,6 +1412,12 @@ if __name__ == "__main__":
 
     def update_story_plan(self, plan: Dict) -> bool:
         """Update or create the long-term story plan."""
+        allowed_keys = ["target_ending", "major_milestones", "thematic_focus", "arc_targets"]
+        filtered_plan = {k: v for k, v in plan.items() if k in allowed_keys}
+
+        if not filtered_plan:
+            return False
+
         conn = self._get_connection()
         cursor = conn.cursor()
 
@@ -1420,13 +1426,13 @@ if __name__ == "__main__":
         row = cursor.fetchone()
 
         if row:
-            set_clause = ", ".join([f"{k} = ?" for k in plan.keys()])
-            values = list(plan.values()) + [row["id"]]
+            set_clause = ", ".join([f"{k} = ?" for k in filtered_plan.keys()])
+            values = list(filtered_plan.values()) + [row["id"]]
             cursor.execute(f"UPDATE story_plan SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", values)
         else:
-            cols = ", ".join(plan.keys())
-            placeholders = ", ".join(["?" for _ in plan])
-            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(plan.values()))
+            cols = ", ".join(filtered_plan.keys())
+            placeholders = ", ".join(["?" for _ in filtered_plan])
+            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(filtered_plan.values()))
 
         conn.commit()
         if not self._conn:
