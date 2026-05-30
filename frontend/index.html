@@ -818,13 +818,18 @@
                         <div class="mb-6">
                             <button v-if="!showAddKnowledgeForm" @click="showAddKnowledgeForm = true" 
                                     class="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors">
-                                <i class="fas fa-plus-circle"></i> Add Knowledge Point
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="w-4 h-4">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                </svg>
+                                Add Knowledge Point
                             </button>
                             <div v-else class="p-4 bg-white/5 rounded-xl border border-white/10 space-y-3 animate-in fade-in slide-in-from-top-2">
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">New Knowledge Point</span>
                                     <button @click="showAddKnowledgeForm = false" class="text-slate-500 hover:text-white transition-colors" aria-label="Cancel" title="Cancel">
-                                        <i class="fas fa-times"></i>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="w-4 h-4">
+                                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                                        </svg>
                                     </button>
                                 </div>
                                 <textarea v-model="newKnowledge.content" placeholder="What does this character know? (e.g., 'Remembers the secret password to the vault')"
@@ -857,10 +862,14 @@
                                 {{ k.knowledge }}
                                 <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button @click="copyToClipboard(k.knowledge)" class="text-slate-600 hover:text-violet-400 transition-colors" title="Copy" aria-label="Copy to clipboard">
-                                        <i class="fas fa-copy"></i>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="w-4 h-4">
+                                          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"/>
+                                        </svg>
                                     </button>
                                     <button @click="deleteKnowledge(k.id)" class="text-slate-600 hover:text-red-400 transition-colors" title="Delete" aria-label="Delete knowledge point">
-                                        <i class="fas fa-trash-alt"></i>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" class="w-4 h-4">
+                                          <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/>
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
