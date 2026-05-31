@@ -1371,6 +1371,48 @@ class CodexDatabase:
             return json.loads(row[0])
         return []
 
+    # ============ STORY PLAN OPERATIONS ============
+
+    def get_story_plan(self) -> Optional[Dict]:
+        """Get the current long-term story plan."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM story_plan ORDER BY updated_at DESC LIMIT 1")
+        row = cursor.fetchone()
+        if not self._conn:
+            conn.close()
+        return dict(row) if row else None
+
+    def update_story_plan(self, plan: Dict) -> bool:
+        """Update or create the long-term story plan."""
+        # Validate keys against allowlist to prevent SQL injection
+        allowed_keys = {"target_ending", "major_milestones", "thematic_focus", "arc_targets"}
+        valid_plan = {k: v for k, v in plan.items() if k in allowed_keys}
+
+        if not valid_plan:
+            return False
+
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        # Check if plan exists
+        cursor.execute("SELECT id FROM story_plan LIMIT 1")
+        row = cursor.fetchone()
+
+        if row:
+            set_clause = ", ".join([f"{k} = ?" for k in valid_plan.keys()])
+            values = list(valid_plan.values()) + [row["id"]]
+            cursor.execute(f"UPDATE story_plan SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", values)
+        else:
+            cols = ", ".join(valid_plan.keys())
+            placeholders = ", ".join(["?" for _ in valid_plan])
+            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(valid_plan.values()))
+
+        conn.commit()
+        if not self._conn:
+            conn.close()
+        return True
+
 
 if __name__ == "__main__":
     # Test the database
@@ -1397,38 +1439,3 @@ if __name__ == "__main__":
     print("\n📊 Statistics:", db.get_stats())
     print("\n🔍 Relationships:", db.get_relationships())
     print("\n📖 Chapters:", db.get_chapters())
-
-    # ============ STORY PLAN OPERATIONS ============
-
-    def get_story_plan(self) -> Optional[Dict]:
-        """Get the current long-term story plan."""
-        conn = self._get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM story_plan ORDER BY updated_at DESC LIMIT 1")
-        row = cursor.fetchone()
-        if not self._conn:
-            conn.close()
-        return dict(row) if row else None
-
-    def update_story_plan(self, plan: Dict) -> bool:
-        """Update or create the long-term story plan."""
-        conn = self._get_connection()
-        cursor = conn.cursor()
-
-        # Check if plan exists
-        cursor.execute("SELECT id FROM story_plan LIMIT 1")
-        row = cursor.fetchone()
-
-        if row:
-            set_clause = ", ".join([f"{k} = ?" for k in plan.keys()])
-            values = list(plan.values()) + [row["id"]]
-            cursor.execute(f"UPDATE story_plan SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", values)
-        else:
-            cols = ", ".join(plan.keys())
-            placeholders = ", ".join(["?" for _ in plan])
-            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(plan.values()))
-
-        conn.commit()
-        if not self._conn:
-            conn.close()
-        return True
