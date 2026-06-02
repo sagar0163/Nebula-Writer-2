@@ -1032,10 +1032,17 @@ class CodexDatabase:
         self.get_relationships()
 
         # Check for orphan entities (referenced but never in scene)
+
+        # Optimization: Pre-compute lowercase chapter content to avoid O(N*M) lowercasing in nested loops
+        lower_chapters_content = [
+            chapter.get("content").lower() if chapter.get("content") else "" for chapter in chapters
+        ]
+
         for entity in entities.values():
             found = False
-            for chapter in chapters:
-                if chapter.get("content") and entity["name"].lower() in chapter["content"].lower():
+            entity_name_lower = entity["name"].lower()
+            for content_lower in lower_chapters_content:
+                if content_lower and entity_name_lower in content_lower:
                     found = True
                     break
             if not found and len(chapters) > 0:
