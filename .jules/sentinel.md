@@ -1,4 +1,4 @@
-## 2024-05-24 - [Remove Hardcoded Supabase Credentials]
-**Vulnerability:** A hardcoded connection string template (including project ID and hostname) existed in `nebula_writer/postgres_db.py` as a fallback mechanism.
-**Learning:** Legacy fallback mechanisms often leak infrastructure details and pose a security risk. They can linger in the codebase if not actively reviewed.
-**Prevention:** Strictly enforce the use of environment variables (`POSTGRES_CONNECTION_STRING`) for all database connections and avoid hardcoding any parts of connection URIs, even for fallback purposes.
+## 2024-05-18 - [SQL Injection via Dynamic Dictionary Keys]
+**Vulnerability:** Found multiple SQL injection vulnerabilities in `nebula_writer/codex.py` and `nebula_writer/postgres_db.py` where dictionary keys are used directly to build SET clauses in UPDATE statements and columns in INSERT statements without validation (e.g. `set_clause = ", ".join([f"{k} = ?" for k in plan.keys()])` and `cols = ", ".join(plan.keys())`). An attacker who controls the dictionary keys could inject malicious SQL.
+**Learning:** Even when parameterized queries are used for the *values*, using unvalidated user input for column names or table names in dynamic SQL construction completely bypasses parameterization protection.
+**Prevention:** Always validate dictionary keys against a strict allowlist of known column names before interpolating them into SQL statements.
