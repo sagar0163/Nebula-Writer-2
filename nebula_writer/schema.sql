@@ -195,6 +195,7 @@ CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type);
 CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name);
 CREATE INDEX IF NOT EXISTS idx_attributes_entity ON attributes(entity_id);
 CREATE INDEX IF NOT EXISTS idx_relationships_from ON relationships(from_entity_id);
+CREATE INDEX IF NOT EXISTS idx_relationships_to ON relationships(to_entity_id);
 CREATE INDEX IF NOT EXISTS idx_chapters_number ON chapters(number);
 CREATE INDEX IF NOT EXISTS idx_plot_threads_status ON plot_threads(status);
 CREATE INDEX IF NOT EXISTS idx_plot_threads_importance ON plot_threads(importance);
