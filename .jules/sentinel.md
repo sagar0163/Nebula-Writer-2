@@ -7,3 +7,8 @@
 **Vulnerability:** Found a critical SQL injection vulnerability in `update_story_plan` (in `nebula_writer/codex.py`). The method directly interpolated dictionary keys from user input (`plan.keys()`) into `UPDATE` and `INSERT` query clauses (e.g. `SET k1 = ?, k2 = ?` or `INSERT INTO story_plan (k1, k2)`).
 **Learning:** Even when values are properly parameterized (using `?` placeholders), dynamically constructing column names from unvalidated user input exposes the database to structural injection, allowing attackers to manipulate the query schema or execute arbitrary commands. This is a common pattern in Python when building flexible update methods without an ORM.
 **Prevention:** Always validate and filter dictionary keys against an explicit allowlist of expected column names before using them to construct any part of an SQL query string dynamically.
+
+## 2024-06-06 - [Hardcoded API Keys in `nebula_writer/run_supabase.py`]
+**Vulnerability:** A hardcoded `SUPABASE_URL` and `SUPABASE_ANON_KEY` were present in `nebula_writer/run_supabase.py`.
+**Learning:** Hardcoding API keys in utility scripts is a critical security vulnerability that exposes access to external infrastructure.
+**Prevention:** Load credentials via `.env` files or system environment variables instead of committing secrets into source control.
