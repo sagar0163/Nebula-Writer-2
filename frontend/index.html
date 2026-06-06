@@ -383,6 +383,7 @@
                                     <div class="p-6 border-t border-space-600 bg-space-900/80 backdrop-blur-md">
                                         <form @submit.prevent="sendArchitectMessage" class="relative group">
                                             <textarea v-model="architectInput"
+                                                aria-label="Message input"
                                                 placeholder="Give feedback, redirect the story, or describe a new character..."
                                                 class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-2xl px-6 py-4 pr-16 text-sm transition-all resize-none overflow-hidden h-14 hover:bg-space-800"
                                                 @keydown.enter.prevent="sendArchitectMessage"
@@ -392,7 +393,11 @@
                                                 :disabled="loading || !architectInput"
                                                 aria-label="Send message"
                                                 title="Send">
-                                                <svg aria-hidden="true" class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                                                <svg v-if="loading" aria-hidden="true" class="w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <svg v-else aria-hidden="true" class="w-5 h-5 text-white" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -735,6 +740,7 @@
                                 <div class="p-3 border-t border-space-600 bg-space-900/80">
                                     <form @submit.prevent="sendArchitectMessage" class="relative group">
                                         <textarea v-model="architectInput"
+                                            aria-label="Message input"
                                             placeholder="Talk to the AI while you edit..."
                                             class="w-full bg-space-800/50 border border-space-600 focus:border-violet-500 rounded-xl px-3 py-2 pr-10 text-xs resize-none overflow-hidden h-10 hover:bg-space-800"
                                             @keydown.enter.prevent="sendArchitectMessage"
@@ -744,7 +750,11 @@
                                             :disabled="loading || !architectInput"
                                             aria-label="Send message"
                                             title="Send">
-                                            <svg aria-hidden="true" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
+                                            <svg v-if="loading" aria-hidden="true" class="w-3 h-3 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <svg v-else aria-hidden="true" class="w-3 h-3 text-white" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
