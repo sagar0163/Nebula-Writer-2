@@ -96,9 +96,10 @@ class RippleChecker:
         violations = []
 
         # 1. Check constraints
+        prose_lower = prose.lower()  # Cache lowercase prose to avoid O(N*M) string allocation overhead
         for constraint in directive.constraints:
             # Simple keyword matching for demo; real version uses semantic scoring
-            if "DO NOT" in constraint.upper() and constraint.split(":")[-1].strip().lower() in prose.lower():
+            if "DO NOT" in constraint.upper() and constraint.split(":")[-1].strip().lower() in prose_lower:
                 violations.append(f"Constraint Violation: {constraint}")
 
         # 2. Check Anchor Consistency
