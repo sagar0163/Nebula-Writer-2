@@ -73,7 +73,8 @@ class NarrativeDirector:
         """
         # Simple heuristic check: do forbidden constraints appear in the plan?
         # In a real implementation, this would use semantic analysis or LLM check.
+        plan_lower = plan.lower()  # Cache lowercase plan to avoid O(N*M) string allocation overhead
         for constraint in directive.constraints:
-            if "NOT" in constraint.upper() and constraint.split(":")[-1].strip().lower() in plan.lower():
+            if "NOT" in constraint.upper() and constraint.split(":")[-1].strip().lower() in plan_lower:
                 return False
         return True
