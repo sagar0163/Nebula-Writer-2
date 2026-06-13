@@ -344,30 +344,37 @@ class EvolvingOutlineEngine:
             ("relationship tension", ["betray", "lie", "miss trust", "argument"], "normal"),
         ]
 
+        # ⚡ Bolt: Cache lowercased descriptions to avoid O(N*M) allocation overhead in loop
+        cached_tension_descriptions_lower = {t.description.lower() for t in self.open_tensions}
+
         for pattern_name, keywords, priority in tension_patterns:
             for keyword in keywords:
-                if keyword in content_lower and not any(
-                    pattern_name in t.description.lower() for t in self.open_tensions
-                ):
-                    self.add_open_tension(
-                        description=f"{pattern_name}: {keyword}", chapter=self.current_chapter, priority=priority
-                    )
+                if keyword in content_lower and not any(pattern_name in t for t in cached_tension_descriptions_lower):
+                    new_desc = f"{pattern_name}: {keyword}"
+                    self.add_open_tension(description=new_desc, chapter=self.current_chapter, priority=priority)
+                    # ⚡ Bolt: Update cache when underlying list mutates
+                    cached_tension_descriptions_lower.add(new_desc.lower())
                     break
 
     def _detect_seeds_from_prose(self, content: str):
         """Auto-detect foreshadowing from chapter prose"""
         seed_patterns = ["promise", "will", "later", "eventually", "when", "before"]
 
-        content.lower()
         sentences = content.split(".")
+
+        # ⚡ Bolt: Cache lowercased seeds to avoid O(N*M) allocation overhead in loop
+        cached_seeds_lower = {s.content.lower() for s in self.planted_seeds}
 
         for sentence in sentences:
             sentence_lower = sentence.lower()
             for pattern in seed_patterns:
                 if pattern in sentence_lower and len(sentence) < 100:
                     # Check if already planted
-                    if not any(pattern in s.content.lower() for s in self.planted_seeds):
-                        self.add_planted_seed(sentence.strip()[:100], self.current_chapter)
+                    if not any(pattern in s for s in cached_seeds_lower):
+                        new_seed = sentence.strip()[:100]
+                        self.add_planted_seed(new_seed, self.current_chapter)
+                        # ⚡ Bolt: Update cache when underlying list mutates
+                        cached_seeds_lower.add(new_seed.lower())
 
 
 def create_evolution_engine() -> EvolvingOutlineEngine:
