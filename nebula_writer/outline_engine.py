@@ -344,14 +344,17 @@ class EvolvingOutlineEngine:
             ("relationship tension", ["betray", "lie", "miss trust", "argument"], "normal"),
         ]
 
+        # Optimization: Cache lowercased open tension descriptions outside the loop
+        # to prevent O(N) string allocation overhead on every check iteration.
+        existing_tensions = [t.description.lower() for t in self.open_tensions]
+
         for pattern_name, keywords, priority in tension_patterns:
             for keyword in keywords:
-                if keyword in content_lower and not any(
-                    pattern_name in t.description.lower() for t in self.open_tensions
-                ):
-                    self.add_open_tension(
-                        description=f"{pattern_name}: {keyword}", chapter=self.current_chapter, priority=priority
-                    )
+                if keyword in content_lower and not any(pattern_name in t_desc for t_desc in existing_tensions):
+                    new_desc = f"{pattern_name}: {keyword}"
+                    self.add_open_tension(description=new_desc, chapter=self.current_chapter, priority=priority)
+                    # Sync cache after mutation to avoid functional regressions
+                    existing_tensions.append(new_desc.lower())
                     break
 
     def _detect_seeds_from_prose(self, content: str):
@@ -361,13 +364,20 @@ class EvolvingOutlineEngine:
         content.lower()
         sentences = content.split(".")
 
+        # Optimization: Cache lowercased planted seed content outside the loop
+        # to prevent O(N) string allocation overhead on every check iteration.
+        existing_seeds = [s.content.lower() for s in self.planted_seeds]
+
         for sentence in sentences:
             sentence_lower = sentence.lower()
             for pattern in seed_patterns:
                 if pattern in sentence_lower and len(sentence) < 100:
                     # Check if already planted
-                    if not any(pattern in s.content.lower() for s in self.planted_seeds):
-                        self.add_planted_seed(sentence.strip()[:100], self.current_chapter)
+                    if not any(pattern in s_content for s_content in existing_seeds):
+                        new_seed_content = sentence.strip()[:100]
+                        self.add_planted_seed(new_seed_content, self.current_chapter)
+                        # Sync cache after mutation to avoid functional regressions
+                        existing_seeds.append(new_seed_content.lower())
 
 
 def create_evolution_engine() -> EvolvingOutlineEngine:
