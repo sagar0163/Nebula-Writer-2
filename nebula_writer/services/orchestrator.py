@@ -97,9 +97,11 @@ class NarrativeOrchestrator:
 
         # 5. Character Agent -> Action Prediction
         character_predictions = []
+        # ⚡ Bolt: Cache beat.lower() to prevent repeated string allocations inside loop
+        beat_lower = beat.lower()
         # Focus on characters mentioned in the beat or intent
         for entity in snapshot.entities:
-            if entity["type"] == "character" and entity["name"].lower() in beat.lower():
+            if entity["type"] == "character" and entity["name"].lower() in beat_lower:
                 agent = CharacterAgent(entity["id"], self.db)
                 character_predictions.append(agent.predict_actions(beat))
 
