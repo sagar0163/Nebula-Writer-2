@@ -344,14 +344,15 @@ class EvolvingOutlineEngine:
             ("relationship tension", ["betray", "lie", "miss trust", "argument"], "normal"),
         ]
 
+        cached_tensions = [t.description.lower() for t in self.open_tensions]
+
         for pattern_name, keywords, priority in tension_patterns:
             for keyword in keywords:
-                if keyword in content_lower and not any(
-                    pattern_name in t.description.lower() for t in self.open_tensions
-                ):
+                if keyword in content_lower and not any(pattern_name in t for t in cached_tensions):
                     self.add_open_tension(
                         description=f"{pattern_name}: {keyword}", chapter=self.current_chapter, priority=priority
                     )
+                    cached_tensions.append(f"{pattern_name}: {keyword}".lower())
                     break
 
     def _detect_seeds_from_prose(self, content: str):
@@ -361,13 +362,17 @@ class EvolvingOutlineEngine:
         content.lower()
         sentences = content.split(".")
 
+        cached_seeds = [s.content.lower() for s in self.planted_seeds]
+
         for sentence in sentences:
             sentence_lower = sentence.lower()
             for pattern in seed_patterns:
                 if pattern in sentence_lower and len(sentence) < 100:
                     # Check if already planted
-                    if not any(pattern in s.content.lower() for s in self.planted_seeds):
-                        self.add_planted_seed(sentence.strip()[:100], self.current_chapter)
+                    if not any(pattern in s for s in cached_seeds):
+                        new_content = sentence.strip()[:100]
+                        self.add_planted_seed(new_content, self.current_chapter)
+                        cached_seeds.append(new_content.lower())
 
 
 def create_evolution_engine() -> EvolvingOutlineEngine:
