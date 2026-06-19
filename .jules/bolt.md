@@ -11,3 +11,6 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2024-06-25 - Maintain cache consistency during iteration
+**Learning:** Found a performance bottleneck in `nebula_writer/outline_engine.py` where `.lower()` was repeatedly called inside generator expressions. While the general solution is to cache list comprehensions (`[t.description.lower() for t in self.open_tensions]`), a functional regression can occur if the original structure is mutated (e.g., adding a new tension) *during* the loop, as the cache will become stale.
+**Action:** When pre-computing lowercase strings to avoid O(N*M) allocation overhead in loops, always explicitly `.append()` to the cached list when the original data structure is modified within the iteration to keep the state synchronized.
