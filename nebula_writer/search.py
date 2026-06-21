@@ -52,13 +52,19 @@ class SearchEngine:
         """Filter entities by criteria"""
         entities = self.db.get_entities(entity_type)
 
+        entities_with_attrs = None
+        if has_attributes is not None:
+            # Pre-fetch all entity IDs that have attributes in a single query
+            # to avoid N+1 queries when iterating over entities.
+            entities_with_attrs = self.db.get_entity_ids_with_attributes()
+
         filtered = []
         for e in entities:
             if has_attributes is not None:
-                attrs = self.db.get_attributes(e["id"])
-                if has_attributes and not attrs:
+                has_attrs = e["id"] in entities_with_attrs
+                if has_attributes and not has_attrs:
                     continue
-                if not has_attributes and attrs:
+                if not has_attributes and has_attrs:
                     continue
 
             if is_alive is not None:
