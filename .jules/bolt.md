@@ -11,3 +11,6 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2024-06-22 - Avoid repetitive string allocation via caching
+**Learning:** Found a performance inefficiency in `SearchEngine.filter_entities` where `location.lower()` was re-evaluated inside an iteration loop over potentially thousands of entities, causing unnecessary repetitive string allocations.
+**Action:** When filtering objects using a text condition, always pre-compute and cache string transformations (like `.lower()`) into a local variable before entering the iteration loop to ensure O(1) allocation cost instead of O(N).
