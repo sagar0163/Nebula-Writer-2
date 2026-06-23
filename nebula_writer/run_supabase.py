@@ -1,10 +1,19 @@
 import os
+import sys
 
-# Set environment
-os.environ["SUPABASE_URL"] = "https://slovnfrjidipspogvktb.supabase.co"
-os.environ["SUPABASE_ANON_KEY"] = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsMW5mcmppZGlwc3BvZ3ZrdGIiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc0NjMxMDY1MCwiZXhwIjoxOTYxODg2NjUwfQ.sb_publishable_MC-oV3wdAsZDVnkWSMqKYQ_KngPn_-J"
-)
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Verify environment
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_ANON_KEY")
+
+if not supabase_url or not supabase_key:
+    print("Error: SUPABASE_URL and SUPABASE_ANON_KEY must be set in the environment or .env file.")
+    sys.exit(1)
+
 os.environ["NEBULA_DB"] = "supabase"
 
 # Add backend to path
