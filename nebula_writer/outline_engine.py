@@ -358,16 +358,22 @@ class EvolvingOutlineEngine:
         """Auto-detect foreshadowing from chapter prose"""
         seed_patterns = ["promise", "will", "later", "eventually", "when", "before"]
 
-        content.lower()
+        # DO NOT split on lowercased content so we preserve case when adding the seed
         sentences = content.split(".")
+
+        # Cache lowercased seeds before the loop to avoid O(N*M) string re-allocations
+        planted_seeds_lower = [s.content.lower() for s in self.planted_seeds]
 
         for sentence in sentences:
             sentence_lower = sentence.lower()
             for pattern in seed_patterns:
                 if pattern in sentence_lower and len(sentence) < 100:
                     # Check if already planted
-                    if not any(pattern in s.content.lower() for s in self.planted_seeds):
-                        self.add_planted_seed(sentence.strip()[:100], self.current_chapter)
+                    if not any(pattern in s_lower for s_lower in planted_seeds_lower):
+                        new_seed_content = sentence.strip()[:100]
+                        self.add_planted_seed(new_seed_content, self.current_chapter)
+                        # Keep cache synchronized
+                        planted_seeds_lower.append(new_seed_content.lower())
 
 
 def create_evolution_engine() -> EvolvingOutlineEngine:
