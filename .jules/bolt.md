@@ -11,3 +11,7 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+
+## 2024-05-18 - Avoid generator expressions for `.lower()` in O(N*M) nested loops
+**Learning:** Python generator expressions and list comprehensions (e.g., `any(pattern in s.content.lower() for s in self.planted_seeds)`) lazily re-evaluate the target operation on every iteration. This causes O(N*M) string allocation overhead when evaluating large strings inside long nested iteration loops, a pattern common in this codebase's text-extraction functions.
+**Action:** Always pre-compute and cache string transformations like `.lower()` into a local variable before using them as the target in iterators to avoid hidden O(N*M) string allocation overhead. Explicitly update the cache within the loop to keep it synchronized and prevent functional regressions if the list is mutated.
