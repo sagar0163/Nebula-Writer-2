@@ -344,30 +344,32 @@ class EvolvingOutlineEngine:
             ("relationship tension", ["betray", "lie", "miss trust", "argument"], "normal"),
         ]
 
+        open_tensions_desc_lower = [t.description.lower() for t in self.open_tensions]
+
         for pattern_name, keywords, priority in tension_patterns:
             for keyword in keywords:
-                if keyword in content_lower and not any(
-                    pattern_name in t.description.lower() for t in self.open_tensions
-                ):
-                    self.add_open_tension(
-                        description=f"{pattern_name}: {keyword}", chapter=self.current_chapter, priority=priority
-                    )
+                if keyword in content_lower and not any(pattern_name in t_desc for t_desc in open_tensions_desc_lower):
+                    desc = f"{pattern_name}: {keyword}"
+                    self.add_open_tension(description=desc, chapter=self.current_chapter, priority=priority)
+                    open_tensions_desc_lower.append(desc.lower())
                     break
 
     def _detect_seeds_from_prose(self, content: str):
         """Auto-detect foreshadowing from chapter prose"""
         seed_patterns = ["promise", "will", "later", "eventually", "when", "before"]
 
-        content.lower()
         sentences = content.split(".")
+        planted_seeds_lower = [s.content.lower() for s in self.planted_seeds]
 
         for sentence in sentences:
             sentence_lower = sentence.lower()
             for pattern in seed_patterns:
                 if pattern in sentence_lower and len(sentence) < 100:
                     # Check if already planted
-                    if not any(pattern in s.content.lower() for s in self.planted_seeds):
-                        self.add_planted_seed(sentence.strip()[:100], self.current_chapter)
+                    if not any(pattern in s_content for s_content in planted_seeds_lower):
+                        seed_content = sentence.strip()[:100]
+                        self.add_planted_seed(seed_content, self.current_chapter)
+                        planted_seeds_lower.append(seed_content.lower())
 
 
 def create_evolution_engine() -> EvolvingOutlineEngine:
