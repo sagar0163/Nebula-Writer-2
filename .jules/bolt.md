@@ -11,3 +11,6 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2024-06-28 - Keep cached generator expressions synchronized during loops
+**Learning:** When using Python generator expressions or list comprehensions inside a loop (like `any(x in t.description.lower() for t in list)`), extracting the list transformation (`.lower()`) to a cache outside the loop prevents O(N*M) allocation overhead. However, if the underlying list is updated inside the loop (e.g., adding a new item), the cache will become stale and cause incorrect logic regressions.
+**Action:** Always pre-compute and cache string transformations outside iteration loops. If the structure being cached is mutated during the loop, explicitly update the cache to maintain synchronization.
