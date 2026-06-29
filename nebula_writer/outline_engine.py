@@ -344,14 +344,21 @@ class EvolvingOutlineEngine:
             ("relationship tension", ["betray", "lie", "miss trust", "argument"], "normal"),
         ]
 
+        # Cache existing tension patterns to avoid O(N*M) generator expression overhead
+        open_pattern_names = set()
+        for t in self.open_tensions:
+            t_lower = t.description.lower()
+            for pattern_name, _, _ in tension_patterns:
+                if pattern_name in t_lower:
+                    open_pattern_names.add(pattern_name)
+
         for pattern_name, keywords, priority in tension_patterns:
             for keyword in keywords:
-                if keyword in content_lower and not any(
-                    pattern_name in t.description.lower() for t in self.open_tensions
-                ):
+                if keyword in content_lower and pattern_name not in open_pattern_names:
                     self.add_open_tension(
                         description=f"{pattern_name}: {keyword}", chapter=self.current_chapter, priority=priority
                     )
+                    open_pattern_names.add(pattern_name)
                     break
 
     def _detect_seeds_from_prose(self, content: str):
@@ -361,13 +368,27 @@ class EvolvingOutlineEngine:
         content.lower()
         sentences = content.split(".")
 
+        # Cache existing planted patterns to avoid O(N*M) generator expression overhead
+        planted_patterns = set()
+        for s in self.planted_seeds:
+            s_lower = s.content.lower()
+            for p in seed_patterns:
+                if p in s_lower:
+                    planted_patterns.add(p)
+
         for sentence in sentences:
             sentence_lower = sentence.lower()
             for pattern in seed_patterns:
                 if pattern in sentence_lower and len(sentence) < 100:
                     # Check if already planted
-                    if not any(pattern in s.content.lower() for s in self.planted_seeds):
+                    if pattern not in planted_patterns:
                         self.add_planted_seed(sentence.strip()[:100], self.current_chapter)
+                        # The sentence was added to planted_seeds, so any pattern in this sentence is now planted.
+                        # Update the cache for all patterns found in this newly planted seed.
+                        for p in seed_patterns:
+                            if p in sentence_lower:
+                                planted_patterns.add(p)
+                        break  # A sentence is planted once; move to the next sentence
 
 
 def create_evolution_engine() -> EvolvingOutlineEngine:
