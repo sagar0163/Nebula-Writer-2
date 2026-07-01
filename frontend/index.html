@@ -594,7 +594,17 @@
                                         <button @click="modalType = 'entity'; showAddModal = true"
                                             class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add</button>
                                     </div>
-                                    <div class="grid grid-cols-3 gap-4">
+                                    <div v-if="entities.length === 0" class="glass rounded-2xl border border-space-600 p-12 flex flex-col items-center justify-center text-center">
+                                        <svg aria-hidden="true" class="w-12 h-12 text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                                        </svg>
+                                        <h4 class="text-lg font-semibold text-slate-200 mb-2">Your Codex is empty</h4>
+                                        <p class="text-sm text-slate-400 max-w-sm mb-6">Start building your world by adding characters, locations, and lore to your story codex.</p>
+                                        <button @click="modalType = 'entity'; showAddModal = true" class="btn-primary px-6 py-2.5 rounded-lg font-medium shadow-lg shadow-violet-500/20">
+                                            Add First Entry
+                                        </button>
+                                    </div>
+                                    <div v-else class="grid grid-cols-3 gap-4">
                                         <div v-for="entity in entities" :key="entity.id"
                                             class="glass rounded-xl p-4 border border-space-600 hover:border-violet-500/50 transition-all cursor-pointer"
                                             @click="editEntity(entity)">
