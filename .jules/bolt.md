@@ -11,3 +11,6 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2026-07-02 - Avoid repeated string transformations in validation constraints
+**Learning:** Python operations like `.lower()` on long prose strings inside constraint validation loops (e.g., `validate_scene_integrity`, `validate_scene_plan`) execute on every iteration, leading to O(N*M) string allocation overhead.
+**Action:** Always pre-compute and cache the transformed string into a local variable before iterating over the constraint rules to ensure O(1) text processing overhead.
