@@ -42,9 +42,14 @@ def main():
 
 
 # CORS
+# Security Improvement: Avoid permissive wildcard CORS origins when allow_credentials=True.
+# Use an environment variable with a safe local fallback to prevent CSRF and cross-origin attacks.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        origin.strip()
+        for origin in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
