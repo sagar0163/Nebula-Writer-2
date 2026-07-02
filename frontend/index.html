@@ -591,10 +591,28 @@
                                     class="space-y-6 animate-in slide-in-from-right-4">
                                     <div class="flex justify-between items-center">
                                         <h3 class="text-lg font-semibold">Story Codex</h3>
-                                        <button @click="modalType = 'entity'; showAddModal = true"
+                                        <button v-if="entities && entities.length > 0" @click="modalType = 'entity'; showAddModal = true"
                                             class="btn-primary px-4 py-2 rounded-lg text-sm">+ Add</button>
                                     </div>
-                                    <div class="grid grid-cols-3 gap-4">
+
+                                    <!-- Empty State -->
+                                    <div v-if="!entities || entities.length === 0" class="glass rounded-2xl p-10 border border-space-600 flex flex-col items-center justify-center text-center mt-8">
+                                        <div class="w-16 h-16 bg-space-800/50 rounded-2xl flex items-center justify-center mb-4 border border-space-600/50">
+                                            <svg aria-hidden="true" class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-200 mb-2">Your Codex is Empty</h3>
+                                        <p class="text-sm text-slate-400 max-w-md mb-6">The Story Codex stores characters, locations, and items. Adding entities helps the AI maintain continuity and write better scenes.</p>
+                                        <button @click="modalType = 'entity'; showAddModal = true" class="btn-primary px-6 py-3 rounded-xl shadow-lg shadow-violet-500/20 font-semibold tracking-wide flex items-center gap-2">
+                                            <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Add Your First Entity
+                                        </button>
+                                    </div>
+
+                                    <div v-else class="grid grid-cols-3 gap-4">
                                         <div v-for="entity in entities" :key="entity.id"
                                             class="glass rounded-xl p-4 border border-space-600 hover:border-violet-500/50 transition-all cursor-pointer"
                                             @click="editEntity(entity)">
