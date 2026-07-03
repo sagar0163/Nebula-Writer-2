@@ -7,3 +7,8 @@
 **Vulnerability:** Found a critical SQL injection vulnerability in `update_story_plan` (in `nebula_writer/codex.py`). The method directly interpolated dictionary keys from user input (`plan.keys()`) into `UPDATE` and `INSERT` query clauses (e.g. `SET k1 = ?, k2 = ?` or `INSERT INTO story_plan (k1, k2)`).
 **Learning:** Even when values are properly parameterized (using `?` placeholders), dynamically constructing column names from unvalidated user input exposes the database to structural injection, allowing attackers to manipulate the query schema or execute arbitrary commands. This is a common pattern in Python when building flexible update methods without an ORM.
 **Prevention:** Always validate and filter dictionary keys against an explicit allowlist of expected column names before using them to construct any part of an SQL query string dynamically.
+
+## 2024-05-24 - Overly Permissive CORS Configuration
+**Vulnerability:** The FastAPI application used an overly permissive CORS configuration (`allow_origins=["*"]`) combined with `allow_credentials=True` in `nebula_writer/main.py`. This exposes the application to severe cross-origin security risks, including Cross-Site Request Forgery (CSRF) and unauthorized cross-origin data reads.
+**Learning:** Modern browsers block requests with credentials when the wildcard origin is used, but a permissive configuration might bypass some checks or fail to implement the defense-in-depth expected for APIs that handle sensitive data or actions.
+**Prevention:** Avoid using a permissive wildcard origin (`allow_origins=["*"]`) when `allow_credentials=True` is enabled. Instead, use an environment variable (e.g., `ALLOWED_ORIGINS`) with a safe local fallback to strictly govern allowed origins.
