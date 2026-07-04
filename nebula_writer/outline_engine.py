@@ -344,14 +344,18 @@ class EvolvingOutlineEngine:
             ("relationship tension", ["betray", "lie", "miss trust", "argument"], "normal"),
         ]
 
+        # Optimization: Pre-compute lowercase open tensions descriptions
+        open_tensions_desc_lower = [t.description.lower() for t in self.open_tensions]
+
         for pattern_name, keywords, priority in tension_patterns:
             for keyword in keywords:
                 if keyword in content_lower and not any(
-                    pattern_name in t.description.lower() for t in self.open_tensions
+                    pattern_name in desc_lower for desc_lower in open_tensions_desc_lower
                 ):
-                    self.add_open_tension(
-                        description=f"{pattern_name}: {keyword}", chapter=self.current_chapter, priority=priority
-                    )
+                    new_desc = f"{pattern_name}: {keyword}"
+                    self.add_open_tension(description=new_desc, chapter=self.current_chapter, priority=priority)
+                    # Keep the cache synchronized since we're mutating the list
+                    open_tensions_desc_lower.append(new_desc.lower())
                     break
 
     def _detect_seeds_from_prose(self, content: str):
