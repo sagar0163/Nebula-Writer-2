@@ -42,9 +42,13 @@ def main():
 
 
 # CORS
+# 🛡️ Sentinel: Using a wildcard with allow_credentials=True is a security risk.
+# Instead, parse allowed origins from the environment or use safe local defaults.
+allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:8000,http://localhost:5173").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
