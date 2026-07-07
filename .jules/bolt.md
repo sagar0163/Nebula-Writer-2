@@ -11,3 +11,7 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+
+## 2024-07-07 - Avoid String Mutation in Loops with Mutated Lists
+**Learning:** Python string transformations like `.lower()` inside list comprehensions evaluate lazily and can create O(N*M) allocation overhead inside loops. Pre-computing them outside the loop solves this, but if the underlying list is mutated (e.g., items appended) during the loop, the cache becomes stale, causing functional regressions.
+**Action:** Always pre-compute list comprehensions outside of iteration loops to avoid O(N*M) overhead, and explicitly update the cache within the loop when mutating the underlying list.
