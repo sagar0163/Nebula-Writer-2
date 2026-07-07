@@ -42,9 +42,15 @@ def main():
 
 
 # CORS
+# SECURITY: Using allow_origins=["*"] with allow_credentials=True is a major security risk.
+# Use an environment variable with safe local fallbacks to strictly govern allowed origins.
+allowed_origins_str = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "http://localhost,http://localhost:8000,http://127.0.0.1,http://127.0.0.1:8000,http://localhost:3000",
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins_str.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
