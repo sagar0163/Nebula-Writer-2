@@ -15,10 +15,13 @@ class StoryAuditor:
         self.db = db
         self.issues = []
 
-    def check_entity_consistency(self, chapter_content: str) -> List[Dict]:
+    def check_entity_consistency(self, chapter_content: str, entities: List[Dict] = None) -> List[Dict]:
         """Check if mentioned entities behave consistently"""
         issues = []
-        entities = self.db.get_entities()
+        if entities is None:
+            entities = self.db.get_entities()
+        # Optimization: cache lowercase chapter content outside loop to avoid O(n) string lowercasing inside iteration
+        chapter_content_lower = chapter_content.lower()
 
         for entity in entities:
             name = entity["name"]
@@ -29,7 +32,7 @@ class StoryAuditor:
 
             # Check if entity is mentioned with different location in same chapter
             # This is a simple heuristic - could be enhanced with NLP
-            if name.lower() in chapter_content.lower():
+            if name.lower() in chapter_content_lower:
                 # Entity is in this chapter
                 pass
 
@@ -39,7 +42,7 @@ class StoryAuditor:
             # Simple death check
             death_phrases = ["died", "dead", "killed", "death"]
             for phrase in death_phrases:
-                if f"{name.lower()} {phrase}" in chapter_content.lower() and is_alive:
+                if f"{name.lower()} {phrase}" in chapter_content_lower and is_alive:
                     issues.append(
                         {
                             "type": "contradiction",
@@ -52,10 +55,13 @@ class StoryAuditor:
 
         return issues
 
-    def check_relationship_consistency(self, chapter_content: str) -> List[Dict]:
+    def check_relationship_consistency(self, chapter_content: str, relationships: List[Dict] = None) -> List[Dict]:
         """Check if relationships are respected"""
         issues = []
-        relationships = self.db.get_relationships()
+        if relationships is None:
+            relationships = self.db.get_relationships()
+        # Optimization: cache lowercase chapter content outside loop to avoid O(n) string lowercasing inside iteration
+        chapter_content_lower = chapter_content.lower()
 
         for rel in relationships:
             from_name = rel["from_name"]
@@ -64,7 +70,7 @@ class StoryAuditor:
             strength = rel.get("strength", 0.5)
 
             # Check for contradiction in relationship portrayal
-            if from_name.lower() in chapter_content.lower() and to_name.lower() in chapter_content.lower():
+            if from_name.lower() in chapter_content_lower and to_name.lower() in chapter_content_lower:
                 # Both entities in same chapter - check for contradiction
                 if strength > 0.7 and rel_type in ["hates", "enemy", "rivals"]:
                     issues.append(
@@ -79,10 +85,11 @@ class StoryAuditor:
 
         return issues
 
-    def check_timeline(self) -> List[Dict]:
+    def check_timeline(self, events: List[Dict] = None) -> List[Dict]:
         """Check event timeline for inconsistencies"""
         issues = []
-        events = self.db.get_events()
+        if events is None:
+            events = self.db.get_events()
 
         # Sort by chapter
         events_by_chapter = {}
@@ -102,18 +109,25 @@ class StoryAuditor:
 
         return issues
 
-    def audit_chapter(self, chapter_content: str, chapter_num: int = None) -> Dict:
+    def audit_chapter(
+        self,
+        chapter_content: str,
+        chapter_num: int = None,
+        entities: List[Dict] = None,
+        relationships: List[Dict] = None,
+        events: List[Dict] = None,
+    ) -> Dict:
         """Run full audit on a chapter"""
         all_issues = []
 
         # Entity consistency
-        all_issues.extend(self.check_entity_consistency(chapter_content))
+        all_issues.extend(self.check_entity_consistency(chapter_content, entities))
 
         # Relationship consistency
-        all_issues.extend(self.check_relationship_consistency(chapter_content))
+        all_issues.extend(self.check_relationship_consistency(chapter_content, relationships))
 
         # Timeline
-        all_issues.extend(self.check_timeline())
+        all_issues.extend(self.check_timeline(events))
 
         return {
             "chapter": chapter_num,
@@ -129,10 +143,23 @@ class StoryAuditor:
     def audit_all_chapters(self) -> Dict:
         """Audit all chapters"""
         chapters = self.db.get_chapters()
+
+        # Performance Optimization (Bolt ⚡):
+        # Fetch entities, relationships, and events once outside the loop
+        # to avoid N+1 query overhead where they were previously fetched per chapter.
+        entities = self.db.get_entities()
+        relationships = self.db.get_relationships()
+        events = self.db.get_events()
         results = []
 
         for chapter in chapters:
-            result = self.audit_chapter(chapter.get("content", ""), chapter["number"])
+            result = self.audit_chapter(
+                chapter.get("content", ""),
+                chapter["number"],
+                entities=entities,
+                relationships=relationships,
+                events=events,
+            )
             results.append(result)
 
         total_issues = sum(r["total_issues"] for r in results)

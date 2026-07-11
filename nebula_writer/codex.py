@@ -163,6 +163,7 @@ class CodexDatabase:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_attributes_entity ON attributes(entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_relationships_from ON relationships(from_entity_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_relationships_to ON relationships(to_entity_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chapters_number ON chapters(number)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chapter_versions_chapter ON chapter_versions(chapter_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_character_knowledge_entity ON character_knowledge(entity_id)")
@@ -1031,11 +1032,17 @@ class CodexDatabase:
         # Get all relationships
         self.get_relationships()
 
+        # Pre-compute lowercase chapter contents to avoid O(n) lowercasing inside iteration loops
+        chapter_contents_lower = [
+            chapter.get("content").lower() if chapter.get("content") else "" for chapter in chapters
+        ]
+
         # Check for orphan entities (referenced but never in scene)
         for entity in entities.values():
             found = False
-            for chapter in chapters:
-                if chapter.get("content") and entity["name"].lower() in chapter["content"].lower():
+            entity_name_lower = entity["name"].lower()
+            for content_lower in chapter_contents_lower:
+                if content_lower and entity_name_lower in content_lower:
                     found = True
                     break
             if not found and len(chapters) > 0:
@@ -1412,6 +1419,12 @@ if __name__ == "__main__":
 
     def update_story_plan(self, plan: Dict) -> bool:
         """Update or create the long-term story plan."""
+        allowed_keys = {"target_ending", "major_milestones", "thematic_focus", "arc_targets"}
+        filtered_plan = {k: v for k, v in plan.items() if k in allowed_keys}
+
+        if not filtered_plan:
+            return False
+
         conn = self._get_connection()
         cursor = conn.cursor()
 
@@ -1420,13 +1433,13 @@ if __name__ == "__main__":
         row = cursor.fetchone()
 
         if row:
-            set_clause = ", ".join([f"{k} = ?" for k in plan.keys()])
-            values = list(plan.values()) + [row["id"]]
+            set_clause = ", ".join([f"{k} = ?" for k in filtered_plan.keys()])
+            values = list(filtered_plan.values()) + [row["id"]]
             cursor.execute(f"UPDATE story_plan SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", values)
         else:
-            cols = ", ".join(plan.keys())
-            placeholders = ", ".join(["?" for _ in plan])
-            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(plan.values()))
+            cols = ", ".join(filtered_plan.keys())
+            placeholders = ", ".join(["?" for _ in filtered_plan])
+            cursor.execute(f"INSERT INTO story_plan ({cols}) VALUES ({placeholders})", list(filtered_plan.values()))
 
         conn.commit()
         if not self._conn:
