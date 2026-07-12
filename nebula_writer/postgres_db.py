@@ -82,7 +82,7 @@ class PostgresDB:
 
     def get_entities(self, entity_type: str = None) -> List[Dict]:
         if entity_type:
-            return self._query("SELECT * FROM entities WHERE entity_type = %s", (entity_type,))
+            return self._query("SELECT * FROM entities WHERE type = %s ORDER BY name", (entity_type,))
         return self._query("SELECT * FROM entities")
 
     def get_entity(self, entity_id: str) -> Optional[Dict]:
@@ -90,21 +90,21 @@ class PostgresDB:
         return dict(result[0]) if result else None
 
     def add_entity(
-        self,
-        name: str,
-        entity_type: str,
-        description: str = None,
-        current_location: str = None,
-        is_alive: bool = True,
-        image_url: str = None,
-    ) -> str:
-        return self._execute(
-            """
-            INSERT INTO entities (name, entity_type, description, current_location, is_alive, image_url)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """,
-            (name, entity_type, description, current_location, is_alive, image_url),
-        )
+            self,
+            name: str,
+            type: str,
+            description: str = None,
+            current_location: str = None,
+            is_alive: bool = True,
+            image_url: str = None,
+        ) -> str:
+            return self._execute(
+                """
+                INSERT INTO entities (name, type, description, current_location, is_alive, image_url)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+                (name, type, description, current_location, is_alive, image_url),
+            )
 
     def get_attributes(self, entity_id: str) -> List[Dict]:
         return self._query("SELECT * FROM attributes WHERE entity_id = %s", (entity_id,))

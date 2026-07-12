@@ -241,7 +241,7 @@ def create_entity(entity: EntityCreate):
     """Create a new entity"""
     entity_id = db.add_entity(
         name=entity.name,
-        entity_type=entity.entity_type,
+        type=entity.entity_type,
         description=entity.description,
         current_location=entity.current_location,
         is_alive=entity.is_alive,
@@ -1736,6 +1736,107 @@ async def websocket_endpoint(websocket: WebSocket, project_id: str):
                     pass
     except WebSocketDisconnect:
         sync_manager.disconnect(websocket, project_id)
+
+
+# ============ ONBOARDING / CODEX GENERATION ============
+
+class OnboardingRequest(BaseModel):
+    concept: str
+    template: Optional[str] = None
+    characters: List[Dict] = []
+
+
+@app.post("/api/onboarding/generate-codex")
+def generate_codex_onboarding(req: OnboardingRequest):
+    """Generate a complete Codex from onboarding wizard input"""
+    try:
+        # Build initial project state from wizard input
+        entities_to_create = []
+        
+        # Add selected template characters
+        if req.characters:
+            for char in req.characters:
+                entities_to_create.append({
+                    "name": char.get("name", "Character"),
+                    "entity_type": "character",
+                    "description": char.get("description", ""),
+                    "attributes": [
+                        {"key": k, "value": v} for k, v in char.get("attributes", {}).items()
+                    ]
+                })
+        
+        # Create entities in database
+        entity_ids = []
+        for entity in entities_to_create:
+            entity_id = db.add_entity(
+                name=entity["name"],
+                type=entity["entity_type"],
+                description=entity["description"]
+            )
+            for attr in entity.get("attributes", []):
+                db.add_attribute(entity_id, attr["key"], attr["value"])
+            entity_ids.append(entity_id)
+        
+        # Create the project with initial concept
+        project_id = str(uuid.uuid4())
+        
+        # Store the initial concept as a chapter or event
+        db.add_event(
+            chapter=0,
+            title="Story Concept",
+            description=req.concept,
+            significance="major"
+        )
+        
+        # If template selected, load additional template data
+        if req.template:
+            template_path = Path(__file__).parent.parent / "frontend" / "templates" / f"{req.template}.json"
+            if template_path.exists():
+                with open(template_path) as f:
+                    template_data = json.load(f)
+                
+                # Add template entities (locations, items, etc.)
+                for entity in template_data.get("entities", []):
+                    if entity.get("entity_type") != "character":  # Characters already handled
+                        entity_id = db.add_entity(
+                                        name=entity["name"],
+                                        type=entity["entity_type"],
+                                        description=entity.get("description", "")
+                        )
+                        for attr in entity.get("attributes", []):
+                            db.add_attribute(entity_id, attr.get("key", ""), attr.get("value", ""))
+                
+                # Add plot threads
+                for thread in template_data.get("plot_threads", []):
+                    # Plot threads would be added via plot manager if available
+                    pass
+                
+                # Add world rules
+                for rule in template_data.get("world_rules", []):
+                    db.add_world_rule(
+                        category=rule.get("category", "general"),
+                        rule=rule.get("rule", ""),
+                        exceptions=rule.get("exceptions", "")
+                    )
+                
+                # Add foreshadowing
+                for fore in template_data.get("foreshadowing", []):
+                    db.add_foreshadowing(
+                        plot_thread_id=1,  # Would need actual thread ID
+                        chapter=fore.get("chapter", 1),
+                        content=fore.get("content", ""),
+                        hint_level=fore.get("hint_level", "subtle"),
+                        payoff_chapter=fore.get("payoff_chapter", 10)
+                    )
+        
+        return {
+            "project_id": project_id,
+            "message": "Codex generated successfully",
+            "entities_created": len(entity_ids)
+        }
+    except Exception as e:
+        logger.error("Onboarding codex generation failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============ HEALTH CHECK ============
