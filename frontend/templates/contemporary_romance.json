@@ -1,0 +1,159 @@
+{
+  "name": "Contemporary Romance",
+  "description": "Character-driven love story with emotional depth, realistic obstacles, and satisfying HEA",
+  "genre": "romance",
+  "subgenre": "contemporary",
+  "tags": ["HEA-guaranteed", "emotional-depth", "dual-POV", "trope-friendly", "series-potential"],
+  "entities": [
+    {
+      "name": "Protagonist A - The Caretaker",
+      "entity_type": "character",
+      "description": "Competent, giving, everyone's rock. Forgot how to receive. Career-focused but lonely.",
+      "attributes": {
+        "role": "protagonist",
+        "age": "early 30s",
+        "career": "ER nurse / teacher / nonprofit director",
+        "love_language": "acts of service",
+        "wound": "abandonment - parent left / died young",
+        "flaw": "self-sacrifice to fault",
+        "arc": "learns to receive -> chooses self -> equal partnership"
+      }
+    },
+    {
+      "name": "Protagonist B - The Free Spirit",
+      "entity_type": "character",
+      "description": "Chaotic, passionate, commitment-phobic on surface. Actually terrified of being truly seen.",
+      "attributes": {
+        "role": "protagonist",
+        "age": "early 30s",
+        "career": "freelance artist / traveling nurse / startup founder",
+        "love_language": "quality time + physical touch",
+        "wound": "betrayal - ex cheated / best friend stole partner",
+        "flaw": "runs when things get real",
+        "arc": "runs -> stays -> builds home"
+      }
+    },
+    {
+      "name": "The Best Friend / Confidant",
+      "entity_type": "character",
+      "description": "Voice of reason, comic relief, sees both clearly. Has own quiet subplot.",
+      "attributes": {
+        "role": "supporting",
+        "relationship": "known both 10+ years",
+        "function": "calls out BS, provides perspective",
+        "subplot": "own quiet romance / career crisis"
+      }
+    },
+    {
+      "name": "The Ex / Obstacle",
+      "entity_type": "character",
+      "description": "Returns at worst time. Not villain - just reminder of past patterns.",
+      "attributes": {
+        "role": "antagonist (situational)",
+        "function": "triggers insecurity, forces confrontation",
+        "resolution": "protagonist chooses current love over past comfort"
+      }
+    },
+    {
+      "name": "The Cozy Coffee Shop / Bookstore",
+      "entity_type": "location",
+      "description": "Third place where they meet, fight, make up. Community hub.",
+      "attributes": {
+        "type": "business",
+        "atmosphere": "warm, lived-in, regulars know each other",
+        "significance": "first date, breakup, reunion",
+        "staff": "quirky ensemble cast"
+      }
+    },
+    {
+      "name": "Protagonist A's Apartment",
+      "entity_type": "location",
+      "description": "Organized, peaceful, empty. Reflects controlled life. Becomes messy with love.",
+      "attributes": {
+        "type": "residence",
+        "evolution": "sterile -> lived-in -> shared home",
+        "key_spaces": ["kitchen (where they cook together)", "balcony (deep talks)", "bedroom (vulnerability)"]
+      }
+    }
+  ],
+  "plot_threads": [
+    {
+      "title": "The Meet Cute",
+      "description": "Coffee spill / mistaken identity / forced proximity at wedding / rival businesses",
+      "importance": "major",
+      "planted_chapter": 1,
+      "payoff_chapter": 1
+    },
+    {
+      "title": "The Fake Dating / Forced Proximity",
+      "description": "Need date for event / snowed in / renovation forces cohabitation / work project",
+      "importance": "major",
+      "planted_chapter": 4,
+      "payoff_chapter": 12
+    },
+    {
+      "title": "The Black Moment",
+      "description": "Miscommunication / ex returns / fear triggers flight / secret revealed",
+      "importance": "critical",
+      "planted_chapter": 14,
+      "payoff_chapter": 18
+    },
+    {
+      "title": "The Grand Gesture",
+      "description": "Not grand - quiet. Shows up. Stays. Chooses daily.",
+      "importance": "critical",
+      "planted_chapter": 19,
+      "payoff_chapter": 20
+    }
+  ],
+  "world_rules": [
+    {
+      "category": "genre",
+      "rule": "HEA (Happily Ever After) or HFN (Happy For Now) is non-negotiable",
+      "exceptions": "None - reader contract"
+    },
+    {
+      "category": "genre",
+      "rule": "Both POVs get equal weight. Dual POV preferred.",
+      "exceptions": "Single POV only if deliberate artistic choice"
+    },
+    {
+      "category": "conflict",
+      "rule": "External obstacles (distance, rivals, timing) serve internal growth",
+      "exceptions": "Internal conflict (fear, wound) is the REAL obstacle"
+    },
+    {
+      "category": "consent",
+      "rule": "Enthusiastic consent in all intimate scenes. Communication is sexy.",
+      "exceptions": "None"
+    }
+  ],
+  "foreshadowing": [
+    {
+      "chapter": 1,
+      "content": "Protagonist A's coffee order remembered by barista - Protagonist B notices",
+      "hint_level": "subtle",
+      "payoff_chapter": 15
+    },
+    {
+      "chapter": 3,
+      "content": "Protagonist B's keychain has photo of deceased pet - vulnerability glimpse",
+      "hint_level": "moderate",
+      "payoff_chapter": 10
+    },
+    {
+      "chapter": 7,
+      "content": "Best friend warns: 'You're doing the thing where you push away what you want'",
+      "hint_level": "explicit",
+      "payoff_chapter": 14
+    }
+  ],
+  "research_topics": [
+    "Contemporary dating culture and apps",
+    "Trauma-informed relationship dynamics",
+    "Specific career details (nursing, teaching, freelance)",
+    "Small business operations (coffee shop, bookstore)",
+    "Modern communication patterns (texting, social media)",
+    "Therapy and attachment styles"
+  ]
+}

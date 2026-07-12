@@ -1,0 +1,162 @@
+{
+  "name": "Epic Fantasy",
+  "description": "Multi-POV sprawling fantasy with magic systems, political intrigue, and world-shaping stakes",
+  "genre": "fantasy",
+  "subgenre": "epic",
+  "tags": ["multi-POV", "magic-system", "political-intrigue", "chosen-one-subverted", "series-potential"],
+  "entities": [
+    {
+      "name": "The Reluctant Hero",
+      "entity_type": "character",
+      "description": "Ordinary person thrust into ancient prophecy. Not special - just in wrong place at right time. Resists destiny.",
+      "attributes": {
+        "role": "protagonist",
+        "age": "early 20s",
+        "background": "farmhand / apprentice / orphan",
+        "power": "latent, dangerous, uncontrolled",
+        "conflict": "wants normal life vs world needs saving",
+        "arc": "passive -> active -> leader"
+      }
+    },
+    {
+      "name": "The Mentor with Secrets",
+      "entity_type": "character",
+      "description": "Ancient wizard/scholar guiding the hero. Knows more about the prophecy than they admit. Past failures haunt them.",
+      "attributes": {
+        "role": "mentor",
+        "age": "centuries (appears 60-70)",
+        "knowledge": "forbidden history of magic",
+        "flaw": "manipulates for 'greater good'",
+        "secret": "caused the last cataclysm",
+        "arc": "manipulator -> genuine guide -> sacrifice"
+      }
+    },
+    {
+      "name": "The Political Rival",
+      "entity_type": "character",
+      "description": "Charismatic noble/warrior who believes THEY are the chosen one. Not evil - just certain of their destiny.",
+      "attributes": {
+        "role": "antagonist (sympathetic)",
+        "motivation": "genuinely believes they're the hero",
+        "methods": "ruthless but effective",
+        "conflict": "ideological - order vs chaos",
+        "arc": "adversary -> uneasy ally -> tragic figure"
+      }
+    },
+    {
+      "name": "The Ancient Capital - Aelthamar",
+      "entity_type": "location",
+      "description": "City of a thousand spires, built on ruins of older cities. Center of empire, magic, and intrigue.",
+      "attributes": {
+        "type": "capital_city",
+        "population": "millions",
+        "districts": ["spire district (mages)", "lower city (commoners)", "undercity (forgotten)", "royal palace", "great library"],
+        "atmosphere": "grand but rotting",
+        "magic": "ley lines converge here"
+      }
+    },
+    {
+      "name": "The Forbidden Wastes",
+      "entity_type": "location",
+      "description": "Land corrupted by ancient magical war. Nothing grows. Monsters roam. Source of the world's problems.",
+      "attributes": {
+        "type": "cursed_land",
+        "danger": "extreme",
+        "secrets": ["source of magic", "sleeping god", "truth of prophecy"],
+        "access": "forbidden on pain of death"
+      }
+    },
+    {
+      "name": "The Magic System - Resonance",
+      "entity_type": "item",
+      "description": "Magic requires harmonic resonance with world's fundamental frequencies. Talent is perfect pitch for reality.",
+      "attributes": {
+        "type": "magic_system",
+        "source": "ley lines / world song",
+        "cost": "physical/mental exhaustion, eventual burnout",
+        "limitations": ["requires training", "emotional state affects power", "counter-spelling via dissonance"],
+        "levels": ["apprentice (cantrips)", "adept (combat)", "master (reality warping)", "archmage (world-shaping)"]
+      }
+    }
+  ],
+  "plot_threads": [
+    {
+      "title": "The False Prophecy",
+      "description": "Ancient text predicts chosen one - but text was forged by mentor to control events",
+      "importance": "major",
+      "planted_chapter": 1,
+      "payoff_chapter": 20
+    },
+    {
+      "title": "The Wasting Sickness",
+      "description": "Magic users slowly dying. Connected to ley line corruption in Wastes",
+      "importance": "major",
+      "planted_chapter": 3,
+      "payoff_chapter": 15
+    },
+    {
+      "title": "The Rival's Claim",
+      "description": "Political rival produces 'true' chosen one - a child with stronger resonance",
+      "importance": "major",
+      "planted_chapter": 5,
+      "payoff_chapter": 18
+    },
+    {
+      "title": "The Sleeping God",
+      "description": "Wastes contain dormant deity. Awakening it could save or end the world",
+      "importance": "critical",
+      "planted_chapter": 8,
+      "payoff_chapter": 25
+    }
+  ],
+  "world_rules": [
+    {
+      "category": "magic",
+      "rule": "Resonance requires emotional clarity. Fear/anger creates dissonance (dangerous)",
+      "exceptions": "Rare 'discordants' weaponize chaos"
+    },
+    {
+      "category": "magic",
+      "rule": "Overuse causes 'burnout' - permanent loss of magic, often fatal",
+      "exceptions": "Artifacts can store resonance safely"
+    },
+    {
+      "category": "society",
+      "rule": "Mages are registered, monitored by Imperial Inquisition",
+      "exceptions": "Wild mages executed on sight"
+    },
+    {
+      "category": "geography",
+      "rule": "Ley lines shift every century. Cities built on old lines lose power",
+      "exceptions": "Capital built on stable nexus"
+    }
+  ],
+  "foreshadowing": [
+    {
+      "chapter": 1,
+      "content": "Hero hears 'hum' no one else hears - the world song",
+      "hint_level": "subtle",
+      "payoff_chapter": 12
+    },
+    {
+      "chapter": 2,
+      "content": "Mentor's hands tremble when channeling - early burnout sign",
+      "hint_level": "moderate",
+      "payoff_chapter": 10
+    },
+    {
+      "chapter": 4,
+      "content": "Rival's resonance is PURE - no dissonance. Too perfect.",
+      "hint_level": "moderate",
+      "payoff_chapter": 16
+    }
+  ],
+  "research_topics": [
+    "Medieval feudal politics and succession",
+    "Historical secret societies and mystery cults",
+    "Comparative mythology - hero's journey variations",
+    "Historical siege warfare and castle defense",
+    "Pre-industrial economics and trade routes",
+    "Historical plagues and magical thinking"
+  ]
+}

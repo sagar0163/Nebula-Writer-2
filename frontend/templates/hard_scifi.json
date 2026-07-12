@@ -1,0 +1,135 @@
+{
+  "name": "Hard Sci-Fi",
+  "description": "Realistic physics, near-future tech, scientific accuracy over space opera",
+  "genre": "sci-fi",
+  "subgenre": "hard",
+  "tags": ["realistic-physics", "near-future", "scientific-accuracy", "no-FTL", "hard-tech"],
+  "entities": [
+    {
+      "name": "The Scientist-Astronaut",
+      "entity_type": "character",
+      "description": "Mission specialist with deep expertise. Professional, methodical, haunted by past mission failure.",
+      "attributes": {
+        "role": "protagonist",
+        "age": "40s",
+        "specialty": "exogeology / propulsion / astrobiology",
+        "flaw": "rigid thinking, guilt over past",
+        "arc": "rigid -> adaptive -> intuitive leader"
+      }
+    },
+    {
+      "name": "The AI / Ship Mind",
+      "entity_type": "character",
+      "description": "Not sentient but extremely sophisticated. Manages ship systems. May develop emergent behavior.",
+      "attributes": {
+        "role": "deuteragonist",
+        "constraints": "Asimov-compliant / mission-priority / learning-loop",
+        "conflict": "efficiency vs human safety",
+        "arc": "tool -> partner -> sacrifice"
+      }
+    },
+    {
+      "name": "The Corporate Liaison",
+      "entity_type": "character",
+      "description": "Represents funding entity. Risk-averse, deadline-driven. Not villain - just different priorities.",
+      "attributes": {
+        "role": "antagonist (situational)",
+        "conflict": "safety vs schedule / profit vs science",
+        "arc": "obstacle -> understanding -> advocate"
+      }
+    },
+    {
+      "name": "The Research Vessel",
+      "entity_type": "location",
+      "description": "Hard-science spacecraft. Rotating habitat for gravity. Nuclear thermal propulsion. No artificial gravity magic.",
+      "attributes": {
+        "type": "spacecraft",
+        "propulsion": "nuclear thermal / ion drive / fusion torch",
+        "gravity": "centrifugal (rotating ring)",
+        "life_support": "closed-loop (CO2 scrubbers, hydroponics, water reclamation)",
+        "delta_v_budget": "strictly calculated"
+      }
+    },
+    {
+      "name": "Target Celestial Body",
+      "entity_type": "location",
+      "description": "Moon of gas giant / asteroid / Mars / exoplanet. Scientifically valuable. Hostile environment.",
+      "attributes": {
+        "type": "planetary_body",
+        "gravity": "0.1-1.0g",
+        "atmosphere": "none / thin CO2 / toxic",
+        "radiation": "high (Jovian) / moderate / low",
+        "resources": "water ice / rare earths / helium-3 / scientific data"
+      }
+    }
+  ],
+  "plot_threads": [
+    {
+      "title": "The Anomaly",
+      "description": "Unexpected sensor reading defies current models. Biological? Geological? Artificial?",
+      "importance": "major",
+      "planted_chapter": 1,
+      "payoff_chapter": 15
+    },
+    {
+      "title": "Systems Degradation",
+      "description": "Cascading failures. Radiation damage. Micrometeoroid. Software fault. Time pressure.",
+      "importance": "major",
+      "planted_chapter": 3,
+      "payoff_chapter": 12
+    },
+    {
+      "title": "The Corporate Secret",
+      "description": "Mission profile changed. Hidden objective. Crew is expendable test subjects.",
+      "importance": "critical",
+      "planted_chapter": 5,
+      "payoff_chapter": 20
+    }
+  ],
+  "world_rules": [
+    {
+      "category": "physics",
+      "rule": "No FTL. No artificial gravity except rotation/acceleration. Light lag is real.",
+      "exceptions": "None - hard constraint"
+    },
+    {
+      "category": "propulsion",
+      "rule": "Delta-v budget is absolute. Every maneuver costs. Tyranny of rocket equation.",
+      "exceptions": "Gravity assists / aerobraking / ISRU refueling"
+    },
+    {
+      "category": "biology",
+      "rule": "Humans need 1g, radiation shielding, 2000+ kcal, psychological support",
+      "exceptions": "Genetic mods / cybernetics exist but experimental"
+    },
+    {
+      "category": "communication",
+      "rule": "Light-speed delay. No real-time comms beyond Earth orbit. Autonomy required.",
+      "exceptions": "Quantum entanglement comms theoretical only"
+    }
+  ],
+  "foreshadowing": [
+    {
+      "chapter": 1,
+      "content": "Protagonist notices micro-vibration in hull - 'ship breathing' - actually early structural fatigue",
+      "hint_level": "subtle",
+      "payoff_chapter": 18
+    },
+    {
+      "chapter": 3,
+      "content": "AI logs 'unexplained sensor ghost' during calibration - dismissed as cosmic ray",
+      "hint_level": "moderate",
+      "payoff_chapter": 14
+    }
+  ],
+  "research_topics": [
+    "Orbital mechanics and transfer windows",
+    "Nuclear thermal/electric propulsion",
+    "Closed-loop life support systems",
+    "Radiation shielding materials",
+    "ISRU (In-Situ Resource Utilization)",
+    "Long-duration space psychology",
+    "Planetary protection protocols",
+    "Asteroid/mining economics"
+  ]
+}

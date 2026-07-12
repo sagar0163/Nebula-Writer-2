@@ -1,0 +1,147 @@
+{
+  "name": "Psychological Thriller",
+  "description": "Unreliable narrator, memory gaps, gaslighting, twists that reframe everything",
+  "genre": "thriller",
+  "subgenre": "psychological",
+  "tags": ["unreliable-narrator", "memory-loss", "gaslighting", "plot-twist", "dark"],
+  "entities": [
+    {
+      "name": "The Protagonist - Unreliable",
+      "entity_type": "character",
+      "description": "Seems normal but has gaps. Blackouts. Missing time. May be perpetrator or victim. Or both.",
+      "attributes": {
+        "role": "protagonist",
+        "age": "30s-40s",
+        "condition": "dissociative episodes / medication side effects / trauma",
+        "narrative_function": "reader discovers truth WITH them",
+        "flaw": "trusts own perception despite evidence",
+        "arc": "confusion -> suspicion -> horror -> acceptance -> agency"
+      }
+    },
+    {
+      "name": "The Partner / Gaslighter",
+      "entity_type": "character",
+      "description": "Charming, supportive, concerned. But details don't add up. Protective or controlling?",
+      "attributes": {
+        "role": "antagonist (hidden)",
+        "dynamic": "caregiver vs controller",
+        "methods": "subtle manipulation, medication management, isolation",
+        "tell": "knows things they shouldn't",
+        "arc": "mask slips -> full reveal -> confrontation"
+      }
+    },
+    {
+      "name": "The Anchor - Outside Witness",
+      "entity_type": "character",
+      "description": "Old friend / therapist / detective / neighbor. Only one who believes protagonist. Targeted.",
+      "attributes": {
+        "role": "ally",
+        "vulnerability": "investigating puts them in danger",
+        "function": "external validation of reality",
+        "fate": "survives to testify / becomes victim"
+      }
+    },
+    {
+      "name": "The Family Home",
+      "entity_type": "location",
+      "description": "Beautiful, isolated, smart-home everything. Cameras everywhere. Protagonist's prison/sanctuary.",
+      "attributes": {
+        "type": "residence",
+        "features": ["full surveillance", "automated locks", "medication dispenser", "soundproofing"],
+        "atmosphere": "pristine, sterile, watched",
+        "symbolism": "gilded cage"
+      }
+    },
+    {
+      "name": "The Therapy Office / Safe Space",
+      "entity_type": "location",
+      "description": "Only place without cameras. Where protagonist speaks freely. May be compromised.",
+      "attributes": {
+        "type": "professional",
+        "atmosphere": "calm, confidential, fragile safety",
+        "key_object": "journal / recorder / hidden notes"
+      }
+    }
+  ],
+  "plot_threads": [
+    {
+      "title": "The Missing Time",
+      "description": "Protagonist loses hours/days. Finds evidence of actions they don't remember.",
+      "importance": "major",
+      "planted_chapter": 1,
+      "payoff_chapter": 10
+    },
+    {
+      "title": "The Medication Mystery",
+      "description": "Pills changed. Side effects include memory loss. Who prescribes? Who benefits?",
+      "importance": "major",
+      "planted_chapter": 2,
+      "payoff_chapter": 8
+    },
+    {
+      "title": "The Previous Victim",
+      "description": "Protagonist discovers partner's ex disappeared/died. Similar circumstances.",
+      "importance": "critical",
+      "planted_chapter": 5,
+      "payoff_chapter": 15
+    },
+    {
+      "title": "The Truth About the 'Accident'",
+      "description": "Traumatic event that started it all wasn't an accident. Protagonist caused it - or was framed.",
+      "importance": "critical",
+      "planted_chapter": 3,
+      "payoff_chapter": 20
+    }
+  ],
+  "world_rules": [
+    {
+      "category": "psychology",
+      "rule": "Memory is reconstructive, not reproductive. Every recall changes the memory.",
+      "exceptions": "Trauma memories can be fragmented but core emotional truth remains"
+    },
+    {
+      "category": "technology",
+      "rule": "Smart home records everything. Cloud backups exist even if local deleted.",
+      "exceptions": "Faraday cage / powered off / analog only"
+    },
+    {
+      "category": "gaslighting",
+      "rule": "Gaslighter makes victim question reality. Small lies -> big lies. Isolation is key.",
+      "exceptions": "External anchor breaks the cycle"
+    },
+    {
+      "category": "legal",
+      "rule": "Incompetency declarations can strip autonomy. Partner can petition.",
+      "exceptions": "Independent evaluation / court hearing required"
+    }
+  ],
+  "foreshadowing": [
+    {
+      "chapter": 1,
+      "content": "Protospet notices partner's reflection in window - smiling when they think she's not looking",
+      "hint_level": "subtle",
+      "payoff_chapter": 12
+    },
+    {
+      "chapter": 2,
+      "content": "Prescription bottle label smudged. Dosage changed but doctor denies it.",
+      "hint_level": "moderate",
+      "payoff_chapter": 9
+    },
+    {
+      "chapter": 4,
+      "content": "Anchor character mentions 'your partner called me, said you're having episode again' - protagonist has no memory",
+      "hint_level": "explicit",
+      "payoff_chapter": 11
+    }
+  ],
+  "research_topics": [
+    "Dissociative disorders and trauma",
+    "Gaslighting tactics and coercive control",
+    "Psychiatric medication side effects",
+    "Smart home surveillance capabilities",
+    "Legal guardianship and competency hearings",
+    "Trauma therapy approaches (EMDR, CBT)",
+    "Forensic psychology - false memories"
+  ]
+}

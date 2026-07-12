@@ -1,0 +1,137 @@
+{
+  "name": "Cozy Mystery",
+  "description": "Light-hearted whodunit in a charming small town with an amateur sleuth",
+  "genre": "mystery",
+  "subgenre": "cozy",
+  "tags": ["amateur-sleuth", "small-town", "no-gore", "recipe-included", "recurring-cast"],
+  "entities": [
+    {
+      "name": "The Sleuth",
+      "entity_type": "character",
+      "description": "Curious, observant local with a day job (baker/librarian/florist). Uses community connections to solve crimes police miss.",
+      "attributes": {
+        "role": "protagonist",
+        "age": "30s-40s",
+        "day_job": "bakery owner",
+        "skill": "knows everyone's secrets",
+        "flaw": "can't mind her own business",
+        "arc": "meddler -> respected investigator"
+      }
+    },
+    {
+      "name": "The Police Contact",
+      "entity_type": "character",
+      "description": "Handsome but by-the-book detective who tolerates the sleuth. Romantic tension optional.",
+      "attributes": {
+        "role": "deuteragonist",
+        "relationship": "friendly rivalry -> romance",
+        "conflict": "procedure vs intuition",
+        "arc": "skeptic -> partner"
+      }
+    },
+    {
+      "name": "The Victim",
+      "entity_type": "character",
+      "description": "Locally disliked figure with many enemies. Death shakes the community's peace.",
+      "attributes": {
+        "role": "victim",
+        "reputation": "universally disliked",
+        "secrets": ["blackmail", "affair", "embezzlement", "family feud"],
+        "connections": "suspects everyone"
+      }
+    },
+    {
+      "name": "The Suspects (Ensemble)",
+      "entity_type": "character",
+      "description": "Quirky locals each with motive, means, and opportunity. Each has a secret unrelated to murder.",
+      "attributes": {
+        "role": "suspects",
+        "count": "5-7",
+        "types": ["rival business owner", "estranged family", "secret lover", "blackmailed employee", "long-lost relative"],
+        "red_herrings": "each has non-murder secret"
+      }
+    },
+    {
+      "name": "Main Street Bakery",
+      "entity_type": "location",
+      "description": "Sleuth's business and unofficial investigation HQ. Smells of cinnamon and gossip.",
+      "attributes": {
+        "type": "business",
+        "atmosphere": "warm, flour-dusted, gossip central",
+        "key_locations": ["display case", "back kitchen", "community bulletin board"],
+        "recurring_chars": ["regulars", "delivery people", "supplier"]
+      }
+    },
+    {
+      "name": "Town Police Station",
+      "entity_type": "location",
+      "description": "Small, understaffed, where the detective tries to maintain order amid amateur interference.",
+      "attributes": {
+        "type": "government",
+        "atmosphere": "underfunded, overworked, tolerant of sleuth",
+        "key_locations": ["detective's desk", "evidence locker", "interview room", "break room with bad coffee"]
+      }
+    }
+  ],
+  "plot_threads": [
+    {
+      "title": "The Opening Murder",
+      "description": "Beloved/hated local found dead during town festival",
+      "importance": "major",
+      "planted_chapter": 1,
+      "payoff_chapter": 12
+    },
+    {
+      "title": "The Red Herring Romance",
+      "description": "Sleuth suspects police contact's new partner",
+      "importance": "minor",
+      "planted_chapter": 3,
+      "payoff_chapter": 8
+    },
+    {
+      "title": "The Hidden Will",
+      "description": "Victim's secret inheritance changes all motives",
+      "importance": "major",
+      "planted_chapter": 4,
+      "payoff_chapter": 11
+    }
+  ],
+  "world_rules": [
+    {
+      "category": "genre",
+      "rule": "No graphic violence, sex, or profanity - murder happens off-page",
+      "exceptions": "None - core to cozy genre"
+    },
+    {
+      "category": "genre",
+      "rule": "Sleuth never in mortal danger - stakes are social/intellectual",
+      "exceptions": "Climax may have mild peril"
+    },
+    {
+      "category": "community",
+      "rule": "Small town knows everything - secrets are currency",
+      "exceptions": "Outsiders can keep secrets temporarily"
+    }
+  ],
+  "foreshadowing": [
+    {
+      "chapter": 1,
+      "content": "Sleuth notices victim's missing heirloom brooch",
+      "hint_level": "subtle",
+      "payoff_chapter": 10
+    },
+    {
+      "chapter": 2,
+      "content": "Police contact mentions 'cold case from 20 years ago'",
+      "hint_level": "moderate",
+      "payoff_chapter": 12
+    }
+  ],
+  "research_topics": [
+    "Small town police procedures",
+    "Historical poisons and detection",
+    "Bakery recipes and operations",
+    "Small town festival traditions",
+    "Genealogy research methods"
+  ]
+}
