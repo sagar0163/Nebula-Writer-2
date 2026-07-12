@@ -60,17 +60,19 @@ class PostgresDB:
         conn = self._get_conn()
         try:
             with conn.cursor() as cursor:
-                cursor.execute(sql, params)
+                cursor.execute(sql + " RETURNING id", params)
                 conn.commit()
-                return str(cursor.lastrowid) if cursor.lastrowid else "0"
+                result = cursor.fetchone()
+                return str(result['id']) if result else "0"
         except psycopg2.InterfaceError:
             self.pool.putconn(conn, close=True)
             conn = self.pool.getconn()
             conn.autocommit = False
             with conn.cursor() as cursor:
-                cursor.execute(sql, params)
+                cursor.execute(sql + " RETURNING id", params)
                 conn.commit()
-                return str(cursor.lastrowid) if cursor.lastrowid else "0"
+                result = cursor.fetchone()
+                return str(result['id']) if result else "0"
         finally:
             self._put_conn(conn)
 
