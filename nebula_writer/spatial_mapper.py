@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Nebula-Writer Spatial Mapping System
 Handles geographical relationships, mapping, and location-based intelligence for world-building
@@ -10,6 +12,7 @@ from dataclasses import asdict, dataclass
 from typing import Dict, List, Optional
 
 from nebula_writer.codex import CodexDatabase
+from nebula_writer.postgres_db import PostgresDB
 
 
 @dataclass
@@ -52,71 +55,124 @@ class MapRoute:
 class SpatialMapper:
     """Handles spatial relationships and mapping for world-building"""
 
-    def __init__(self, db: CodexDatabase):
+    def __init__(self, db: CodexDatabase | PostgresDB):
         self.db = db
         self._init_spatial_tables()
+
+    def _get_connection(self):
+        """Get database connection - works with both SQLite and PostgreSQL"""
+        if isinstance(self.db, PostgresDB):
+            return self.db._get_conn()
+        else:
+            conn = sqlite3.connect(self.db.db_path)
+            conn.row_factory = sqlite3.Row
+            return conn
+
+    def _release_connection(self, conn):
+        """Release connection back to pool (for PostgreSQL) or close (SQLite)"""
+        if isinstance(self.db, PostgresDB):
+            self.db._put_conn(conn)
+        else:
+            conn.close()
 
     def _init_spatial_tables(self):
         """Initialize spatial mapping tables in the database"""
         conn = self._get_connection()
         cursor = conn.cursor()
 
-        # Map Points Table (for geographic locations)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS map_points (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                entity_id INTEGER,
-                name TEXT NOT NULL,
-                x REAL NOT NULL,
-                y REAL NOT NULL,
-                z REAL,
-                description TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
-            )
-        """)
+        if isinstance(self.db, PostgresDB):
+            # PostgreSQL syntax
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS map_points (
+                    id SERIAL PRIMARY KEY,
+                    entity_id INTEGER,
+                    name TEXT NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL,
+                    z REAL,
+                    description TEXT,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
+                )
+            """)
 
-        # Map Routes Table (for paths between locations)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS map_routes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_point_id INTEGER,
-                end_point_id INTEGER,
-                distance REAL,
-                travel_time TEXT,
-                terrain_type TEXT,
-                difficulty TEXT DEFAULT 'moderate',
-                is_bidirectional INTEGER DEFAULT 1,
-                description TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (start_point_id) REFERENCES map_points(id) ON DELETE CASCADE,
-                FOREIGN KEY (end_point_id) REFERENCES map_points(id) ON DELETE CASCADE
-            )
-        """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS map_routes (
+                    id SERIAL PRIMARY KEY,
+                    start_point_id INTEGER REFERENCES map_points(id) ON DELETE CASCADE,
+                    end_point_id INTEGER REFERENCES map_points(id) ON DELETE CASCADE,
+                    distance REAL,
+                    travel_time TEXT,
+                    terrain_type TEXT,
+                    difficulty TEXT DEFAULT 'moderate',
+                    is_bidirectional BOOLEAN DEFAULT TRUE,
+                    description TEXT,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """)
 
-        # Spatial Regions Table (for areas/zones)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS spatial_regions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                description TEXT,
-                center_x REAL,
-                center_y REAL,
-                radius REAL,
-                points_json TEXT,
-                region_type TEXT DEFAULT 'circular',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS spatial_regions (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    center_x REAL,
+                    center_y REAL,
+                    radius REAL,
+                    points_json TEXT,
+                    region_type TEXT DEFAULT 'circular',
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                )
+            """)
+        else:
+            # SQLite syntax
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS map_points (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entity_id INTEGER,
+                    name TEXT NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL,
+                    z REAL,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS map_routes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    start_point_id INTEGER,
+                    end_point_id INTEGER,
+                    distance REAL,
+                    travel_time TEXT,
+                    terrain_type TEXT,
+                    difficulty TEXT DEFAULT 'moderate',
+                    is_bidirectional INTEGER DEFAULT 1,
+                    description TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (start_point_id) REFERENCES map_points(id) ON DELETE CASCADE,
+                    FOREIGN KEY (end_point_id) REFERENCES map_points(id) ON DELETE CASCADE
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS spatial_regions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    center_x REAL,
+                    center_y REAL,
+                    radius REAL,
+                    points_json TEXT,
+                    region_type TEXT DEFAULT 'circular',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
 
         conn.commit()
         conn.close()
-
-    def _get_connection(self):
-        """Get database connection"""
-        conn = sqlite3.connect(self.db.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
 
     # ============ MAP POINTS ============
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 from nebula_writer.ai_writer import AIWriter
 from nebula_writer.codex import CodexDatabase
@@ -18,6 +18,7 @@ from nebula_writer.plot_manager import create_plot_manager
 from nebula_writer.ripple_checker import create_ripple_checker
 from nebula_writer.spatial_mapper import create_spatial_mapper
 from nebula_writer.style_learner import create_style_learner
+from nebula_writer.postgres_db import PostgresDB
 
 
 class NarrativeOrchestrator:
@@ -26,9 +27,12 @@ class NarrativeOrchestrator:
     Coordinates the proactive planning, simulation, and validation pipeline.
     """
 
-    def __init__(self):
+    def __init__(self, db=None):
         # 1. Initialize core data layers
-        self.db = CodexDatabase()
+        if db is None:
+            self.db = CodexDatabase()
+        else:
+            self.db = db
         self.pm = create_plot_manager()
         self.ai = AIWriter()
 
@@ -41,7 +45,7 @@ class NarrativeOrchestrator:
         # 3. Initialize Support Modules
         self.memory = MemoryManager(token_limit=120000)
         self.versioning = VersioningService()
-        self.ripple = create_ripple_checker(self.db, self.ai)
+        self.ripple = create_ripple_checker(self.db, self.ai, self.pm)
         self.feedback = FeedbackEngine(self.db)
         self.conv = ConversationEngine(self.db, self.ai)
 

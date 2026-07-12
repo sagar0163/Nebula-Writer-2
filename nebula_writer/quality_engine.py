@@ -113,11 +113,23 @@ CRITERIA:
 WEIGHTS:
 {weights}
 
+CRITICAL: You MUST use EXACTLY these 8 criterion names in your scores object:
+- narrative_drive
+- character_voice
+- show_not_tell
+- sensory_depth
+- pacing
+- dialogue_realism
+- thematic_resonance
+- prose_rhythm
+
+Do NOT add, remove, or rename any criteria. Use EXACT names above.
+
 Return JSON with:
 {
   "scores": {"criterion_name": float_score, ...},
   "overall": float_weighted_average,
-  "weakest": "criterion_name",
+  "weakest": "criterion_name_from_above_list_only",
   "feedback": ["specific actionable feedback for revision", ...]
 }"""),
     HumanMessage(content="""PROSE TO EVALUATE:

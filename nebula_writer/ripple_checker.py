@@ -10,15 +10,15 @@ from nebula_writer.audit import StoryAuditor
 
 
 class RippleChecker:
-    """
-    Analyzes story changes for ripple effects.
+    """Analyzes story changes for ripple effects.
     Combines AI prediction with structural audit.
     """
 
-    def __init__(self, db, ai_writer):
+    def __init__(self, db, ai_writer, plot_manager=None):
         self.db = db
         self.ai = ai_writer
         self.auditor = StoryAuditor(db)
+        self.pm = plot_manager
 
     async def analyze_change(self, change_description: str, context: Dict = None) -> Dict:
         """
@@ -127,5 +127,5 @@ class RippleChecker:
         }
 
 
-def create_ripple_checker(db, ai_writer):
-    return RippleChecker(db, ai_writer)
+def create_ripple_checker(db, ai_writer, plot_manager=None):
+    return RippleChecker(db, ai_writer, plot_manager)

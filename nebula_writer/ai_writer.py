@@ -181,7 +181,7 @@ class AIWriter:
 
         for e in entities:
             e["attributes"] = db.get_attributes(e["id"])[:3]
-            if "description" in e and len(e["description"]) > 200:
+            if e.get("description") and len(e["description"]) > 200:
                 e["description"] = e["description"][:200] + "..."
             context["entities"].append(e)
 

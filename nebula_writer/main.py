@@ -102,10 +102,15 @@ else:
     DATA_DIR.mkdir(exist_ok=True)
     db = CodexDatabase(str(DATA_DIR / "codex.db"))
 
-# Initialize Orchestrator (Step 7)
+# Initialize Orchestrator (Step 7) - use the correct database based on NEBULA_DB
 from nebula_writer.services.orchestrator import NarrativeOrchestrator
 
-orchestrator = NarrativeOrchestrator()
+if db_type == "supabase":
+    # Create orchestrator with PostgresDB
+    from nebula_writer.postgres_db import PostgresDB
+    orchestrator = NarrativeOrchestrator(PostgresDB())
+else:
+    orchestrator = NarrativeOrchestrator()
 
 # Keep direct access for simple CRUD (backwards compatibility)
 db = orchestrator.db

@@ -1,20 +1,17 @@
-"""
-Nebula-Writer PostgreSQL Adapter for Supabase
-Direct PostgreSQL connection to Supabase database
-"""
-
+import json
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2.pool import SimpleConnectionPool
 
 
 class PostgresDB:
     """PostgreSQL database interface matching CodexDatabase API"""
 
-    def __init__(self, connection_string: str = None, password: str = None):
+    def __init__(self, connection_string: str = None, password: str = None, min_conn: int = 1, max_conn: int = 5):
         # Build connection string
         if not connection_string:
             connection_string = os.environ.get("POSTGRES_CONNECTION_STRING")
@@ -22,26 +19,64 @@ class PostgresDB:
         if not connection_string:
             raise ValueError("POSTGRES_CONNECTION_STRING environment variable is required")
 
-        try:
-            self.conn = psycopg2.connect(connection_string, cursor_factory=RealDictCursor)
-            print("[OK] Connected to Supabase PostgreSQL")
-        except Exception as e:
-            print(f"[ERROR] Connection failed: {e}")
-            raise
+        self.connection_string = connection_string
+        self.pool = SimpleConnectionPool(min_conn, max_conn, connection_string, cursor_factory=RealDictCursor)
+        print("[OK] Connected to Supabase PostgreSQL (pool)")
+
+    def _get_conn(self):
+        """Get a connection from the pool"""
+        conn = self.pool.getconn()
+        conn.autocommit = False
+        return conn
+
+    def _put_conn(self, conn):
+        """Return a connection to the pool"""
+        self.pool.putconn(conn)
 
     def _query(self, sql: str, params: tuple = None) -> List[Dict]:
-        with self.conn.cursor() as cursor:
-            cursor.execute(sql, params)
-            if cursor.description:
-                return cursor.fetchall()
-            self.conn.commit()
-            return []
+        conn = self._get_conn()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, params)
+                if cursor.description:
+                    return cursor.fetchall()
+                conn.commit()
+                return []
+        except psycopg2.InterfaceError:
+            # Connection lost, try to reconnect
+            self.pool.putconn(conn, close=True)
+            conn = self.pool.getconn()
+            conn.autocommit = False
+            with conn.cursor() as cursor:
+                cursor.execute(sql, params)
+                if cursor.description:
+                    return cursor.fetchall()
+                conn.commit()
+                return []
+        finally:
+            self._put_conn(conn)
 
     def _execute(self, sql: str, params: tuple = None) -> str:
-        with self.conn.cursor() as cursor:
-            cursor.execute(sql, params)
-            self.conn.commit()
-            return str(cursor.lastrowid) if cursor.lastrowid else "0"
+        conn = self._get_conn()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, params)
+                conn.commit()
+                return str(cursor.lastrowid) if cursor.lastrowid else "0"
+        except psycopg2.InterfaceError:
+            self.pool.putconn(conn, close=True)
+            conn = self.pool.getconn()
+            conn.autocommit = False
+            with conn.cursor() as cursor:
+                cursor.execute(sql, params)
+                conn.commit()
+                return str(cursor.lastrowid) if cursor.lastrowid else "0"
+        finally:
+            self._put_conn(conn)
+
+    def close(self):
+        """Close all connections in the pool"""
+        self.pool.closeall()
 
     # ============ ENTITY OPERATIONS ============
 
@@ -455,7 +490,65 @@ class PostgresDB:
         if self.conn:
             self.conn.close()
 
+    # ============ CONVERSATION PERSISTENCE ============
 
-def create_postgres_db(connection_string: str = None) -> PostgresDB:
-    """Create PostgreSQL database instance"""
-    return PostgresDB(connection_string=os.environ.get("POSTGRES_CONNECTION_STRING") or connection_string)
+    def _ensure_conversations_table(self):
+        """Create conversations table if it doesn't exist"""
+        self._query("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(255) NOT NULL,
+                messages JSONB NOT NULL DEFAULT '[]',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
+        """)
+        # Create index on user_id
+        self._query("""
+            CREATE INDEX IF NOT EXISTS idx_conversations_user_id 
+            ON conversations(user_id)
+        """)
+
+    def save_conversation(self, messages: List[Dict], user_id: str = "default") -> int:
+        """Save conversation history to database"""
+        self._ensure_conversations_table()
+        
+        messages_json = json.dumps(messages)
+        now = datetime.now().isoformat()
+        
+        # Check if conversation exists
+        existing = self._query(
+            "SELECT id FROM conversations WHERE user_id = %s", (user_id,)
+        )
+        
+        if existing:
+            conversation_id = existing[0]['id']
+            self._query(
+                "UPDATE conversations SET messages = %s, updated_at = %s WHERE id = %s",
+                (messages_json, now, conversation_id)
+            )
+        else:
+            result = self._query(
+                "INSERT INTO conversations (user_id, messages, updated_at) VALUES (%s, %s, %s) RETURNING id",
+                (user_id, messages_json, now)
+            )
+            conversation_id = result[0]['id'] if result else 0
+        
+        return conversation_id
+
+    def load_conversation(self, user_id: str = "default") -> List[Dict]:
+        """Load conversation history from database"""
+        self._ensure_conversations_table()
+        
+        result = self._query(
+            "SELECT messages FROM conversations WHERE user_id = %s ORDER BY updated_at DESC LIMIT 1",
+            (user_id,)
+        )
+        
+        if result and result[0]['messages']:
+            return result[0]['messages']
+        return []
+
+    def close(self):
+        if self.conn:
+            self.conn.close()
