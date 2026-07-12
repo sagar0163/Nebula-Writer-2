@@ -1,25 +1,14 @@
-"""
-Nebula-Writer API Server
-FastAPI backend for the Codex and writing tools
-"""
-
-import json
-import os
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional
-
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-
-# Import Subsystems
-from nebula_writer.codex import CodexDatabase
-from nebula_writer.comment_system import create_comment_engine, create_quality_layer
-from nebula_writer.idea_processor import create_story_architect
-from nebula_writer.lookahead_engine import LookaheadEngine
+import logging
+import os
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
 
 load_dotenv()
 
@@ -30,8 +19,24 @@ try:
 except importlib.metadata.PackageNotFoundError:
     __version__ = "3.0.0"
 
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
+)
+logger = logging.getLogger("nebula_writer")
+
 # Initialize app
 app = FastAPI(title="Nebula-Writer API", version=__version__)
+
+# Background job store for async AI writing
+_ai_write_jobs: Dict[str, Dict] = {}
+
+# Import Subsystems
+from nebula_writer.codex import CodexDatabase
+from nebula_writer.comment_system import create_comment_engine, create_quality_layer
+from nebula_writer.idea_processor import create_story_architect
+from nebula_writer.lookahead_engine import LookaheadEngine
 
 
 def main():
@@ -87,12 +92,12 @@ async def structured_logging_and_error_middleware(request: Request, call_next):
 db_type = os.environ.get("NEBULA_DB", "sqlite")
 
 if db_type == "supabase":
-    print("[OK] Using Supabase PostgreSQL database")
+    logger.info("[OK] Using Supabase PostgreSQL database")
     from nebula_writer.postgres_db import PostgresDB
 
     db = PostgresDB()
 else:
-    print("[OK] Using SQLite local database")
+    logger.info("[OK] Using SQLite local database")
     DATA_DIR = Path(__file__).parent.parent / "data"
     DATA_DIR.mkdir(exist_ok=True)
     db = CodexDatabase(str(DATA_DIR / "codex.db"))
@@ -498,9 +503,114 @@ class AIShowNotTellRequest(BaseModel):
     text: str
 
 
+class AIWriteRequest(BaseModel):
+    beat: str
+    word_count: int = 500
+    entity_ids: Optional[List[int]] = None
+    chapter: Optional[int] = None
+    # v2.1 Enhanced Controls
+    pacing: Optional[str] = None  # e.g., "slow", "steady", "fast", "breakneck"
+    pov: Optional[str] = None  # e.g., "first_person", "third_person_limited", "third_person_omniscient"
+    tone: Optional[str] = None  # e.g., "dark", "hopeful", "suspenseful", "melancholic"
+
+
+class AIWriteAsyncRequest(BaseModel):
+    """Request to start async scene writing"""
+    beat: str
+    word_count: int = 500
+    entity_ids: Optional[List[int]] = None
+    chapter: Optional[int] = None
+    pacing: Optional[str] = None
+    pov: Optional[str] = None
+    tone: Optional[str] = None
+
+
+class AIWriteStatusResponse(BaseModel):
+    """Response for async write status polling"""
+    task_id: str
+    status: str  # "pending", "running", "completed", "failed"
+    result: Optional[str] = None
+    error: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+
+# In-memory task store (use Redis in production)
+_ai_write_tasks: Dict[str, Dict] = {}
+
+
+async def _run_ai_write_scene(
+    task_id: str,
+    beat: str,
+    word_count: int,
+    entity_ids: Optional[List[int]],
+    chapter: Optional[int],
+    pacing: Optional[str],
+    pov: Optional[str],
+    tone: Optional[str],
+):
+    """Background task to write scene"""
+    _ai_write_tasks[task_id]["status"] = "running"
+    try:
+        from nebula_writer.ai_writer import AIWriter
+        ai = AIWriter()
+        result = await ai.write_scene(
+            db=db,
+            beat=beat,
+            word_count=word_count,
+            entity_ids=entity_ids,
+            chapter=chapter,
+            pacing=pacing,
+            pov=pov,
+            tone=tone,
+        )
+        _ai_write_tasks[task_id]["status"] = "completed"
+        _ai_write_tasks[task_id]["result"] = result
+        _ai_write_tasks[task_id]["completed_at"] = datetime.now()
+    except Exception as e:
+        _ai_write_tasks[task_id]["status"] = "failed"
+        _ai_write_tasks[task_id]["error"] = str(e)
+
+
 @app.post("/api/ai/write")
-def ai_write_scene(req: AIWriteRequest):
-    """Write a scene using AI with Codex context"""
+async def ai_write_scene_async(
+    req: AIWriteAsyncRequest,
+    background_tasks: BackgroundTasks
+):
+    """Start async scene writing - returns task_id for polling"""
+    task_id = str(uuid.uuid4())
+    _ai_write_tasks[task_id] = {
+        "status": "pending",
+        "result": None,
+        "error": None,
+        "created_at": datetime.now(),
+        "completed_at": None,
+    }
+    background_tasks.add_task(
+        _run_ai_write_scene,
+        task_id,
+        req.beat,
+        req.word_count,
+        req.entity_ids,
+        req.chapter,
+        req.pacing,
+        req.pov,
+        req.tone,
+    )
+    return {"task_id": task_id, "status": "pending"}
+
+
+@app.get("/api/ai/write/{task_id}", response_model=AIWriteStatusResponse)
+async def ai_write_status(task_id: str):
+    """Poll for async write completion"""
+    if task_id not in _ai_write_tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return _ai_write_tasks[task_id]
+
+
+@app.post("/api/ai/write")
+def ai_write_scene(req: AIWriteRequest, background_tasks: BackgroundTasks):
+    """Write a scene using AI with Codex context (synchronous - may timeout for long generations)"""
     try:
         from nebula_writer.ai_writer import AIWriter
 
@@ -518,6 +628,42 @@ def ai_write_scene(req: AIWriteRequest):
         return {"text": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/write-async")
+def ai_write_scene_async(req: AIWriteRequest, background_tasks: BackgroundTasks):
+    """Start AI scene writing as background job - returns job_id for polling"""
+    job_id = str(uuid.uuid4())
+    _ai_write_jobs[job_id] = {"status": "pending", "result": None, "error": None}
+    
+    async def run_write():
+        try:
+            from nebula_writer.ai_writer import AIWriter
+            ai = AIWriter()
+            result = await ai.write_scene(
+                db=db,
+                beat=req.beat,
+                word_count=req.word_count,
+                entity_ids=req.entity_ids,
+                chapter=req.chapter,
+                pacing=req.pacing,
+                pov=req.pov,
+                tone=req.tone,
+            )
+            _ai_write_jobs[job_id] = {"status": "completed", "result": result, "error": None}
+        except Exception as e:
+            _ai_write_jobs[job_id] = {"status": "failed", "result": None, "error": str(e)}
+    
+    background_tasks.add_task(run_write)
+    return {"job_id": job_id, "status": "pending"}
+
+
+@app.get("/api/ai/write-status/{job_id}")
+def ai_write_status(job_id: str):
+    """Check status of async AI write job"""
+    if job_id not in _ai_write_jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return _ai_write_jobs[job_id]
 
 
 @app.post("/api/ai/rewrite")
@@ -1216,7 +1362,7 @@ def architect_chat(req: ArchitectChatRequest):
         return result
     except Exception as e:
         # Log the error and return a 500 status code
-        print(f"API Error in Architect Chat: {e}")
+        logger.error("API Error in Architect Chat: %s", e)
         raise HTTPException(status_code=500, detail="Failed to process architect session")
 
 
@@ -1624,6 +1770,6 @@ async def read_index():
 if __name__ == "__main__":
     import uvicorn
 
-    print("Starting Nebula-Writer API server v2.1 (Chat-First)...")
-    print("Using database:", os.environ.get("NEBULA_DB", "sqlite"))
+    logger.info("Starting Nebula-Writer API server v2.1 (Chat-First)...")
+    logger.info("Using database: %s", os.environ.get("NEBULA_DB", "sqlite"))
     uvicorn.run(app, host="0.0.0.0", port=8000)

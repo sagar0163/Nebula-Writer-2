@@ -319,3 +319,38 @@ CREATE POLICY "Allow all for world_rules" ON world_rules FOR ALL USING (true);
 CREATE POLICY "Allow all for voice_profiles" ON voice_profiles FOR ALL USING (true);
 CREATE POLICY "Allow all for research_citations" ON research_citations FOR ALL USING (true);
 CREATE POLICY "Allow all for inline_comments" ON inline_comments FOR ALL USING (true);
+-- ========== VECTOR MEMORY TABLES (pgvector) ==========
+
+-- Enable pgvector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Chapter vectors for semantic search
+CREATE TABLE IF NOT EXISTS chapter_vectors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chapter_id UUID REFERENCES chapters(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    embedding vector(384),
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Entity vectors for semantic search
+CREATE TABLE IF NOT EXISTS entity_vectors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_id UUID REFERENCES entities(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    embedding vector(384),
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- HNSW indexes for fast similarity search (cosine distance)
+CREATE INDEX IF NOT EXISTS idx_chapter_vectors_embedding 
+ON chapter_vectors USING hnsw (embedding vector_cosine_ops);
+
+CREATE INDEX IF NOT EXISTS idx_entity_vectors_embedding 
+ON entity_vectors USING hnsw (embedding vector_cosine_ops);
+
+-- Index for chapter_id lookups
+CREATE INDEX IF NOT EXISTS idx_chapter_vectors_chapter_id ON chapter_vectors(chapter_id);
+CREATE INDEX IF NOT EXISTS idx_entity_vectors_entity_id ON entity_vectors(entity_id);
