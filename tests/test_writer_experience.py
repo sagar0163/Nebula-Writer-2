@@ -41,8 +41,9 @@ def test_05_sse_chapter_streaming(client, mock_project_id):
 def test_06_quality_gate_evaluation(client, mock_project_id):
     """Step 6: Quality gate evaluation"""
     from nebula_writer.quality_engine import QualityEngine
+    import asyncio
     engine = QualityEngine()
-    score, rubric = engine.evaluate_prose("The dark night was very dark and stormy. The end.")
+    score, rubric = asyncio.run(engine.evaluate_prose("The dark night was very dark and stormy. The end."))
     assert isinstance(score, float)
     assert "narrative_drive" in rubric
 
@@ -112,6 +113,8 @@ def test_10_anchored_inline_comments(client, mock_project_id):
         def get_entities(self): return []
         def get_plot_threads(self): return []
         def get_chapters(self): return []
+        def get_relationships(self): return []
+        def get_events(self): return []
         
     from nebula_writer.ripple_checker import create_ripple_checker
     ripple = create_ripple_checker(MockDB(), None)

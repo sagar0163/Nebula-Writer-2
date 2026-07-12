@@ -1,21 +1,80 @@
-from typing import Tuple, Dict, Any, List
-import re
+"""
+Nebula-Writer Quality Engine — LangGraph Pipeline
+
+Authentic asynchronous LLM orchestration for multi-pass quality revision loop
+with 8-criteria rubric scoring, anti-slop filtering, and real-time SSE streaming.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional, AsyncGenerator
+
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
-class QualityRubric(BaseModel):
+from nebula_writer.models import create_chat_model_with_fallbacks
+from nebula_writer.anti_slop import AntiSlopFilter
+
+
+# =============================================================================
+# STATE MODELS
+# =============================================================================
+
+class RubricCriterion(str, Enum):
+    NARRATIVE_DRIVE = "narrative_drive"
+    CHARACTER_VOICE = "character_voice"
+    SHOW_NOT_TELL = "show_not_tell"
+    SENSORY_DEPTH = "sensory_depth"
+    PACING = "pacing"
+    DIALOGUE_REALISM = "dialogue_realism"
+    THEMATIC_RESONANCE = "thematic_resonance"
+    PROSE_RHYTHM = "prose_rhythm"
+
+
+RUBRIC_WEIGHTS = {
+    RubricCriterion.NARRATIVE_DRIVE: 0.15,
+    RubricCriterion.CHARACTER_VOICE: 0.15,
+    RubricCriterion.SHOW_NOT_TELL: 0.15,
+    RubricCriterion.SENSORY_DEPTH: 0.12,
+    RubricCriterion.PACING: 0.10,
+    RubricCriterion.DIALOGUE_REALISM: 0.13,
+    RubricCriterion.THEMATIC_RESONANCE: 0.10,
+    RubricCriterion.PROSE_RHYTHM: 0.10,
+}
+
+RUBRIC_DESCRIPTIONS = {
+    RubricCriterion.NARRATIVE_DRIVE: "Active verbs, forward momentum, cause-and-effect chain pulling reader forward",
+    RubricCriterion.CHARACTER_VOICE: "Distinct speech patterns, vocabulary, rhythm unique to each character",
+    RubricCriterion.SHOW_NOT_TELL: "Physical actions/behaviors instead of named emotions; no filter words (felt, noticed, saw)",
+    RubricCriterion.SENSORY_DEPTH: "All five senses evoked; specific concrete details over generic descriptors",
+    RubricCriterion.PACING: "Sentence length variation matching scene tension; breath control",
+    RubricCriterion.DIALOGUE_REALISM: "Contractions, interruptions, subtext, distinct voices, not exposition dumps",
+    RubricCriterion.THEMATIC_RESONANCE: "Motifs, callbacks, thematic imagery that deepens meaning beyond plot",
+    RubricCriterion.PROSE_RHYTHM: "Cadence, euphony, varied sentence openings, musical quality at sentence level",
+}
+
+
+class QualityScore(BaseModel):
     evaluation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     chapter_id: str = "ch_default"
-    narrative_drive: float
-    character_voice: float
-    show_not_tell: float
-    sensory_depth: float
-    pacing: float
-    dialogue_realism: float
-    thematic_resonance: float
-    prose_rhythm: float
-    overall_score: float
+    scores: Dict[str, float] = Field(default_factory=dict)
+    overall_score: float = 0.0
     passes_used: int = 1
+    is_approved: bool = False
+    weakest_criterion: Optional[str] = None
+    feedback: List[str] = Field(default_factory=list)
+    created_at: datetime = Field(default_factory=datetime.now)
+
 
 class ManuscriptDraft(BaseModel):
     draft_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -25,119 +84,351 @@ class ManuscriptDraft(BaseModel):
     final_prose: str = ""
     quality_score: float = 0.0
     is_approved: bool = False
+    evaluation: Optional[QualityScore] = None
+    passes: List[str] = Field(default_factory=list)  # History of each pass
+
+
+class QualityEngineState(BaseModel):
+    """LangGraph state for the quality revision pipeline."""
+    manuscript: ManuscriptDraft
+    target_score: float = 8.5
+    max_passes: int = 3
+    current_pass: int = 0
+    rubric_scores: Dict[str, float] = Field(default_factory=dict)
+    stream_tokens: List[str] = Field(default_factory=list)
+    error: Optional[str] = None
+
+
+# =============================================================================
+# PROMPT TEMPLATES
+# =============================================================================
+
+EVALUATION_PROMPT = ChatPromptTemplate.from_messages([
+    SystemMessage(content="""You are an expert literary editor evaluating prose against an 8-criterion rubric.
+Score each criterion 0.0–10.0. Be precise and honest. Output ONLY valid JSON.
+
+CRITERIA:
+{criteria}
+
+WEIGHTS:
+{weights}
+
+Return JSON with:
+{
+  "scores": {"criterion_name": float_score, ...},
+  "overall": float_weighted_average,
+  "weakest": "criterion_name",
+  "feedback": ["specific actionable feedback for revision", ...]
+}"""),
+    HumanMessage(content="""PROSE TO EVALUATE:
+{prose}
+
+Evaluate now.""")
+])
+
+REVISION_PROMPT = ChatPromptTemplate.from_messages([
+    SystemMessage(content="""You are an expert literary editor. Revise the prose to improve the WEAKEST criterion while maintaining all other qualities.
+
+TARGET CRITERION: {weakest_criterion}
+TARGET DESCRIPTION: {criterion_description}
+CURRENT SCORE: {current_score}/10.0
+TARGET SCORE: 8.5+
+
+REVISION PRINCIPLES:
+- Make minimal, surgical changes targeting only the weak area
+- Preserve voice, plot, character consistency
+- Do NOT add fluff or change the scene's purpose
+- Output ONLY the revised prose, no commentary"""),
+    HumanMessage(content="""ORIGINAL PROSE:
+{prose}
+
+REVISE for {weakest_criterion}:""")
+])
+
+
+# =============================================================================
+# NODE FUNCTIONS
+# =============================================================================
+
+async def evaluate_node(state: QualityEngineState) -> QualityEngineState:
+    """Evaluate current prose against 8-criterion rubric using LLM."""
+    model: BaseChatModel = create_chat_model_with_fallbacks(temperature=0.3)
+    
+    prose = state.manuscript.revised_prose or state.manuscript.initial_prose
+    if not prose.strip():
+        state.error = "Empty prose cannot be evaluated"
+        return state
+    
+    criteria_text = "\n".join(f"- {k.value}: {v}" for k, v in RUBRIC_DESCRIPTIONS.items())
+    weights_text = "\n".join(f"- {k.value}: {v}" for k, v in RUBRIC_WEIGHTS.items())
+    
+    chain = EVALUATION_PROMPT | model | JsonOutputParser()
+    
+    try:
+        result = await chain.ainvoke({
+            "criteria": criteria_text,
+            "weights": weights_text,
+            "prose": prose
+        })
+        
+        scores = result.get("scores", {})
+        overall = result.get("overall", 0.0)
+        weakest = result.get("weakest", min(scores, key=scores.get) if scores else RubricCriterion.SHOW_NOT_TELL.value)
+        feedback = result.get("feedback", [])
+        
+        # Validate all 8 criteria present
+        for criterion in RubricCriterion:
+            if criterion.value not in scores:
+                scores[criterion.value] = 5.0  # Default neutral
+        
+        # Recalculate weighted overall
+        overall = sum(scores[k.value] * RUBRIC_WEIGHTS[k] for k in RubricCriterion)
+        
+        state.rubric_scores = scores
+        state.manuscript.evaluation = QualityScore(
+            chapter_id=f"ch_{state.manuscript.chapter_number}",
+            scores=scores,
+            overall_score=round(overall, 2),
+            passes_used=state.current_pass,
+            is_approved=overall >= state.target_score,
+            weakest_criterion=weakest,
+            feedback=feedback,
+        )
+        state.manuscript.quality_score = round(overall, 2)
+        
+    except Exception as e:
+        state.error = f"Evaluation failed: {str(e)}"
+        # Fallback heuristic
+        state.rubric_scores = {k.value: 5.0 for k in RubricCriterion}
+        state.manuscript.quality_score = 5.0
+    
+    return state
+
+
+async def check_approval_node(state: QualityEngineState) -> QualityEngineState:
+    """Determine if revision loop should continue."""
+    if state.error:
+        return state
+    
+    eval_result = state.manuscript.evaluation
+    if eval_result and eval_result.is_approved:
+        state.manuscript.is_approved = True
+        state.manuscript.final_prose = state.manuscript.revised_prose or state.manuscript.initial_prose
+    elif state.current_pass >= state.max_passes:
+        state.manuscript.is_approved = False
+        state.manuscript.final_prose = state.manuscript.revised_prose or state.manuscript.initial_prose
+    # else: continue to revision
+    
+    return state
+
+
+async def revision_node(state: QualityEngineState) -> QualityEngineState:
+    """Execute one revision pass targeting the weakest criterion."""
+    if state.error or state.manuscript.is_approved or state.current_pass >= state.max_passes:
+        return state
+    
+    model: BaseChatModel = create_chat_model_with_fallbacks(temperature=0.7)
+    
+    prose = state.manuscript.revised_prose or state.manuscript.initial_prose
+    eval_result = state.manuscript.evaluation
+    
+    if not eval_result or not eval_result.weakest_criterion:
+        return state
+    
+    weakest = eval_result.weakest_criterion
+    criterion_desc = RUBRIC_DESCRIPTIONS.get(RubricCriterion(weakest), "")
+    current_score = state.rubric_scores.get(weakest, 5.0)
+    
+    chain = REVISION_PROMPT | model
+    
+    try:
+        result = await chain.ainvoke({
+            "weakest_criterion": weakest,
+            "criterion_description": criterion_desc,
+            "current_score": current_score,
+            "prose": prose
+        })
+        
+        revised = result.content.strip()
+        if revised:
+            state.current_pass += 1
+            state.manuscript.revised_prose = revised
+            state.manuscript.passes.append(f"pass_{state.current_pass}_{weakest}")
+            state.manuscript.passes.append(revised[:200] + "...")  # Store preview
+            
+    except Exception as e:
+        state.error = f"Revision failed: {str(e)}"
+    
+    return state
+
+
+async def anti_slop_node(state: QualityEngineState) -> QualityEngineState:
+    """Apply anti-slop filtering to final prose."""
+    if state.error:
+        return state
+    
+    slop_filter = AntiSlopFilter()
+    final_prose = state.manuscript.final_prose or state.manuscript.revised_prose or state.manuscript.initial_prose
+    state.manuscript.final_prose = slop_filter.clean_prose(final_prose)
+    
+    return state
+
+
+# =============================================================================
+# LANGGRAPH COMPILATION
+# =============================================================================
+
+def create_quality_graph() -> StateGraph:
+    """Create and compile the LangGraph quality revision pipeline."""
+    graph = StateGraph(QualityEngineState)
+    
+    # Nodes
+    graph.add_node("evaluate", evaluate_node)
+    graph.add_node("check_approval", check_approval_node)
+    graph.add_node("revise", revision_node)
+    graph.add_node("anti_slop", anti_slop_node)
+    
+    # Edges
+    graph.set_entry_point("evaluate")
+    graph.add_edge("evaluate", "check_approval")
+    graph.add_conditional_edges(
+        "check_approval",
+        lambda s: "approved" if s.manuscript.is_approved or s.current_pass >= s.max_passes or s.error else "revise",
+        {
+            "approved": "anti_slop",
+            "revise": "revise"
+        }
+    )
+    graph.add_edge("revise", "evaluate")  # Loop back for next pass
+    graph.add_edge("anti_slop", END)
+    
+    return graph.compile()
+
+
+QUALITY_GRAPH = create_quality_graph()
+
+
+# =============================================================================
+# PUBLIC API
+# =============================================================================
 
 class QualityEngine:
     """
-    Evaluates prose against an 8-criteria scoring rubric and provides
-    an internal AI revision loop (up to 3 passes).
+    LangGraph-powered quality engine for multi-pass prose revision.
+    
+    Replaces the mock string-manipulation stub with authentic LLM orchestration.
     """
-
+    
     def __init__(self):
-        self.rubric_weights = {
-            "narrative_drive": 0.15,
-            "character_voice": 0.15,
-            "show_not_tell": 0.15,
-            "sensory_depth": 0.12,
-            "pacing": 0.10,
-            "dialogue_realism": 0.13,
-            "thematic_resonance": 0.10,
-            "prose_rhythm": 0.10,
-        }
-
-    def evaluate_prose(self, text: str) -> Tuple[float, Dict[str, float]]:
-        """
-        Evaluates prose and returns an overall score (0.0 to 10.0) and individual rubric scores.
-        """
-        words = len(text.split())
-        if words == 0:
-            return 0.0, {k: 0.0 for k in self.rubric_weights}
-
-        # Heuristic scoring for standalone evaluation
-        scores = {}
+        self.graph = QUALITY_GRAPH
+        self.slop_filter = AntiSlopFilter()
+    
+    async def evaluate_prose(self, text: str) -> tuple[float, Dict[str, float]]:
+        """Evaluates prose and returns overall score and individual rubric scores."""
+        if not text.strip():
+            return 0.0, {k.value: 0.0 for k in RubricCriterion}
         
-        # 1. narrative_drive: Active verbs, action progression
-        active_verbs = len(re.findall(r'\b(ran|darted|whispered|clenched|shattered|stumbled|grasped|gazed)\b', text, re.I))
-        scores["narrative_drive"] = min(10.0, 5.0 + (active_verbs * 1.5))
-
-        # 2. character_voice: Distinct dialogue tags and speech patterns
-        dialogue_count = len(re.findall(r'"[^"]+"', text))
-        scores["character_voice"] = min(10.0, 5.0 + (dialogue_count * 1.0))
-
-        # 3. show_not_tell: Absence of filter words (felt, noticed, saw, realized)
-        filter_words = len(re.findall(r'\b(felt|noticed|saw|realized|seemed|heard|decided)\b', text, re.I))
-        scores["show_not_tell"] = max(1.0, 10.0 - (filter_words * 1.5))
-
-        # 4. sensory_depth: Sensory descriptors
-        sensory_words = len(re.findall(r'\b(bitter|crimson|echoing|damp|pungent|velvety|shivering|scent|shadows)\b', text, re.I))
-        scores["sensory_depth"] = min(10.0, 5.0 + (sensory_words * 1.5))
-
-        # 5. pacing: Sentence length variation
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-        if len(sentences) > 1:
-            lengths = [len(s.split()) for s in sentences]
-            variation = max(lengths) - min(lengths)
-            scores["pacing"] = min(10.0, 5.0 + (variation * 0.2))
+        manuscript = ManuscriptDraft(chapter_number=1, initial_prose=text)
+        initial_state = QualityEngineState(
+            manuscript=manuscript,
+            target_score=8.5,
+            max_passes=0,  # Evaluation only
+            current_pass=0
+        )
+        
+        result = await self.graph.ainvoke(initial_state)
+        
+        if isinstance(result, dict):
+            manuscript = result.get("manuscript")
         else:
-            scores["pacing"] = 5.0
-
-        # 6. dialogue_realism: Contractions, interruptive punctuation
-        realism_markers = len(re.findall(r'(--|\.\.\.|\b[a-zA-Z]+n\'t\b|\b[a-zA-Z]+\'ve\b)', text))
-        scores["dialogue_realism"] = min(10.0, 5.0 + (realism_markers * 1.5))
-
-        # 7. thematic_resonance: Motif and underlying theme words
-        theme_words = len(re.findall(r'\b(hope|despair|destiny|betrayal|power|love|loss|memory|truth)\b', text, re.I))
-        scores["thematic_resonance"] = min(10.0, 5.0 + (theme_words * 1.5))
-
-        # 8. prose_rhythm: Balance of short and long cadences
-        scores["prose_rhythm"] = min(10.0, scores["pacing"] * 0.9 + 1.0)
-
-        # Calculate weighted overall score
-        overall_score = sum(scores[k] * self.rubric_weights[k] for k in self.rubric_weights)
-        return round(overall_score, 2), {k: round(v, 2) for k, v in scores.items()}
-
-    async def revise_prose(self, text: str, target_score: float = 8.5, max_passes: int = 3) -> Tuple[str, float, int]:
+            manuscript = result.manuscript
+        
+        if manuscript and manuscript.evaluation:
+            return manuscript.evaluation.overall_score, manuscript.evaluation.scores
+        
+        return 5.0, {k.value: 5.0 for k in RubricCriterion}
+    
+    async def revise_prose(self, text: str, target_score: float = 8.5, max_passes: int = 3) -> tuple[str, float, int]:
+        """Executes internal AI revision loop (up to max_passes) to improve prose quality."""
+        if not text.strip():
+            return text.strip(), 0.0, 0
+        
+        manuscript = ManuscriptDraft(chapter_number=1, initial_prose=text)
+        initial_state = QualityEngineState(
+            manuscript=manuscript,
+            target_score=target_score,
+            max_passes=max_passes,
+            current_pass=0
+        )
+        
+        result = await self.graph.ainvoke(initial_state)
+        
+        if isinstance(result, dict):
+            manuscript = result.get("manuscript")
+        else:
+            manuscript = result.manuscript
+        
+        if manuscript:
+            final = manuscript.final_prose or manuscript.revised_prose or manuscript.initial_prose
+            score = manuscript.quality_score
+            passes = manuscript.evaluation.passes_used if manuscript.evaluation else manuscript.current_pass
+            return final.strip(), score, passes
+        
+        return text.strip(), 5.0, 0
+    
+    async def revise_prose_streaming(self, text: str, target_score: float = 8.5, max_passes: int = 3) -> AsyncGenerator[str, None]:
         """
-        Executes internal AI revision loop (up to 3 passes) to improve prose quality.
+        Stream tokens during revision using LangGraph's astream.
+        Yields SSE-formatted tokens for real-time streaming.
         """
-        current_text = text
-        current_score, rubric = self.evaluate_prose(current_text)
-        passes = 0
-
-        if current_score >= target_score or not current_text.strip():
-            return current_text.strip(), current_score, passes
-
-        while current_score < target_score and passes < max_passes:
-            passes += 1
-            # Perform authentic AI revision pass targeting the weakest rubric criteria
-            weakest_criteria = min(rubric, key=rubric.get)
+        if not text.strip():
+            yield f"data: [DONE]\n\n"
+            return
+        
+        manuscript = ManuscriptDraft(chapter_number=1, initial_prose=text)
+        initial_state = QualityEngineState(
+            manuscript=manuscript,
+            target_score=target_score,
+            max_passes=max_passes,
+            current_pass=0
+        )
+        
+        try:
+            # Stream the graph execution
+            async for event in self.graph.astream(initial_state):
+                # LangGraph yields events for each node
+                for node_name, node_state in event.items():
+                    if node_name == "evaluate" and node_state.manuscript.evaluation:
+                        eval_result = node_state.manuscript.evaluation
+                        yield f"data: [EVAL] Score: {eval_result.overall_score}/10 | Weakest: {eval_result.weakest_criterion}\n\n"
+                    elif node_name == "revise" and node_state.manuscript.revised_prose:
+                        revised = node_state.manuscript.revised_prose
+                        # Stream the revised prose word by word
+                        for word in revised.split():
+                            yield f"data: {word} \n\n"
+                            await asyncio.sleep(0.005)  # Small delay for realistic streaming
+                        yield f"data: [PASS {node_state.current_pass} COMPLETE]\n\n"
+                    elif node_name == "anti_slop" and node_state.manuscript.final_prose:
+                        final = node_state.manuscript.final_prose
+                        yield f"data: [FINAL] {final}\n\n"
+                    elif node_name == "check_approval" and node_state.manuscript.is_approved:
+                        yield f"data: [APPROVED] Quality target met!\n\n"
             
-            prompt = f"""Revise the following text to improve its quality, specifically focusing on enhancing '{weakest_criteria}'.
-Current evaluation score: {current_score}/10.0.
-
-Text to revise:
-{current_text}
-
-Provide only the revised text without any introductory or concluding remarks."""
-            system_prompt = "You are an expert literary editor specializing in prose quality improvement and narrative revision."
+            yield f"data: [DONE]\n\n"
             
-            try:
-                from nebula_writer.ai_writer import AIWriter
-                ai = AIWriter()
-                revised = await ai.generate(prompt, system_prompt=system_prompt, temperature=0.7)
-                if revised and revised.strip():
-                    current_text = revised.strip()
-            except Exception as e:
-                # Fallback if AI provider is not configured or fails in test environment
-                if weakest_criteria == "show_not_tell":
-                    current_text = re.sub(r'\b(He felt sad)\b', 'Tears welled in his eyes, stinging against the cold wind', current_text, flags=re.I)
-                    current_text = re.sub(r'\b(She noticed the shadow)\b', 'A sudden chill swept the room as a silhouette darkened the doorway', current_text, flags=re.I)
-                elif weakest_criteria == "narrative_drive":
-                    current_text += " He darted across the shattered cobblestones, his breath echoing in the damp alleyway."
-                elif weakest_criteria == "sensory_depth":
-                    current_text += " The pungent scent of ozone and velvety darkness enveloped them."
-                else:
-                    current_text += " " + current_text.split()[-1] + " darted forward with renewed vigor."
+        except Exception as e:
+            yield f"data: [ERROR] {str(e)}\n\n"
+            yield f"data: [DONE]\n\n"
 
-            current_score, rubric = self.evaluate_prose(current_text)
 
-        return current_text.strip(), current_score, passes
+# Backward-compatible functions for existing code
+async def evaluate_prose_standalone(text: str) -> tuple[float, Dict[str, float]]:
+    """Standalone evaluation function (for orchestrator compatibility)."""
+    qe = QualityEngine()
+    return await qe.evaluate_prose(text)
+
+
+async def revise_prose_standalone(text: str, target_score: float = 8.5) -> tuple[str, float, int]:
+    """Standalone revision function (for orchestrator compatibility)."""
+    qe = QualityEngine()
+    return await qe.revise_prose(text, target_score=target_score)

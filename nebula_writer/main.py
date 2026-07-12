@@ -723,40 +723,35 @@ def extract_entities(req: ExtractRequest):
     return db.extract_entities_from_text(req.text)
 
 
-# ============ MULTI-AI CLIENT ============
+# ============ LANGCHAIN AI WRITER (Consolidated) ============
 
 
 class AIClientRequest(BaseModel):
-    provider: str = "gemini"
     prompt: str
     system_prompt: Optional[str] = None
+    temperature: float = 0.7
+    max_tokens: int = 2000
 
 
-@app.post("/api/ai/client")
-def ai_client_generate(req: AIClientRequest):
-    """Generate using any configured AI provider"""
+@app.post("/api/ai/generate")
+async def ai_generate(req: AIClientRequest):
+    """Generate using LangChain AIWriter with Mistral→Gemini→OpenAI fallback chain"""
     try:
-        import os
+        from nebula_writer.ai_writer import AIWriter
 
-        from nebula_writer.ai_client import AIClient
-
-        api_key = os.environ.get(f"{req.provider.upper()}_API_KEY") or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise HTTPException(status_code=400, detail=f"No API key for {req.provider}")
-
-        client = AIClient(provider=req.provider, api_key=api_key)
-        result = client.generate(req.prompt, req.system_prompt)
-        return {"text": result, "provider": req.provider}
+        ai = AIWriter()
+        result = await ai.generate(req.prompt, req.system_prompt, req.temperature, req.max_tokens)
+        return {"text": result, "provider": "langchain-fallback-chain"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/ai/providers")
 def get_ai_providers():
-    """Get available AI providers"""
-    from nebula_writer.ai_client import get_available_providers
+    """Get available AI providers in the fallback chain"""
+    from nebula_writer.models import get_available_providers
 
-    return get_available_providers()
+    return {"providers": get_available_providers(), "primary": "mistral", "fallback_chain": ["mistral", "gemini", "openai", "anthropic", "huggingface"]}
 
 
 # ============ NEW EXPORT FORMATS ============
@@ -1479,7 +1474,7 @@ class ChatRequest(BaseModel):
 async def chat_with_ai(req: ChatRequest):
     """
     Main chat endpoint with real-time SSE streaming, quality gate evaluation,
-    and anti-slop cliches filtering.
+    and anti-slop cliches filtering using LangGraph QualityEngine.
     """
     try:
         if req.stream:
@@ -1491,18 +1486,18 @@ async def chat_with_ai(req: ChatRequest):
                 if intent in ("write_chapter", "revise_chapter"):
                     qe = QualityEngine()
                     slop = AntiSlopFilter()
-                    revised_text, score, passes = await qe.revise_prose(full_text)
-                    cleaned_text = slop.clean_prose(revised_text)
+                    # Use LangGraph streaming for proper SSE
+                    async for token in qe.revise_prose_streaming(full_text):
+                        yield token
                 else:
                     slop = AntiSlopFilter()
                     cleaned_text = slop.clean_prose(full_text)
-                
-                words = cleaned_text.split()
-                for word in words:
-                    yield f"data: {word} \n\n"
-                    await asyncio.sleep(0.01)
-                yield f"data: [DONE]\n\n"
-                
+                    words = cleaned_text.split()
+                    for word in words:
+                        yield f"data: {word} \n\n"
+                        await asyncio.sleep(0.01)
+                    yield f"data: [DONE]\n\n"
+            
             return StreamingResponse(sse_generator(), media_type="text/event-stream")
         else:
             raw_response = await orchestrator.handle_chat(req.message)
