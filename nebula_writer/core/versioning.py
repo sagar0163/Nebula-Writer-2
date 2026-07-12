@@ -1,82 +1,42 @@
 import json
-import sqlite3
 from typing import Dict
+
+from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 
 
 class VersioningService:
     """
     Handles snapshots and rollbacks for Chapters and Codex states.
-    Non-breaking: Uses new tables to store history.
     """
 
-    def __init__(self, db_path: str = "data/codex.db"):
-        self.db_path = db_path
-        self._init_versioning_tables()
+    def __init__(self, db: CodexDatabase = None):
+        self.db = db or CodexDatabase()
 
-    def _init_versioning_tables(self):
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        # New table for full state snapshots
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS codex_snapshots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                snapshot_type TEXT,
-                data JSON NOT NULL,
-                metadata TEXT
-            )
-        """)
-
-        # Existing chapter_versions is already in codex.py, but we'll ensure it's robust
-        conn.commit()
-        conn.close()
-
-    def create_snapshot(self, db, snapshot_type: str = "manual") -> int:
+    def create_snapshot(self, db=None, snapshot_type: str = "manual") -> int:
         """Creates a lightweight snapshot of the current Codex entities."""
+        db = db or self.db
         entities = db.get_entities()
         relationships = db.get_relationships()
 
         snapshot_data = {"entities": entities, "relationships": relationships}
 
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO codex_snapshots (snapshot_type, data)
-            VALUES (?, ?)
-        """,
+        result = db._query(
+            "INSERT INTO codex_snapshots (snapshot_type, data) VALUES (%s, %s) RETURNING id",
             (snapshot_type, json.dumps(snapshot_data)),
         )
-        snapshot_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
-        return snapshot_id
+        return int(result[0]['id']) if result else 0
 
-    def rollback_to_snapshot(self, snapshot_id: int):
-        """Rolls back the Codex entities to a previous snapshot."""
-        # Logic to clear current entities and restore from snapshot
-        # WARNING: Destructive operation, should be wrapped in confirmation
+    def rollback_to_snapshot(self, snapshot_id: str):
         pass
 
-    def get_narrative_diff(self, snapshot_id_a: int, snapshot_id_b: int) -> Dict:
-        """
-        Narrative Diff Awareness (Step 4):
-        Detects differences between versions in terms of narrative facts.
-        """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT data FROM codex_snapshots WHERE id = ?", (snapshot_id_a,))
-        data_a = json.loads(cursor.fetchone()[0])
-
-        cursor.execute("SELECT data FROM codex_snapshots WHERE id = ?", (snapshot_id_b,))
-        data_b = json.loads(cursor.fetchone()[0])
-        conn.close()
+    def get_narrative_diff(self, snapshot_id_a: str, snapshot_id_b: str) -> Dict:
+        result_a = self.db._query("SELECT data FROM codex_snapshots WHERE id = %s", (snapshot_id_a,))
+        result_b = self.db._query("SELECT data FROM codex_snapshots WHERE id = %s", (snapshot_id_b,))
+        data_a = json.loads(result_a[0]['data']) if result_a else {"entities": [], "relationships": []}
+        data_b = json.loads(result_b[0]['data']) if result_b else {"entities": [], "relationships": []}
 
         diff = {"entity_changes": [], "relationship_changes": [], "narrative_drift_detected": False}
 
-        # Compare entities
         entities_a = {e["id"]: e for e in data_a["entities"]}
         entities_b = {e["id"]: e for e in data_b["entities"]}
 
@@ -89,6 +49,5 @@ class VersioningService:
 
         return diff
 
-    def get_diff(self, snapshot_id_a: int, snapshot_id_b: int) -> Dict:
-        """Compute changes between two snapshots."""
+    def get_diff(self, snapshot_id_a: str, snapshot_id_b: str) -> Dict:
         return {"added": [], "removed": [], "modified": []}

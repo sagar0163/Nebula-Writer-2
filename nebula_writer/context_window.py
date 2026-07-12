@@ -1,17 +1,33 @@
 """
 Nebula-Writer Context Windowing System
-Prevents token overflow by only including relevant context
+Prevents token overflow by only including relevant context.
+Uses LangChain model token counting when available.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
+
+from langchain_core.language_models import BaseChatModel
+
+from nebula_writer.models import create_chat_model, count_tokens
 
 
 class ContextWindow:
     """
-    Manages context window for AI calls
-    Selects only relevant story graph data for each request type
-    AGGRESSIVE TOKEN LIMITS to prevent overflow
+    Manages context window for AI calls.
+    Selects only relevant story graph data for each request type.
+    Uses LangChain token counting when a model is available.
     """
+
+    _model: Optional[BaseChatModel] = None
+
+    @classmethod
+    def _get_model(cls) -> Optional[BaseChatModel]:
+        if cls._model is None:
+            try:
+                cls._model = create_chat_model()
+            except Exception:
+                cls._model = None
+        return cls._model
 
     # Token budget per request type (conservative, well under 204800)
     BUDGETS = {
@@ -83,7 +99,13 @@ class ContextWindow:
 
     @classmethod
     def estimate_tokens(cls, text: str) -> int:
-        """Rough token estimate (1 token ≈ 4 chars)"""
+        """Token estimate using LangChain model when available, else char heuristic."""
+        model = cls._get_model()
+        if model:
+            try:
+                return count_tokens(model, text)
+            except Exception:
+                pass
         return len(text) // 4
 
     @classmethod

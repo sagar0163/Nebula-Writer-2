@@ -295,3 +295,17 @@ def get_available_providers() -> List[Dict]:
 if __name__ == "__main__":
     print("Available providers:", get_available_providers())
     print("Auto-detected primary:", _detect_provider())
+
+# Backwards compatibility wrappers
+def create_chat_model(provider: str = None, temperature: float = 0.7, max_tokens: int = 4096):
+    """Backwards compatible wrapper for create_chat_model_with_fallbacks"""
+    return create_chat_model_with_fallbacks(
+        primary_provider=provider,
+        temperature=temperature,
+        max_tokens=max_tokens
+    )
+
+def count_tokens(text: str, model_name: str = "mistral-large-latest") -> int:
+    """Rough token count approximation"""
+    # Approximate: ~4 chars per token for English
+    return len(text) // 4

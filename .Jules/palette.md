@@ -1,7 +1,4 @@
-## 2024-05-14 - Aria Labels for Vue Icons
-**Learning:** Icon-only buttons in the Vue application required manual ARIA labels and tooltips, as the existing Tailwind classes did not provide screen reader text automatically.
-**Action:** Always verify icon-only interactive elements contain `aria-label` and `title` attributes.
 
-## 2024-05-15 - Missing Icon Fonts
-**Learning:** Found `<i class="fas fa-..."></i>` tags used for icons, but FontAwesome is not included as a dependency in this project.
-**Action:** Always verify icon dependencies and replace external font-based icons with inline SVG Heroicons. Ensure that the SVG elements have `aria-hidden="true"` so they don't cause screen reader noise for buttons that already have `aria-label` or visible text.
+## 2024-05-24 - Screen Reader Noise from Inline SVGs
+**Learning:** Legacy UI components (like buttons and links) with explicit text or `aria-label`s were exposing nested inline SVGs to assistive technologies, causing repetitive/confusing screen reader output.
+**Action:** When adding inline SVGs (like Heroicons or FontAwesome) inside interactive elements with existing context, explicitly add `aria-hidden="true"` to the SVG node.

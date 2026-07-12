@@ -5,7 +5,7 @@ Advanced search and filtering capabilities
 
 from typing import Dict, List
 
-from nebula_writer.codex import CodexDatabase
+from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 
 
 class SearchEngine:

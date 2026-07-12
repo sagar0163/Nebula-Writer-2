@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-from nebula_writer.codex import CodexDatabase
+from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 
 
 class StyleProfile:

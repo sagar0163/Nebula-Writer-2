@@ -8,7 +8,7 @@ import json
 from typing import Dict, List
 
 from nebula_writer.ai_writer import AIWriter
-from nebula_writer.codex import CodexDatabase
+from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 from nebula_writer.plot_manager import PlotManager
 
 
@@ -75,14 +75,16 @@ class LookaheadEngine:
 
         # Use AIWriter's generate method
         try:
-            # We'll use a generic generation call
             response = await self.ai._generate(
-                prompt, system_prompt="You are an expert novelist planning the next steps of a story.", role="architect"
+                system_prompt="You are an expert novelist planning the next steps of a story.",
+                user_prompt=prompt,
+                temperature=0.7,
+                max_tokens=3000,
             )
         except AttributeError:
-            # Fallback
             response = await self.ai.generate(
-                prompt, system_prompt="You are an expert novelist planning the next steps of a story.", role="architect"
+                system_prompt="You are an expert novelist planning the next steps of a story.",
+                user_prompt=prompt,
             )
 
         # Extract JSON (simplified extraction)

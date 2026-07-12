@@ -41,6 +41,14 @@ scratch/
 .DS_Store
 Thumbs.db
 
+# Dotfiles in repo root
+.github/
+.Jules/
+.kilo/
+.kilocodeignore
+.kiloignore
+.pre-commit-config.yaml
+
 # Environment
 .env
 .env.local
@@ -55,3 +63,4 @@ htmlcov/
 
 # Logs
 *.log
+.gstack/
