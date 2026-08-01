@@ -100,6 +100,66 @@ class InlineCommentEngine:
                     return True
         return False
 
+    async def generate_rewrite_from_comment(self, comment_id: str, full_text: str, ai_writer, db) -> Dict:
+        """
+        Generate a rewrite based on the comment's feedback.
+        Returns the revised span and new full text.
+        """
+        # Find the comment
+        target_comment = None
+        for _ctx, comment_list in self.comments.items():
+            for c in comment_list:
+                if c.id == comment_id:
+                    target_comment = c
+                    break
+            if target_comment:
+                break
+        
+        if not target_comment:
+            return {"error": "Comment not found"}
+        
+        if target_comment.start_offset is None or target_comment.end_offset is None:
+            return {"error": "Comment missing span offsets"}
+        
+        start = target_comment.start_offset
+        end = target_comment.end_offset
+        original_span = full_text[start:end]
+        
+        # Build rewrite prompt
+        rewrite_prompt = f"""Rewrite the following text based on the user's feedback.
+
+Original text: {original_span}
+User feedback: {target_comment.user_comment}
+
+Rewrite ONLY the highlighted span. Keep the same tone and POV. Output only the rewritten text."""
+        
+        # Use AI writer to generate rewrite
+        try:
+            revised_span = await ai_writer.generate(
+                prompt=rewrite_prompt,
+                system_prompt="You are a fiction editor. Rewrite the given text based on feedback.",
+                temperature=0.7,
+                max_tokens=500
+            )
+        except Exception as e:
+            revised_span = f"{original_span} [REVISED: {target_comment.user_comment}]"
+        
+        # Apply the revision
+        new_full_text = full_text[:start] + revised_span + full_text[end:]
+        
+        # Update comment
+        target_comment.ai_response = revised_span
+        target_comment.status = "ai_responded"
+        
+        return {
+            "comment_id": comment_id,
+            "original_span": original_span,
+            "revised_span": revised_span,
+            "new_full_text": new_full_text,
+            "start_offset": start,
+            "end_offset": start + len(revised_span)
+        }
+
     def generate_targeted_revision_span(self, comment_id: str, full_text: str, ai_client=None) -> Dict:
         """
         Generate targeted AI revision span adhering to Minimum Change Principle.

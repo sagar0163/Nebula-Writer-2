@@ -1,167 +1,74 @@
-# Nebula-Writer - Technical Specification
+# SPEC: Nebula-Writer — Complete Novel Writing Assistant
 
-## Project Overview
-- **Name**: Nebula-Writer
-- **Type**: AI-Powered Fiction Writing Assistant with RAG
-- **Core Functionality**: A "System of Record" for fiction that stores entities, relationships, and events in a database, then feeds an LLM the exact context it needs to never hallucinate.
-- **Target Users**: Fiction writers, novelists, game writers who need long-term memory for their stories
+## Vision
+An AI-powered fiction writing assistant that takes a user from initial idea to finished novel, with persistent memory, real-time editing, comment-driven rewrites, direction changes, and improvisation support.
 
-## Architecture
+## Core User Journey
+1. **Idea → Codex**: User describes concept → AI builds persistent Codex (entities, relationships, plot threads, tensions, anchors)
+2. **Beat → Chapter**: User provides story beats → AI generates chapters with full Codex context
+3. **Comment → Rewrite**: User highlights text + adds comment → AI rewrites per direction
+4. **Direction Change**: User changes plot → Ripple checker identifies contradictions → User resolves
+5. **Improvise**: User asks for alternatives → AI provides options (tone, POV, pacing, "what if" scenarios)
 
-### Tech Stack
-- **Backend**: FastAPI (Python)
-- **Database**: SQLite (Codex), ChromaDB (Vector Memory)
-- **LLM**: Google Gemini API (configurable)
-- **Frontend**: Vue.js 3 + TailwindCSS (single-page app)
+## Functional Requirements
 
-### Data Models
+### 1. Story Architect (Chat Interface)
+- **FR-1.1**: Natural language idea ingestion → structured Codex creation
+- **FR-1.2**: Context-aware Q&A about story state
+- **FR-1.3**: Proactive suggestions (plot threads, character arcs, tension escalation)
 
-#### 1. Entities Table
-```sql
-CREATE TABLE entities (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL CHECK(type IN ('character', 'location', 'item')),
-    description TEXT,
-    is_alive BOOLEAN DEFAULT 1,
-    current_location TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### 2. Chapter/Scene Generation
+- **FR-2.1**: Beat → full chapter via LangGraph pipeline (Plan → Write → Validate → Evaluate)
+- **FR-2.2**: Scene-level generation with pacing/POV/tone controls
+- **FR-2.3**: Version history with diff view and rollback
 
-#### 2. Attributes Table
-```sql
-CREATE TABLE attributes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entity_id INTEGER NOT NULL,
-    key TEXT NOT NULL,
-    value TEXT NOT NULL,
-    effective_from TIMESTAMP,
-    FOREIGN KEY (entity_id) REFERENCES entities(id)
-);
-```
+### 3. Comment-Driven Editing
+- **FR-3.1**: Inline comments on generated prose (highlight + comment)
+- **FR-3.3**: AI rewrite per comment (style, direction, fix, expand)
+- **FR-3.3**: Accept/reject/revise workflow for AI suggestions
 
-#### 3. Relationships Table
-```sql
-CREATE TABLE relationships (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    from_entity_id INTEGER NOT NULL,
-    to_entity_id INTEGER NOT NULL,
-    relationship_type TEXT NOT NULL,
-    strength REAL DEFAULT 0.5,
-    FOREIGN KEY (from_entity_id) REFERENCES entities(id),
-    FOREIGN KEY (to_entity_id) REFERENCES entities(id)
-);
-```
+### 4. Direction Change & Continuity
+- **FR-4.1**: Plot thread/tension/anchor management
+- **FR-4.2**: Ripple checker: detects contradictions (entity state, timeline, location, knowledge)
+- **FR-4.3**: "What breaks if I change X?" impact analysis
 
-#### 4. Events Table
-```sql
-CREATE TABLE events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    description TEXT,
-    chapter INTEGER,
-    scene TEXT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### 5. Improvisation Tools
+- **FR-5.1**: Alternative generations (tone, POV, pacing, "what if")
+- **FR-5.2**: Style mimicry from user's own writing
+- **FR-5.3**: "Show don't tell", sensory expansion, dialogue polish
 
-#### 5. Chapters Table
-```sql
-CREATE TABLE chapters (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    number INTEGER NOT NULL UNIQUE,
-    title TEXT,
-    content TEXT,
-    summary TEXT,
-    word_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### 6. Persistence & Export
+- **FR-6.1**: PostgreSQL (Supabase) for structured data
+- **FR-6.2**: pgvector for semantic search over prose
+- **FR-6.3**: Export: Markdown, DOCX, HTML, Mermaid graphs
 
-#### 6. Scenes Table
-```sql
-CREATE TABLE scenes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chapter_id INTEGER NOT NULL,
-    number INTEGER NOT NULL,
-    beat TEXT,
-    content TEXT,
-    FOREIGN KEY (chapter_id) REFERENCES chapters(id)
-);
-```
-
-## Core Features
-
-### Phase 1: Codex (Database Layer)
-- CRUD operations for all entities
-- Attribute versioning (temporal tracking)
-- Relationship graph with strength scores
-- Event logging for plot points
-
-### Phase 2: Memory System (RAG)
-- ChromaDB integration for semantic search
-- Chapter summarization
-- Context retrieval before writing
-
-### Phase 3: Agentic Workflow
-- Context Retrieval → Strategic Planning → Prose Execution
-- Chain-of-thought hidden steps
-- Beat-based writing
-
-### Phase 4: CLI Commands
-- `nebula-writer entity add --name "Ravi" --type character --desc "Protagonist"`
-- `nebula-writer write --beat "They fight in the rain" --words 500`
-- `nebula-writer audit --check contradictions`
-- `nebula-writer visualize --format mermaid`
-
-### Phase 5: Web UI
-- Dashboard with entity overview
-- Entity management (CRUD)
-- Story timeline view
-- Writing interface with beat tracking
-- Relationship visualizer
-
-## UI/UX Specification
-
-### Color Palette
-- **Background**: `#0a0a0f` (deep space black)
-- **Surface**: `#12121a` (card background)
-- **Surface Elevated**: `#1a1a24` (hover states)
-- **Primary**: `#8b5cf6` (violet)
-- **Primary Light**: `#a78bfa`
-- **Accent**: `#06b6d4` (cyan)
-- **Text Primary**: `#f1f5f9`
-- **Text Secondary**: `#94a3b8`
-- **Success**: `#10b981`
-- **Warning**: `#f59e0b`
-- **Error**: `#ef4444`
-
-### Typography
-- **Font Family**: "JetBrains Mono" for code, "Outfit" for UI
-- **Headings**: Outfit, 600 weight
-- **Body**: Outfit, 400 weight
-
-### Layout
-- Sidebar navigation (240px)
-- Main content area with max-width 1400px
-- Responsive: collapses to hamburger on mobile
-
-### Components
-- Entity cards with type badges
-- Relationship graph (D3.js or similar)
-- Chapter timeline
-- Beat editor
-- Command palette (Cmd+K)
+## Non-Functional Requirements
+- **NFR-1**: Sub-30s chapter generation (pipeline)
+- **NFR-2**: Sub-5s scene generation (quick write)
+- **NFR-3**: Zero hallucination of Codex facts
+- **NFR-4**: <100ms comment rewrite latency
 
 ## Acceptance Criteria
-1. ✅ SQLite database created with all tables
-2. ✅ CRUD APIs for entities, relationships, events
-3. ✅ ChromaDB integration for chapter memory
-4. ✅ FastAPI server runs on port 8000
-5. ✅ Web UI loads and connects to API
-6. ✅ Entity creation from UI works
-7. ✅ Chapter writing with beat tracking
-8. ✅ Relationship visualization
+- [ ] User can go from "I want a mystery about X" to 10 polished chapters
+- [ ] User can highlight text, comment "make it darker", get rewrite
+- [ ] User can say "Actually the killer is the brother" → system shows what breaks
+- [ ] User can request 3 alternatives for any scene
+- [ ] Export produces publishable manuscript
+
+## Current Gaps (from audit)
+| Gap | Priority |
+|-----|----------|
+| Ripple checker only checks entity existence, not plot logic | P0 |
+| Comment system doesn't auto-rewrite | P0 |
+| No "what if" / alternative generation | P1 |
+| Style learner not integrated into pipeline | P1 |
+| pgvector not configured (using ChromaDB fallback) | P1 |
+| No timeline/location continuity checks | P1 |
+| No manuscript-level export (DOCX/PDF) | P2 |
+
+## Technical Approach
+Use existing Nebula-Writer architecture:
+- FastAPI + LangGraph pipeline (extend nodes)
+- Supabase PostgreSQL + pgvector (migrate from ChromaDB)
+- Vue.js frontend (extend comment UI, alternative picker)
+- Mistral/Gemini/OpenAI via LangChain fallback chain

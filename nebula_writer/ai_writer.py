@@ -348,5 +348,145 @@ class AIWriter:
         return "\n".join(guidance) if guidance else "Write naturally with appropriate pacing and tone for the scene."
 
 
+
+
+    async def generate_alternatives(
+        self,
+        db,
+        beat: str,
+        word_count: int = 500,
+        entity_ids: Optional[List[int]] = None,
+        chapter: Optional[int] = None,
+        pacing: Optional[str] = None,
+        pov: Optional[str] = None,
+        tone: Optional[str] = None,
+        num_alternatives: int = 3
+    ) -> List[str]:
+        """Generate multiple alternative versions of a scene."""
+        alternatives = []
+        
+        # Base parameters
+        base_params = {
+            "db": db,
+            "beat": beat,
+            "word_count": word_count,
+            "entity_ids": entity_ids,
+            "chapter": chapter,
+            "pacing": pacing,
+            "pov": pov,
+            "tone": tone,
+        }
+        
+        # Generate base version
+        base = await self.write_scene(**base_params)
+        alternatives.append({"variant": "base", "text": base})
+        
+        # Generate alternatives with different parameters
+        variant_configs = [
+            {"tone": "darker", "pov": "first_person", "label": "darker_first_person"},
+            {"tone": "more_descriptive", "pacing": "slow", "label": "slow_descriptive"},
+            {"tone": "faster", "pacing": "fast", "label": "fast_paced"},
+            {"pov": "third_person_omniscient", "label": "omniscient"},
+        ]
+        
+        for i, config in enumerate(variant_configs[:num_alternatives-1]):
+            params = {**base_params, **config}
+            try:
+                alt = await self.write_scene(**params)
+                alternatives.append({"variant": config["label"], "text": alt})
+            except Exception as e:
+                alternatives.append({"variant": config["label"], "text": f"[Error: {e}]"})
+        
+        return alternatives
+
+    async def what_if_scenario(
+        self,
+        db,
+        current_beat: str,
+        what_if: str,
+        word_count: int = 500,
+        chapter: Optional[int] = None,
+        pacing: Optional[str] = None,
+        pov: Optional[str] = None,
+        tone: Optional[str] = None,
+    ) -> str:
+        """Explore a 'what if' scenario based on current story state."""
+        
+        # Build context
+        context = self.get_context(db, chapter=chapter)
+        system_prompt = self._build_system_prompt(context)
+        
+        prompt = f"""Current story beat: {current_beat}
+
+WHAT IF SCENARIO: {what_if}
+
+Write a scene exploring this alternative direction. Consider how this change would affect:
+- Character motivations and relationships
+- Plot trajectory
+- Tone and atmosphere
+
+Target length: ~{word_count} words.
+Pacing: {pacing or 'steady'}
+POV: {pov or 'third_person_limited'}
+Tone: {tone or 'consistent with story'}
+
+Write the scene:"""
+        
+        style_guidance = self._build_style_guidance(pacing, pov, tone)
+        if style_guidance:
+            prompt += f"\n\nSTYLE GUIDANCE:\n{style_guidance}"
+        
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=prompt),
+        ]
+        
+        response = await self.model.ainvoke(messages, {"temperature": 0.8, "max_tokens": max(2000, word_count * 4)})
+        return response.content
+
+    async def generate_scene_options(
+        self,
+        db,
+        beat: str,
+        word_count: int = 500,
+        chapter: Optional[int] = None,
+        num_options: int = 3
+    ) -> List[Dict]:
+        """Generate multiple distinct options for a scene."""
+        options = []
+        
+        # Get base context
+        context = self.get_context(db, chapter=chapter)
+        system_prompt = self._build_system_prompt(context)
+        
+        option_prompts = [
+            ("dramatic", "Focus on emotional intensity and character conflict"),
+            ("atmospheric", "Focus on sensory details, mood, and setting"),
+            ("action", "Focus on pacing, movement, and concrete events"),
+            ("introspective", "Focus on internal thoughts, memories, and psychology"),
+            ("dialogue_heavy", "Focus on conversation and character voice"),
+        ]
+        
+        for i, (label, focus) in enumerate(option_prompts[:num_options]):
+            prompt = f"""Write a scene based on this beat: "{beat}"
+
+Focus: {focus}
+Target length: ~{word_count} words.
+
+Write the scene:"""
+            
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt),
+            ]
+            
+            try:
+                response = await self.model.ainvoke(messages, {"temperature": 0.8, "max_tokens": max(2000, word_count * 4)})
+                options.append({"variant": label, "focus": focus, "text": response.content})
+            except Exception as e:
+                options.append({"variant": label, "focus": focus, "text": f"[Error: {e}]"})
+        
+        return options
+
 if __name__ == "__main__":
     print("Testing AI Writer (LangChain)...")

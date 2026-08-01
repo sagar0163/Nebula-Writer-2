@@ -74,7 +74,7 @@ class RippleChecker:
         # Build context string
         story_state = {
             "entities": self.db.get_entities()[:5],  # Sample for tokens
-            "plot_threads": self.db.get_plot_threads()[:5],
+            "plot_threads": self.pm.get_plot_threads()[:5] if self.pm else [],
         }
 
         prompt = f"CHANGE: {change}\nCONTEXT: {json.dumps(context or {})}\nSTORY STATE: {json.dumps(story_state)}"
@@ -90,10 +90,9 @@ class RippleChecker:
 
     def _audit_for_change(self, change: str) -> List[Dict]:
         """Perform a structural audit based on the change"""
-        # This uses the heuristics in StoryAuditor
-        # For now, we'll return a general check
-        # In a real implementation, we'd map the 'change' to specific audit calls
-        return self.auditor.audit_all_chapters().get("results", [])[:1]  # Just a sample
+        # Use the auditor to check for contradictions
+        audit_result = self.auditor.audit_all_chapters()
+        return audit_result.get("results", [])
 
     def check_consistency(self, text: str) -> List[Dict]:
         """Advisor-style consistency check (Legacy)"""
