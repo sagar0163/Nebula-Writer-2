@@ -80,7 +80,7 @@ class RippleChecker:
         prompt = f"CHANGE: {change}\nCONTEXT: {json.dumps(context or {})}\nSTORY STATE: {json.dumps(story_state)}"
 
         try:
-            response = await self.ai.generate(prompt, system_prompt=system_prompt, role="ripple")
+            response = await self.ai.generate(prompt, system_prompt=system_prompt)
             # Find JSON
             start = response.find("{")
             end = response.rfind("}") + 1
