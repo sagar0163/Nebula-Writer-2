@@ -1,7 +1,14 @@
 import json
 from typing import Dict
 
-from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
+# Use conditional import based on DB mode
+import os
+db_type = os.environ.get("NEBULA_DB", "sqlite")
+
+if db_type == "supabase":
+    from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
+else:
+    from nebula_writer.codex import CodexDatabase
 
 
 class VersioningService:
