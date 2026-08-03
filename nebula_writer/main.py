@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import logging
 import os
 import uuid
@@ -483,51 +483,40 @@ def export_json():
 
 # ============ AI WRITING ENDPOINTS ============
 
-
+# Input validation models with proper constraints
 class AIWriteRequest(BaseModel):
-    beat: str
-    word_count: int = 500
-    entity_ids: Optional[List[int]] = None
-    chapter: Optional[int] = None
+    beat: str = Field(..., min_length=1, max_length=5000, description="Scene beat/instruction")
+    word_count: int = Field(default=500, ge=50, le=5000, description="Target word count")
+    entity_ids: Optional[List[int]] = Field(default=None, max_length=20)
+    chapter: Optional[int] = Field(default=None, ge=1, le=1000)
     # v2.1 Enhanced Controls
-    pacing: Optional[str] = None  # e.g., "slow", "steady", "fast", "breakneck"
-    pov: Optional[str] = None  # e.g., "first_person", "third_person_limited", "third_person_omniscient"
-    tone: Optional[str] = None  # e.g., "dark", "hopeful", "suspenseful", "melancholic"
+    pacing: Optional[str] = Field(default=None, pattern="^(slow|steady|fast|breakneck)$")
+    pov: Optional[str] = Field(default=None, pattern="^(first_person|third_person_limited|third_person_omniscient)$")
+    tone: Optional[str] = Field(default=None, pattern="^(dark|hopeful|suspenseful|melancholic|neutral)$")
 
 
 class AIRewriteRequest(BaseModel):
-    text: str
-    style: str = "noir"
+    text: str = Field(..., min_length=1, max_length=10000)
+    style: str = Field(default="noir", pattern="^(noir|romantic|horror|humor|thriller)$")
 
 
 class AIDescribeRequest(BaseModel):
-    entity_name: str
+    entity_name: str = Field(..., min_length=1, max_length=200)
 
 
 class AIShowNotTellRequest(BaseModel):
-    text: str
-
-
-class AIWriteRequest(BaseModel):
-    beat: str
-    word_count: int = 500
-    entity_ids: Optional[List[int]] = None
-    chapter: Optional[int] = None
-    # v2.1 Enhanced Controls
-    pacing: Optional[str] = None  # e.g., "slow", "steady", "fast", "breakneck"
-    pov: Optional[str] = None  # e.g., "first_person", "third_person_limited", "third_person_omniscient"
-    tone: Optional[str] = None  # e.g., "dark", "hopeful", "suspenseful", "melancholic"
+    text: str = Field(..., min_length=1, max_length=5000)
 
 
 class AIWriteAsyncRequest(BaseModel):
     """Request to start async scene writing"""
-    beat: str
-    word_count: int = 500
-    entity_ids: Optional[List[int]] = None
-    chapter: Optional[int] = None
-    pacing: Optional[str] = None
-    pov: Optional[str] = None
-    tone: Optional[str] = None
+    beat: str = Field(..., min_length=1, max_length=5000)
+    word_count: int = Field(default=500, ge=50, le=5000)
+    entity_ids: Optional[List[int]] = Field(default=None, max_length=20)
+    chapter: Optional[int] = Field(default=None, ge=1, le=1000)
+    pacing: Optional[str] = Field(default=None, pattern="^(slow|steady|fast|breakneck)$")
+    pov: Optional[str] = Field(default=None, pattern="^(first_person|third_person_limited|third_person_omniscient)$")
+    tone: Optional[str] = Field(default=None, pattern="^(dark|hopeful|suspenseful|melancholic|neutral)$")
 
 
 class AIWriteStatusResponse(BaseModel):
@@ -540,8 +529,19 @@ class AIWriteStatusResponse(BaseModel):
     completed_at: Optional[datetime] = None
 
 
-# In-memory task store (use Redis in production)
+# In-memory task store with cleanup (use Redis in production)
 _ai_write_tasks: Dict[str, Dict] = {}
+
+# Cleanup old tasks periodically
+async def _cleanup_old_tasks():
+    """Remove tasks older than 1 hour"""
+    cutoff = datetime.now() - timedelta(hours=1)
+    to_remove = [
+        tid for tid, task in _ai_write_tasks.items()
+        if task.get("created_at", datetime.now()) < cutoff
+    ]
+    for tid in to_remove:
+        del _ai_write_tasks[tid]
 
 
 async def _run_ai_write_scene(
@@ -573,6 +573,7 @@ async def _run_ai_write_scene(
         _ai_write_tasks[task_id]["result"] = result
         _ai_write_tasks[task_id]["completed_at"] = datetime.now()
     except Exception as e:
+        logger.error(f"AI write scene failed for task {task_id}: {e}")
         _ai_write_tasks[task_id]["status"] = "failed"
         _ai_write_tasks[task_id]["error"] = str(e)
 
@@ -582,7 +583,22 @@ async def ai_write_scene_async(
     req: AIWriteAsyncRequest,
     background_tasks: BackgroundTasks
 ):
-    """Start async scene writing - returns task_id for polling"""
+    """
+    Start async scene writing - returns task_id for polling.
+    
+    This is the RECOMMENDED endpoint for scene generation.
+    Returns immediately with a task_id; poll /api/ai/write/{task_id} for completion.
+    """
+    # Cleanup old tasks
+    await _cleanup_old_tasks()
+    
+    # Validate word_count limits
+    if req.word_count > 3000:
+        raise HTTPException(
+            status_code=400, 
+            detail="word_count too large for async endpoint. Use sync endpoint for longer generations."
+        )
+    
     task_id = str(uuid.uuid4())
     _ai_write_tasks[task_id] = {
         "status": "pending",
@@ -602,6 +618,7 @@ async def ai_write_scene_async(
         req.pov,
         req.tone,
     )
+    logger.info(f"Started async AI write task {task_id} for beat: {req.beat[:100]}")
     return {"task_id": task_id, "status": "pending"}
 
 
@@ -613,14 +630,20 @@ async def ai_write_status(task_id: str):
     return _ai_write_tasks[task_id]
 
 
-@app.post("/api/ai/write")
-def ai_write_scene(req: AIWriteRequest, background_tasks: BackgroundTasks):
-    """Write a scene using AI with Codex context (synchronous - may timeout for long generations)"""
+# DEPRECATED: Synchronous endpoint kept for backward compatibility
+# Use /api/ai/write (async) instead
+@app.post("/api/ai/write-sync", include_in_schema=False)
+async def ai_write_scene_sync(req: AIWriteRequest):
+    """
+    Synchronous scene writing - DEPRECATED.
+    Use /api/ai/write (async) + polling instead.
+    This endpoint exists only for backward compatibility and may timeout.
+    """
+    logger.warning("Using deprecated synchronous /api/ai/write-sync endpoint")
     try:
         from nebula_writer.ai_writer import AIWriter
-
         ai = AIWriter()
-        result = ai.write_scene(
+        result = await ai.write_scene(
             db=db,
             beat=req.beat,
             word_count=req.word_count,
@@ -632,12 +655,15 @@ def ai_write_scene(req: AIWriteRequest, background_tasks: BackgroundTasks):
         )
         return {"text": result}
     except Exception as e:
+        logger.error(f"Sync AI write failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/ai/write-async")
-def ai_write_scene_async(req: AIWriteRequest, background_tasks: BackgroundTasks):
-    """Start AI scene writing as background job - returns job_id for polling"""
+# LEGACY: Keep old endpoints for backward compatibility but mark deprecated
+@app.post("/api/ai/write-async", include_in_schema=False)
+async def ai_write_scene_async_legacy(req: AIWriteRequest, background_tasks: BackgroundTasks):
+    """Legacy async endpoint - use /api/ai/write instead"""
+    logger.warning("Using deprecated /api/ai/write-async endpoint")
     job_id = str(uuid.uuid4())
     _ai_write_jobs[job_id] = {"status": "pending", "result": None, "error": None}
     
@@ -663,9 +689,9 @@ def ai_write_scene_async(req: AIWriteRequest, background_tasks: BackgroundTasks)
     return {"job_id": job_id, "status": "pending"}
 
 
-@app.get("/api/ai/write-status/{job_id}")
-def ai_write_status(job_id: str):
-    """Check status of async AI write job"""
+@app.get("/api/ai/write-status/{job_id}", include_in_schema=False)
+async def ai_write_status_legacy(job_id: str):
+    """Legacy status endpoint"""
     if job_id not in _ai_write_jobs:
         raise HTTPException(status_code=404, detail="Job not found")
     return _ai_write_jobs[job_id]
