@@ -53,12 +53,18 @@ class SearchEngine:
         entities = self.db.get_entities(entity_type)
 
         filtered = []
+
+        # ⚡ Bolt: Resolve N+1 query bottleneck by fetching all entity IDs with attributes at once
+        entities_with_attrs = set()
+        if has_attributes is not None:
+            entities_with_attrs = self.db.get_entities_with_attributes()
+
         for e in entities:
             if has_attributes is not None:
-                attrs = self.db.get_attributes(e["id"])
-                if has_attributes and not attrs:
+                has_attr = e["id"] in entities_with_attrs
+                if has_attributes and not has_attr:
                     continue
-                if not has_attributes and attrs:
+                if not has_attributes and has_attr:
                     continue
 
             if is_alive is not None:
