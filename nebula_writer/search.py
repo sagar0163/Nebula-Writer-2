@@ -52,6 +52,10 @@ class SearchEngine:
         """Filter entities by criteria"""
         entities = self.db.get_entities(entity_type)
 
+        # ⚡ Bolt: Cache location lowercasing outside loop
+        if location:
+            location_lower = location.lower()
+
         filtered = []
         for e in entities:
             if has_attributes is not None:
@@ -66,7 +70,8 @@ class SearchEngine:
                     continue
 
             if location:
-                if location.lower() not in (e.get("current_location") or "").lower():
+                curr_loc = e.get("current_location") or ""
+                if location_lower not in curr_loc.lower():
                     continue
 
             filtered.append(e)
