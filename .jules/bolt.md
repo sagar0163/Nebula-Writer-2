@@ -11,3 +11,6 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2024-06-10 - Synchronize parallel string caches for mutated lists
+**Learning:** When applying performance optimizations like caching string transformations outside of a loop to avoid O(N*M) allocation overhead, always check if the underlying lists or structures are mutated during the iteration (e.g., appending new items). In `nebula_writer/outline_engine.py`, the loops checking `any(pattern in s.content.lower() for s in self.planted_seeds)` both mutated `self.planted_seeds` and suffered from hidden overhead.
+**Action:** When caching string properties for lists that are mutated inside a loop, explicitly update the cache within the loop alongside the underlying list to keep it synchronized and prevent functional regressions due to stale state.
