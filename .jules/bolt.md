@@ -11,3 +11,6 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2024-06-21 - Resolve N+1 query in entity filtering
+**Learning:** Found an N+1 query bottleneck in `nebula_writer/search.py` where `filter_entities` retrieved attributes for every entity in a loop to check if they had any attributes (`has_attributes` filter). This scaled poorly as the number of entities grew.
+**Action:** Always pre-fetch distinct relationships or existence checks outside of loops. Added a `get_entity_ids_with_attributes` method to `CodexDatabase` that executes a single `SELECT DISTINCT entity_id FROM attributes` query, returning a set of IDs. We check this set in O(1) time within the loop.

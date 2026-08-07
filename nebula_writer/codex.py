@@ -518,6 +518,16 @@ class CodexDatabase:
             conn.close()
         return [dict(row) for row in rows]
 
+    def get_entity_ids_with_attributes(self) -> set[int]:
+        """Get a set of all entity IDs that have at least one attribute"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT entity_id FROM attributes")
+        rows = cursor.fetchall()
+        if not self._conn:
+            conn.close()
+        return {row[0] for row in rows}
+
     def delete_attribute(self, attr_id: int) -> bool:
         """Delete an attribute"""
         conn = self._get_connection()
