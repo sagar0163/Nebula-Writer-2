@@ -11,3 +11,10 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2024-07-28 - Resolve N+1 query in SearchEngine filter_entities
+**Learning:** Found an N+1 query bottleneck in `SearchEngine.filter_entities` where filtering by `has_attributes` triggered a separate database `SELECT` for every single entity in the database via `get_attributes`.
+**Action:** Replaced the loop-bound query with a single bulk query fetching `SELECT DISTINCT entity_id FROM attributes` into a set, turning N O(1) database queries into 1 database query and N O(1) set membership checks.
+
+## 2024-07-28 - Avoid redundant string lowering in entity filtering
+**Learning:** In `filter_entities`, `location.lower()` was being re-evaluated on every iteration over the entities loop, causing O(N) redundant string allocations.
+**Action:** Cached `location.lower()` outside the entity loop as `location_lower` to ensure it is only processed once.

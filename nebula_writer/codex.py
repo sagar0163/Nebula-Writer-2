@@ -450,6 +450,16 @@ class CodexDatabase:
             conn.close()
         return [dict(row) for row in rows]
 
+    def get_entities_with_attributes(self) -> set:
+        """Get a set of all entity IDs that have attributes."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT entity_id FROM attributes")
+        entity_ids = {row[0] for row in cursor.fetchall()}
+        if not self._conn:
+            conn.close()
+        return entity_ids
+
     def get_entity(self, entity_id: int) -> Optional[Dict]:
         """Get a single entity by ID"""
         conn = self._get_connection()
