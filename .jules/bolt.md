@@ -11,3 +11,6 @@
 **Learning:** Found a performance bottleneck in `nebula_writer/codex.py` where querying relationships with `WHERE r.from_entity_id = ? OR r.to_entity_id = ?` was causing a full table scan despite having an index on `from_entity_id`.
 **Action:** When working with directed graph tables (like relationships) and querying across both directions using an `OR` condition, always ensure both columns are indexed (e.g., `from_entity_id` and `to_entity_id`). This allows SQLite to utilize the `MULTI-INDEX OR` optimization instead of falling back to a full table scan.
 
+## 2024-06-25 - Avoid repeated O(N*M) string allocation overhead inside iteration loops
+**Learning:** Found an inefficiency in `nebula_writer/ripple_checker.py` and `nebula_writer/core/narrative_director.py` where long text strings (`prose` and `plan`) were repeatedly lowercased inside an iteration loop over `directive.constraints`. This created unnecessary O(N*M) string allocation overhead because `.lower()` creates a new string object each time.
+**Action:** Always pre-compute and cache string transformations like `.lower()` into a local variable before using them inside iteration loops over multiple elements.
