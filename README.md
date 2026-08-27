@@ -1,96 +1,158 @@
-# Nebula-Writer v2.0
+# Nebula-Writer-2
 
-<p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.0-blue.svg" alt="Version">
-  <img src="https://img.shields.io/badge/python-3.10+-green.svg" alt="Python">
-  <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
-</p>
+> **AI-powered writing assistant with multi-model support, document analysis, and content generation**
 
-> AI-Powered Fiction Writing Assistant with Persistent Memory
-
-Nebula-Writer is a "System of Record" for fiction that stores every character, location, and plot point so your AI never forgets. It uses RAG (Retrieval-Augmented Generation) to provide accurate context to AI writing, with support for multiple AI providers.
-
-## Features
-
-- **The Codex** - SQLite database for Characters, Locations, Items, Relationships
-- **Chapter Management** - Write chapters with version history
-- **Story Templates** - Three-Act, Hero's Journey, Save the Cat, Snowflake
-- **Multi-AI** - Gemini, OpenAI GPT-4, Anthropic Claude
-- **Consistency Check** - Auto-detect story contradictions
-- **Character Knowledge** - Track what each character knows
-- **Auto-Extract** - Extract entities from prose text
-- **Semantic Search** - ChromaDB-powered RAG memory
-- **Version History** - Full chapter version tracking
-- **Visualization** - Mermaid.js relationship graphs
-- **Web UI** - Beautiful Vue.js interface
-- **Export** - Markdown, HTML, Plain Text, DOCX
-
-## Quick Start
-
-```bash
-# Clone and install
-git clone https://github.com/sagar0163/Nebula-Writer.git
-cd Nebula-Writer
-pip install -r requirements.txt
-
-# Run the server
-cd backend
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-Open `http://localhost:8000` in your browser.
-
-## Environment Variables
-
-```bash
-# Required for AI features
-export GEMINI_API_KEY=your_gemini_key
-
-# Optional - additional AI providers
-export OPENAI_API_KEY=your_openai_key
-export ANTHROPIC_API_KEY=your_claude_key
-```
-
-## Documentation
-
-See the `docs/` folder for full documentation:
-- [API Reference](docs/API.md)
-- [Features Guide](docs/FEATURES.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Development](docs/DEVELOPMENT.md)
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Backend | FastAPI, Python 3.10+, SQLite |
-| AI | Gemini, OpenAI GPT-4, Claude |
-| Memory | ChromaDB (RAG) |
-| Frontend | Vue.js 3, TailwindCSS |
-| DevOps | Docker |
-
-## Project Structure
-
-```
-nebula-writer/
-├── backend/          # FastAPI server
-│   ├── main.py      # API entry point
-│   ├── codex.py    # SQLite database layer
-│   ├── ai_writer.py    # AI writing
-│   ├── ai_client.py  # Multi-AI client (NEW)
-│   ├── memory.py    # ChromaDB RAG
-│   └── exporter.py  # Export formats
-├── frontend/         # Vue.js SPA
-│   └── index.html
-├── docs/            # Documentation (NEW)
-├── tests/           # Test suite
-└── specs/          # BRD and architecture
-```
-
-## License
-
-MIT License - feel free to use!
+[![CI](https://github.com/sagar0163/Nebula-Writer-2/workflows/CI/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/ci.yml)
+[![Release](https://github.com/sagar0163/Nebula-Writer-2/workflows/Release/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org/)
 
 ---
 
-<p align="center">Made with love by Sagar</p>
+## 🎯 Problem
+
+Writers, researchers, and content teams juggle multiple AI tools for drafting, editing, summarizing, and analyzing documents. Context switching kills productivity.
+
+## 💡 Solution
+
+A **unified writing workspace** that combines:
+
+- **Multi-model AI** — OpenAI, Anthropic, local (Ollama), NVIDIA NIM, together
+- **Document intelligence** — semantic search, Q&A, extraction, structure analysis
+- **Content generation** — articles, reports, code docs, emails, creative writing
+- **Workflow automation** — pipelines for research → outline → draft → polish
+
+## 🏗️ Architecture
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                      Nebula-Writer Core                        │
+├─────────────┬─────────────┬─────────────┬──────────────────────┤
+│  Model      │  Document   │  Pipeline   │  Export              │
+│  Router     │  Store      │  Engine     │  (MD/PDF/DOCX/HTML)  │
+└─────────────┴─────────────┴─────────────┴──────────────────────┘
+```
+
+## 🚀 Quick Start
+
+```bash
+# Install
+pip install nebula-writer
+
+# Or with poetry
+poetry add nebula-writer
+
+# Initialize workspace
+nebula-writer init my-project
+cd my-project
+
+# Configure models
+nebula-writer config set openai.api_key $OPENAI_API_KEY
+nebula-writer config set anthropic.api_key $ANTHROPIC_API_KEY
+```
+
+## ⚙️ Configuration
+
+```yaml
+# nebula.yaml
+models:
+  default: gpt-4o-mini
+  available:
+    - name: gpt-4o
+      provider: openai
+      tier: premium
+    - name: claude-3-5-sonnet
+      provider: anthropic
+      tier: premium
+    - name: llama-3.1-70b
+      provider: ollama
+      tier: local
+    - name: nemotron-3-ultra
+      provider: nvidia
+      tier: free
+
+document_store:
+  type: sqlite  # or chromadb, pgvector
+  path: ./data/documents.db
+
+pipelines:
+  - name: research-to-article
+    steps:
+      - search_web
+      - extract_key_points
+      - generate_outline
+      - write_draft
+      - fact_check
+      - polish
+```
+
+## 📖 Usage
+
+### Interactive mode
+```bash
+nebula-writer chat
+> Summarize the PDF in ./docs/research.pdf
+> Generate a blog outline from these notes
+> Rewrite this section for technical audience
+```
+
+### Pipeline execution
+```bash
+nebula-writer run research-to-article --topic "AI agents in 2025"
+```
+
+### Document analysis
+```bash
+nebula-writer analyze ./docs/large-report.pdf \
+  --extract entities,key-points,citations \
+  --output analysis.json
+```
+
+## 🔌 Extending
+
+### Custom pipeline step
+```python
+# steps/my_step.py
+from nebula_writer.pipeline import Step
+
+class MyStep(Step):
+    name = "my_step"
+    
+    async def run(self, context):
+        # Transform context
+        return context
+```
+
+### Custom model provider
+```python
+# providers/my_provider.py
+from nebula_writer.models import BaseProvider
+
+class MyProvider(BaseProvider):
+    async def complete(self, prompt, **kwargs):
+        # Your implementation
+        pass
+```
+
+## 🧪 Testing
+
+```bash
+pytest tests/ -v
+pytest tests/ --cov=nebula_writer
+```
+
+## 📦 Release
+
+```bash
+poetry version patch
+git push origin main --tags
+# GitHub Actions: test → build → release → PyPI
+```
+
+## 📄 License
+
+MIT License
+
+---
+
+**Transform your writing workflow with AI that understands your context**
