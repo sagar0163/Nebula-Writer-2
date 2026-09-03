@@ -53,15 +53,11 @@ Gemini-powered writing with Codex context:
 
 ```python
 from ai_writer import AIWriter
+
 ai = AIWriter()
 
 # Write scene with context
-result = ai.write_scene(
-    db=db,
-    beat="The detective finds a clue",
-    word_count=500,
-    entity_ids=[1, 2]
-)
+result = ai.write_scene(db=db, beat="The detective finds a clue", word_count=500, entity_ids=[1, 2])
 ```
 
 ### AIClient (`ai_client.py`)
@@ -82,6 +78,7 @@ ChromaDB vector store for semantic search:
 
 ```python
 from memory import MemorySystem
+
 mem = MemorySystem()
 
 # Index and search
@@ -182,7 +179,7 @@ return db.get_entities()
 
 # Detail
 chapter = db.get_chapter(chapter_id)
-chapter['scenes'] = db.get_scenes(chapter_id)
+chapter["scenes"] = db.get_scenes(chapter_id)
 return chapter
 ```
 

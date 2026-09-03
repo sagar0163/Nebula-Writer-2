@@ -115,9 +115,10 @@ nebula-writer analyze ./docs/large-report.pdf \
 # steps/my_step.py
 from nebula_writer.pipeline import Step
 
+
 class MyStep(Step):
     name = "my_step"
-    
+
     async def run(self, context):
         # Transform context
         return context
@@ -127,6 +128,7 @@ class MyStep(Step):
 ```python
 # providers/my_provider.py
 from nebula_writer.models import BaseProvider
+
 
 class MyProvider(BaseProvider):
     async def complete(self, prompt, **kwargs):

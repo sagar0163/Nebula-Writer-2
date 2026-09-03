@@ -33,8 +33,10 @@ POSTGRES_CONNECTION_STRING=postgresql://postgres.nwxlmmypbxotkjrtevoy:***@aws-0-
 ## 🧪 Quick Tests (Python)
 ```python
 import sys
+
 sys.path.insert(0, r"E:\my project folder\Nebula-Writer-2")
 from dotenv import load_dotenv
+
 load_dotenv(r"E:\my project folder\Nebula-Writer-2\.env")
 
 from nebula_writer.supabase_db import SupabaseDB

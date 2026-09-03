@@ -179,8 +179,10 @@ npm run dev
 ### Test Direct (Python)
 ```python
 import sys
+
 sys.path.insert(0, r"E:\my project folder\Nebula-Writer-2")
 from dotenv import load_dotenv
+
 load_dotenv(r"E:\my project folder\Nebula-Writer-2\.env")
 
 from nebula_writer.supabase_db import SupabaseDB
@@ -191,15 +193,17 @@ db = SupabaseDB()
 ai = AIWriter()
 
 # Test write_scene
-result = asyncio.run(ai.write_scene(
-    db=db,
-    beat="Arjun finds a mysterious key",
-    word_count=300,
-    chapter=1,  # int = chapter number
-    pacing="steady",
-    pov="third_person_limited",
-    tone="suspenseful"
-))
+result = asyncio.run(
+    ai.write_scene(
+        db=db,
+        beat="Arjun finds a mysterious key",
+        word_count=300,
+        chapter=1,  # int = chapter number
+        pacing="steady",
+        pov="third_person_limited",
+        tone="suspenseful",
+    )
+)
 print(result)
 ```
 

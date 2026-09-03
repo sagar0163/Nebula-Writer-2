@@ -110,7 +110,7 @@ Edit `ai_client.py`:
 ```python
 def _init_provider(self):
     """Initialize provider"""
-    if self.provider == 'new_provider':
+    if self.provider == "new_provider":
         # Initialize new provider
         pass
 ```
@@ -134,6 +134,7 @@ docker run -p 8000:8000 -e GEMINI_API_KEY=key nebula-writer
 ```python
 # Enable debug logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 ```
 
