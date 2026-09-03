@@ -25,6 +25,7 @@ class AIWriter:
     def __init__(self, gemini_key: Optional[str] = None, hf_token: Optional[str] = None):
         # Ensure .env is loaded so env vars are available
         from dotenv import load_dotenv
+
         load_dotenv()
 
         self.gemini_key = gemini_key or os.environ.get("GEMINI_API_KEY")
@@ -77,42 +78,52 @@ class AIWriter:
 
     # ── Prompt templates ──────────────────────────────────────────
 
-    _WRITE_SCENE_TEMPLATE = ChatPromptTemplate.from_messages([
-        SystemMessagePromptTemplate.from_template("{context}"),
-        HumanMessagePromptTemplate.from_template(
-            "Write a scene based on this beat:\n\"{beat}\"\n\nTarget length: ~{word_count} words.\n\n"
-            "STYLE AND PACING GUIDANCE:\n{style_guidance}\n\nWrite the scene now:"
-        ),
-    ])
+    _WRITE_SCENE_TEMPLATE = ChatPromptTemplate.from_messages(
+        [
+            SystemMessagePromptTemplate.from_template("{context}"),
+            HumanMessagePromptTemplate.from_template(
+                'Write a scene based on this beat:\n"{beat}"\n\nTarget length: ~{word_count} words.\n\n'
+                "STYLE AND PACING GUIDANCE:\n{style_guidance}\n\nWrite the scene now:"
+            ),
+        ]
+    )
 
-    _REWRITE_TEMPLATE = ChatPromptTemplate.from_messages([
-        SystemMessagePromptTemplate.from_template("You are a versatile editor and writer. Rewrite the user's text exactly as requested."),
-        HumanMessagePromptTemplate.from_template("{style_prompt}\n\nRewrite:\n{text}"),
-    ])
+    _REWRITE_TEMPLATE = ChatPromptTemplate.from_messages(
+        [
+            SystemMessagePromptTemplate.from_template(
+                "You are a versatile editor and writer. Rewrite the user's text exactly as requested."
+            ),
+            HumanMessagePromptTemplate.from_template("{style_prompt}\n\nRewrite:\n{text}"),
+        ]
+    )
 
-    _DESCRIBE_TEMPLATE = ChatPromptTemplate.from_messages([
-        SystemMessagePromptTemplate.from_template("You are a descriptive writer focusing on sensory details."),
-        HumanMessagePromptTemplate.from_template(
-            "Generate a vivid sensory description for **{name}** ({type}).\n\n"
-            "Details: {description}\n"
-            "Attributes: {attributes}\n\n"
-            "Include smell, touch, sound, and sight. Make it immersive:"
-        ),
-    ])
+    _DESCRIBE_TEMPLATE = ChatPromptTemplate.from_messages(
+        [
+            SystemMessagePromptTemplate.from_template("You are a descriptive writer focusing on sensory details."),
+            HumanMessagePromptTemplate.from_template(
+                "Generate a vivid sensory description for **{name}** ({type}).\n\n"
+                "Details: {description}\n"
+                "Attributes: {attributes}\n\n"
+                "Include smell, touch, sound, and sight. Make it immersive:"
+            ),
+        ]
+    )
 
-    _SHOW_NOT_TELL_TEMPLATE = ChatPromptTemplate.from_messages([
-        SystemMessagePromptTemplate.from_template(
-            "You are a writing coach specializing in the 'Show, Don't Tell' technique."
-        ),
-        HumanMessagePromptTemplate.from_template(
-            "Convert this telling prose to showing (physical actions/behaviors instead of emotions):\n\n"
-            "{text}\n\nRewrite with physical actions that convey the same emotions:"
-        ),
-    ])
+    _SHOW_NOT_TELL_TEMPLATE = ChatPromptTemplate.from_messages(
+        [
+            SystemMessagePromptTemplate.from_template(
+                "You are a writing coach specializing in the 'Show, Don't Tell' technique."
+            ),
+            HumanMessagePromptTemplate.from_template(
+                "Convert this telling prose to showing (physical actions/behaviors instead of emotions):\n\n"
+                "{text}\n\nRewrite with physical actions that convey the same emotions:"
+            ),
+        ]
+    )
 
     def _build_system_prompt(self, context: Dict[str, Any]) -> str:
         """Build system prompt with Codex context.
-        
+
         Preserves the same format as the original for backwards compatibility.
         """
         prompt_parts = [
@@ -168,7 +179,7 @@ class AIWriter:
         max_events: int = 3,
     ) -> Dict[str, Any]:
         """Retrieve context from Codex with limits to prevent token overflow.
-        
+
         Preserves the exact same behavior as the original.
         """
         context: Dict[str, Any] = {"entities": [], "relationships": [], "recent_events": [], "chapters": []}
@@ -195,7 +206,7 @@ class AIWriter:
         if chapter:
             # Pass both chapter (number) and chapter_id (UUID) to get_events
             # This handles both old calls (integer chapter number) and new calls (UUID)
-            if isinstance(chapter, str) and len(chapter) > 10 and '-' in chapter:
+            if isinstance(chapter, str) and len(chapter) > 10 and "-" in chapter:
                 # It's a UUID, pass as chapter_id
                 events = db.get_events(chapter_id=chapter)[:max_events]
             else:
@@ -207,7 +218,7 @@ class AIWriter:
 
         if chapter:
             # Handle both UUID and integer chapter references
-            if isinstance(chapter, str) and len(chapter) > 10 and '-' in chapter:
+            if isinstance(chapter, str) and len(chapter) > 10 and "-" in chapter:
                 chap = db.get_chapter(chapter_id=chapter)
             else:
                 chap = db.get_chapter(number=chapter)
@@ -240,7 +251,7 @@ class AIWriter:
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(
-                content=f"Write a scene based on this beat:\n\"{beat}\"\n\n"
+                content=f'Write a scene based on this beat:\n"{beat}"\n\n'
                 f"Target length: ~{word_count} words.\n\n"
                 f"STYLE AND PACING GUIDANCE:\n{style_guidance}\n\n"
                 f"Write the scene now:"
@@ -260,7 +271,9 @@ class AIWriter:
         style_prompt = style_prompts.get(style.lower(), f"Rewrite in {style} style.")
 
         messages = [
-            SystemMessage(content="You are a versatile editor and writer. Rewrite the user's text exactly as requested."),
+            SystemMessage(
+                content="You are a versatile editor and writer. Rewrite the user's text exactly as requested."
+            ),
             HumanMessage(content=f"{style_prompt}\n\nRewrite:\n{text}"),
         ]
         response = await self.model.ainvoke(messages, {"temperature": 0.8})
@@ -293,9 +306,7 @@ class AIWriter:
 
     async def show_not_tell(self, text: str) -> str:
         messages = [
-            SystemMessage(
-                content="You are a writing coach specializing in the 'Show, Don't Tell' technique."
-            ),
+            SystemMessage(content="You are a writing coach specializing in the 'Show, Don't Tell' technique."),
             HumanMessage(
                 content=f"Convert this telling prose to showing (physical actions/behaviors instead of emotions):\n\n"
                 f"{text}\n\nRewrite with physical actions that convey the same emotions:"
@@ -347,9 +358,6 @@ class AIWriter:
 
         return "\n".join(guidance) if guidance else "Write naturally with appropriate pacing and tone for the scene."
 
-
-
-
     async def generate_alternatives(
         self,
         db,
@@ -360,11 +368,11 @@ class AIWriter:
         pacing: Optional[str] = None,
         pov: Optional[str] = None,
         tone: Optional[str] = None,
-        num_alternatives: int = 3
+        num_alternatives: int = 3,
     ) -> List[str]:
         """Generate multiple alternative versions of a scene."""
         alternatives = []
-        
+
         # Base parameters
         base_params = {
             "db": db,
@@ -376,11 +384,11 @@ class AIWriter:
             "pov": pov,
             "tone": tone,
         }
-        
+
         # Generate base version
         base = await self.write_scene(**base_params)
         alternatives.append({"variant": "base", "text": base})
-        
+
         # Generate alternatives with different parameters
         variant_configs = [
             {"tone": "darker", "pov": "first_person", "label": "darker_first_person"},
@@ -388,15 +396,15 @@ class AIWriter:
             {"tone": "faster", "pacing": "fast", "label": "fast_paced"},
             {"pov": "third_person_omniscient", "label": "omniscient"},
         ]
-        
-        for i, config in enumerate(variant_configs[:num_alternatives-1]):
+
+        for i, config in enumerate(variant_configs[: num_alternatives - 1]):
             params = {**base_params, **config}
             try:
                 alt = await self.write_scene(**params)
                 alternatives.append({"variant": config["label"], "text": alt})
             except Exception as e:
                 alternatives.append({"variant": config["label"], "text": f"[Error: {e}]"})
-        
+
         return alternatives
 
     async def what_if_scenario(
@@ -411,11 +419,11 @@ class AIWriter:
         tone: Optional[str] = None,
     ) -> str:
         """Explore a 'what if' scenario based on current story state."""
-        
+
         # Build context
         context = self.get_context(db, chapter=chapter)
         system_prompt = self._build_system_prompt(context)
-        
+
         prompt = f"""Current story beat: {current_beat}
 
 WHAT IF SCENARIO: {what_if}
@@ -426,39 +434,34 @@ Write a scene exploring this alternative direction. Consider how this change wou
 - Tone and atmosphere
 
 Target length: ~{word_count} words.
-Pacing: {pacing or 'steady'}
-POV: {pov or 'third_person_limited'}
-Tone: {tone or 'consistent with story'}
+Pacing: {pacing or "steady"}
+POV: {pov or "third_person_limited"}
+Tone: {tone or "consistent with story"}
 
 Write the scene:"""
-        
+
         style_guidance = self._build_style_guidance(pacing, pov, tone)
         if style_guidance:
             prompt += f"\n\nSTYLE GUIDANCE:\n{style_guidance}"
-        
+
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=prompt),
         ]
-        
+
         response = await self.model.ainvoke(messages, {"temperature": 0.8, "max_tokens": max(2000, word_count * 4)})
         return response.content
 
     async def generate_scene_options(
-        self,
-        db,
-        beat: str,
-        word_count: int = 500,
-        chapter: Optional[int] = None,
-        num_options: int = 3
+        self, db, beat: str, word_count: int = 500, chapter: Optional[int] = None, num_options: int = 3
     ) -> List[Dict]:
         """Generate multiple distinct options for a scene."""
         options = []
-        
+
         # Get base context
         context = self.get_context(db, chapter=chapter)
         system_prompt = self._build_system_prompt(context)
-        
+
         option_prompts = [
             ("dramatic", "Focus on emotional intensity and character conflict"),
             ("atmospheric", "Focus on sensory details, mood, and setting"),
@@ -466,7 +469,7 @@ Write the scene:"""
             ("introspective", "Focus on internal thoughts, memories, and psychology"),
             ("dialogue_heavy", "Focus on conversation and character voice"),
         ]
-        
+
         for i, (label, focus) in enumerate(option_prompts[:num_options]):
             prompt = f"""Write a scene based on this beat: "{beat}"
 
@@ -474,19 +477,22 @@ Focus: {focus}
 Target length: ~{word_count} words.
 
 Write the scene:"""
-            
+
             messages = [
                 SystemMessage(content=system_prompt),
                 HumanMessage(content=prompt),
             ]
-            
+
             try:
-                response = await self.model.ainvoke(messages, {"temperature": 0.8, "max_tokens": max(2000, word_count * 4)})
+                response = await self.model.ainvoke(
+                    messages, {"temperature": 0.8, "max_tokens": max(2000, word_count * 4)}
+                )
                 options.append({"variant": label, "focus": focus, "text": response.content})
             except Exception as e:
                 options.append({"variant": label, "focus": focus, "text": f"[Error: {e}]"})
-        
+
         return options
+
 
 if __name__ == "__main__":
     print("Testing AI Writer (LangChain)...")

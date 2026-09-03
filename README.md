@@ -2,8 +2,8 @@
 
 > **AI-powered writing assistant with multi-model support, document analysis, and content generation**
 
-[![CI](https://github.com/sagar0163/Nebula-Writer-2/workflows/CI/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/ci.yml)
-[![Release](https://github.com/sagar0163/Nebula-Writer-2/workflows/Release/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml)
+[![CI](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/main.yml/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/main.yml)
+[![Release](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org/)
 

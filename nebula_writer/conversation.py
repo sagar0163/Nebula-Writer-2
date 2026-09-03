@@ -1,13 +1,15 @@
 import asyncio
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Any
-import uuid
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 from nebula_writer.ai_writer import AIWriter
+
 
 class ChatMessage(BaseModel):
     message_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -19,13 +21,13 @@ class ChatMessage(BaseModel):
     response_text: str = ""
     timestamp: datetime = Field(default_factory=datetime.now)
 
+
 class ChatRequest(BaseModel):
     message: str
     project_id: Optional[str] = "default_project"
     chapter_id: Optional[str] = None
     stream: bool = True
     project_state: Optional[Dict[str, Any]] = None
-
 
 
 class IntentType(Enum):

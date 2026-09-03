@@ -8,12 +8,10 @@ with 8-criteria rubric scoring, anti-slop filtering, and real-time SSE streaming
 from __future__ import annotations
 
 import asyncio
-import json
 import uuid
-from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, AsyncGenerator
+from typing import AsyncGenerator, Dict, List, Optional
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -22,13 +20,13 @@ from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
-from nebula_writer.models import create_chat_model_with_fallbacks
 from nebula_writer.anti_slop import AntiSlopFilter
-
+from nebula_writer.models import create_chat_model_with_fallbacks
 
 # =============================================================================
 # STATE MODELS
 # =============================================================================
+
 
 class RubricCriterion(str, Enum):
     NARRATIVE_DRIVE = "narrative_drive"
@@ -90,6 +88,7 @@ class ManuscriptDraft(BaseModel):
 
 class QualityEngineState(BaseModel):
     """LangGraph state for the quality revision pipeline."""
+
     manuscript: ManuscriptDraft
     target_score: float = 8.5
     max_passes: int = 3
@@ -103,8 +102,10 @@ class QualityEngineState(BaseModel):
 # PROMPT TEMPLATES
 # =============================================================================
 
-EVALUATION_PROMPT = ChatPromptTemplate.from_messages([
-    SystemMessage(content="""You are an expert literary editor evaluating prose against an 8-criterion rubric.
+EVALUATION_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage(
+            content="""You are an expert literary editor evaluating prose against an 8-criterion rubric.
 Score each criterion 0.0–10.0. Be precise and honest. Output ONLY valid JSON.
 
 CRITERIA:
@@ -131,15 +132,21 @@ Return JSON with:
   "overall": float_weighted_average,
   "weakest": "criterion_name_from_above_list_only",
   "feedback": ["specific actionable feedback for revision", ...]
-}"""),
-    HumanMessage(content="""PROSE TO EVALUATE:
+}"""
+        ),
+        HumanMessage(
+            content="""PROSE TO EVALUATE:
 {prose}
 
-Evaluate now.""")
-])
+Evaluate now."""
+        ),
+    ]
+)
 
-REVISION_PROMPT = ChatPromptTemplate.from_messages([
-    SystemMessage(content="""You are an expert literary editor. Revise the prose to improve the WEAKEST criterion while maintaining all other qualities.
+REVISION_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage(
+            content="""You are an expert literary editor. Revise the prose to improve the WEAKEST criterion while maintaining all other qualities.
 
 TARGET CRITERION: {weakest_criterion}
 TARGET DESCRIPTION: {criterion_description}
@@ -150,52 +157,53 @@ REVISION PRINCIPLES:
 - Make minimal, surgical changes targeting only the weak area
 - Preserve voice, plot, character consistency
 - Do NOT add fluff or change the scene's purpose
-- Output ONLY the revised prose, no commentary"""),
-    HumanMessage(content="""ORIGINAL PROSE:
+- Output ONLY the revised prose, no commentary"""
+        ),
+        HumanMessage(
+            content="""ORIGINAL PROSE:
 {prose}
 
-REVISE for {weakest_criterion}:""")
-])
+REVISE for {weakest_criterion}:"""
+        ),
+    ]
+)
 
 
 # =============================================================================
 # NODE FUNCTIONS
 # =============================================================================
 
+
 async def evaluate_node(state: QualityEngineState) -> QualityEngineState:
     """Evaluate current prose against 8-criterion rubric using LLM."""
     model: BaseChatModel = create_chat_model_with_fallbacks(temperature=0.3)
-    
+
     prose = state.manuscript.revised_prose or state.manuscript.initial_prose
     if not prose.strip():
         state.error = "Empty prose cannot be evaluated"
         return state
-    
+
     criteria_text = "\n".join(f"- {k.value}: {v}" for k, v in RUBRIC_DESCRIPTIONS.items())
     weights_text = "\n".join(f"- {k.value}: {v}" for k, v in RUBRIC_WEIGHTS.items())
-    
+
     chain = EVALUATION_PROMPT | model | JsonOutputParser()
-    
+
     try:
-        result = await chain.ainvoke({
-            "criteria": criteria_text,
-            "weights": weights_text,
-            "prose": prose
-        })
-        
+        result = await chain.ainvoke({"criteria": criteria_text, "weights": weights_text, "prose": prose})
+
         scores = result.get("scores", {})
         overall = result.get("overall", 0.0)
         weakest = result.get("weakest", min(scores, key=scores.get) if scores else RubricCriterion.SHOW_NOT_TELL.value)
         feedback = result.get("feedback", [])
-        
+
         # Validate all 8 criteria present
         for criterion in RubricCriterion:
             if criterion.value not in scores:
                 scores[criterion.value] = 5.0  # Default neutral
-        
+
         # Recalculate weighted overall
         overall = sum(scores[k.value] * RUBRIC_WEIGHTS[k] for k in RubricCriterion)
-        
+
         state.rubric_scores = scores
         state.manuscript.evaluation = QualityScore(
             chapter_id=f"ch_{state.manuscript.chapter_number}",
@@ -207,13 +215,13 @@ async def evaluate_node(state: QualityEngineState) -> QualityEngineState:
             feedback=feedback,
         )
         state.manuscript.quality_score = round(overall, 2)
-        
+
     except Exception as e:
         state.error = f"Evaluation failed: {str(e)}"
         # Fallback heuristic
         state.rubric_scores = {k.value: 5.0 for k in RubricCriterion}
         state.manuscript.quality_score = 5.0
-    
+
     return state
 
 
@@ -221,7 +229,7 @@ async def check_approval_node(state: QualityEngineState) -> QualityEngineState:
     """Determine if revision loop should continue."""
     if state.error:
         return state
-    
+
     eval_result = state.manuscript.evaluation
     if eval_result and eval_result.is_approved:
         state.manuscript.is_approved = True
@@ -230,7 +238,7 @@ async def check_approval_node(state: QualityEngineState) -> QualityEngineState:
         state.manuscript.is_approved = False
         state.manuscript.final_prose = state.manuscript.revised_prose or state.manuscript.initial_prose
     # else: continue to revision
-    
+
     return state
 
 
@@ -238,39 +246,41 @@ async def revision_node(state: QualityEngineState) -> QualityEngineState:
     """Execute one revision pass targeting the weakest criterion."""
     if state.error or state.manuscript.is_approved or state.current_pass >= state.max_passes:
         return state
-    
+
     model: BaseChatModel = create_chat_model_with_fallbacks(temperature=0.7)
-    
+
     prose = state.manuscript.revised_prose or state.manuscript.initial_prose
     eval_result = state.manuscript.evaluation
-    
+
     if not eval_result or not eval_result.weakest_criterion:
         return state
-    
+
     weakest = eval_result.weakest_criterion
     criterion_desc = RUBRIC_DESCRIPTIONS.get(RubricCriterion(weakest), "")
     current_score = state.rubric_scores.get(weakest, 5.0)
-    
+
     chain = REVISION_PROMPT | model
-    
+
     try:
-        result = await chain.ainvoke({
-            "weakest_criterion": weakest,
-            "criterion_description": criterion_desc,
-            "current_score": current_score,
-            "prose": prose
-        })
-        
+        result = await chain.ainvoke(
+            {
+                "weakest_criterion": weakest,
+                "criterion_description": criterion_desc,
+                "current_score": current_score,
+                "prose": prose,
+            }
+        )
+
         revised = result.content.strip()
         if revised:
             state.current_pass += 1
             state.manuscript.revised_prose = revised
             state.manuscript.passes.append(f"pass_{state.current_pass}_{weakest}")
             state.manuscript.passes.append(revised[:200] + "...")  # Store preview
-            
+
     except Exception as e:
         state.error = f"Revision failed: {str(e)}"
-    
+
     return state
 
 
@@ -278,11 +288,11 @@ async def anti_slop_node(state: QualityEngineState) -> QualityEngineState:
     """Apply anti-slop filtering to final prose."""
     if state.error:
         return state
-    
+
     slop_filter = AntiSlopFilter()
     final_prose = state.manuscript.final_prose or state.manuscript.revised_prose or state.manuscript.initial_prose
     state.manuscript.final_prose = slop_filter.clean_prose(final_prose)
-    
+
     return state
 
 
@@ -290,30 +300,28 @@ async def anti_slop_node(state: QualityEngineState) -> QualityEngineState:
 # LANGGRAPH COMPILATION
 # =============================================================================
 
+
 def create_quality_graph() -> StateGraph:
     """Create and compile the LangGraph quality revision pipeline."""
     graph = StateGraph(QualityEngineState)
-    
+
     # Nodes
     graph.add_node("evaluate", evaluate_node)
     graph.add_node("check_approval", check_approval_node)
     graph.add_node("revise", revision_node)
     graph.add_node("anti_slop", anti_slop_node)
-    
+
     # Edges
     graph.set_entry_point("evaluate")
     graph.add_edge("evaluate", "check_approval")
     graph.add_conditional_edges(
         "check_approval",
         lambda s: "approved" if s.manuscript.is_approved or s.current_pass >= s.max_passes or s.error else "revise",
-        {
-            "approved": "anti_slop",
-            "revise": "revise"
-        }
+        {"approved": "anti_slop", "revise": "revise"},
     )
     graph.add_edge("revise", "evaluate")  # Loop back for next pass
     graph.add_edge("anti_slop", END)
-    
+
     return graph.compile()
 
 
@@ -324,87 +332,84 @@ QUALITY_GRAPH = create_quality_graph()
 # PUBLIC API
 # =============================================================================
 
+
 class QualityEngine:
     """
     LangGraph-powered quality engine for multi-pass prose revision.
-    
+
     Replaces the mock string-manipulation stub with authentic LLM orchestration.
     """
-    
+
     def __init__(self):
         self.graph = QUALITY_GRAPH
         self.slop_filter = AntiSlopFilter()
-    
+
     async def evaluate_prose(self, text: str) -> tuple[float, Dict[str, float]]:
         """Evaluates prose and returns overall score and individual rubric scores."""
         if not text.strip():
             return 0.0, {k.value: 0.0 for k in RubricCriterion}
-        
+
         manuscript = ManuscriptDraft(chapter_number=1, initial_prose=text)
         initial_state = QualityEngineState(
             manuscript=manuscript,
             target_score=8.5,
             max_passes=0,  # Evaluation only
-            current_pass=0
+            current_pass=0,
         )
-        
+
         result = await self.graph.ainvoke(initial_state)
-        
+
         if isinstance(result, dict):
             manuscript = result.get("manuscript")
         else:
             manuscript = result.manuscript
-        
+
         if manuscript and manuscript.evaluation:
             return manuscript.evaluation.overall_score, manuscript.evaluation.scores
-        
+
         return 5.0, {k.value: 5.0 for k in RubricCriterion}
-    
+
     async def revise_prose(self, text: str, target_score: float = 8.5, max_passes: int = 3) -> tuple[str, float, int]:
         """Executes internal AI revision loop (up to max_passes) to improve prose quality."""
         if not text.strip():
             return text.strip(), 0.0, 0
-        
+
         manuscript = ManuscriptDraft(chapter_number=1, initial_prose=text)
         initial_state = QualityEngineState(
-            manuscript=manuscript,
-            target_score=target_score,
-            max_passes=max_passes,
-            current_pass=0
+            manuscript=manuscript, target_score=target_score, max_passes=max_passes, current_pass=0
         )
-        
+
         result = await self.graph.ainvoke(initial_state)
-        
+
         if isinstance(result, dict):
             manuscript = result.get("manuscript")
         else:
             manuscript = result.manuscript
-        
+
         if manuscript:
             final = manuscript.final_prose or manuscript.revised_prose or manuscript.initial_prose
             score = manuscript.quality_score
             passes = manuscript.evaluation.passes_used if manuscript.evaluation else manuscript.current_pass
             return final.strip(), score, passes
-        
+
         return text.strip(), 5.0, 0
-    
-    async def revise_prose_streaming(self, text: str, target_score: float = 8.5, max_passes: int = 3) -> AsyncGenerator[str, None]:
+
+    async def revise_prose_streaming(
+        self, text: str, target_score: float = 8.5, max_passes: int = 3
+    ) -> AsyncGenerator[str, None]:
         """
         Stream tokens during revision using LangGraph's astream.
         Yields SSE-formatted tokens for real-time streaming.
         """
         if not text.strip():
-            yield f"data: [DONE]\n\n"
+            yield "data: [DONE]\n\n"
             return
-        
+
         manuscript = ManuscriptDraft(chapter_number=1, initial_prose=text)
         initial_state = QualityEngineState(
-            manuscript=manuscript,
-            target_score=target_score,
-            max_passes=max_passes,
-            current_pass=0
+            manuscript=manuscript, target_score=target_score, max_passes=max_passes, current_pass=0
         )
-        
+
         try:
             # Stream the graph execution
             async for event in self.graph.astream(initial_state):
@@ -424,13 +429,13 @@ class QualityEngine:
                         final = node_state.manuscript.final_prose
                         yield f"data: [FINAL] {final}\n\n"
                     elif node_name == "check_approval" and node_state.manuscript.is_approved:
-                        yield f"data: [APPROVED] Quality target met!\n\n"
-            
-            yield f"data: [DONE]\n\n"
-            
+                        yield "data: [APPROVED] Quality target met!\n\n"
+
+            yield "data: [DONE]\n\n"
+
         except Exception as e:
             yield f"data: [ERROR] {str(e)}\n\n"
-            yield f"data: [DONE]\n\n"
+            yield "data: [DONE]\n\n"
 
 
 # Backward-compatible functions for existing code

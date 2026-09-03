@@ -390,20 +390,21 @@ class PostgresDB:
 
     def add_project(self, project_id: str, title: str = "Untitled Novel", author: str = "Unknown") -> str:
         return self._execute(
-            "INSERT INTO projects (id, title, author) VALUES (%s, %s, %s)",
-            (project_id, title, author)
+            "INSERT INTO projects (id, title, author) VALUES (%s, %s, %s)", (project_id, title, author)
         )
 
     def get_characters(self, project_id: str) -> List[Dict]:
         return self._query("SELECT * FROM characters WHERE project_id = %s", (project_id,))
 
-    def add_character(self, project_id: str, name: str, role: str = "major", core_desire: str = "", arc_current_state: str = "") -> str:
+    def add_character(
+        self, project_id: str, name: str, role: str = "major", core_desire: str = "", arc_current_state: str = ""
+    ) -> str:
         return self._execute(
             """
             INSERT INTO characters (project_id, name, role, core_desire, arc_current_state)
             VALUES (%s, %s, %s, %s, %s)
             """,
-            (project_id, name, role, core_desire, arc_current_state)
+            (project_id, name, role, core_desire, arc_current_state),
         )
 
     def update_character(self, character_id: int, core_desire: str = None, arc_current_state: str = None) -> bool:
@@ -426,19 +427,37 @@ class PostgresDB:
     def get_research_nodes(self, project_id: str) -> List[Dict]:
         return self._query("SELECT * FROM research_nodes WHERE project_id = %s", (project_id,))
 
-    def add_research_node(self, project_id: str, topic: str, summary: str, queries_used: str = "[]", sources: str = "[]", confidence: str = "medium") -> str:
+    def add_research_node(
+        self,
+        project_id: str,
+        topic: str,
+        summary: str,
+        queries_used: str = "[]",
+        sources: str = "[]",
+        confidence: str = "medium",
+    ) -> str:
         return self._execute(
             """
             INSERT INTO research_nodes (project_id, topic, summary, queries_used, sources, confidence)
             VALUES (%s, %s, %s, %s, %s, %s)
             """,
-            (project_id, topic, summary, queries_used, sources, confidence)
+            (project_id, topic, summary, queries_used, sources, confidence),
         )
 
     def get_lookahead_cards(self, project_id: str) -> List[Dict]:
         return self._query("SELECT * FROM lookahead_cards WHERE project_id = %s ORDER BY card_index", (project_id,))
 
-    def add_lookahead_card(self, project_id: str, card_index: int, chapter_number: int, title: str, scene_intention: str, opening_image: str, character_focus: str, tension_targeted: str) -> str:
+    def add_lookahead_card(
+        self,
+        project_id: str,
+        card_index: int,
+        chapter_number: int,
+        title: str,
+        scene_intention: str,
+        opening_image: str,
+        character_focus: str,
+        tension_targeted: str,
+    ) -> str:
         return self._execute(
             """
             INSERT INTO lookahead_cards (project_id, card_index, chapter_number, title, scene_intention, opening_image, character_focus, tension_targeted)
@@ -451,22 +470,35 @@ class PostgresDB:
                 character_focus = EXCLUDED.character_focus,
                 tension_targeted = EXCLUDED.tension_targeted
             """,
-            (project_id, card_index, chapter_number, title, scene_intention, opening_image, character_focus, tension_targeted)
+            (
+                project_id,
+                card_index,
+                chapter_number,
+                title,
+                scene_intention,
+                opening_image,
+                character_focus,
+                tension_targeted,
+            ),
         )
 
     def get_comments(self, chapter_id: str) -> List[Dict]:
         return self._query("SELECT * FROM comments WHERE chapter_id = %s", (chapter_id,))
 
-    def add_comment(self, chapter_id: str, anchor_start: int, anchor_end: int, anchor_text: str, comment_text: str) -> str:
+    def add_comment(
+        self, chapter_id: str, anchor_start: int, anchor_end: int, anchor_text: str, comment_text: str
+    ) -> str:
         return self._execute(
             """
             INSERT INTO comments (chapter_id, anchor_start, anchor_end, anchor_text, comment_text)
             VALUES (%s, %s, %s, %s, %s)
             """,
-            (chapter_id, anchor_start, anchor_end, anchor_text, comment_text)
+            (chapter_id, anchor_start, anchor_end, anchor_text, comment_text),
         )
 
-    def update_comment(self, comment_id: int, ai_response: str = None, revised_text: str = None, status: str = None) -> bool:
+    def update_comment(
+        self, comment_id: int, ai_response: str = None, revised_text: str = None, status: str = None
+    ) -> bool:
         updates = []
         params = []
         if ai_response is not None:
@@ -512,41 +544,38 @@ class PostgresDB:
     def save_conversation(self, messages: List[Dict], user_id: str = "default") -> int:
         """Save conversation history to database"""
         self._ensure_conversations_table()
-        
+
         messages_json = json.dumps(messages)
         now = datetime.now().isoformat()
-        
+
         # Check if conversation exists
-        existing = self._query(
-            "SELECT id FROM conversations WHERE user_id = %s", (user_id,)
-        )
-        
+        existing = self._query("SELECT id FROM conversations WHERE user_id = %s", (user_id,))
+
         if existing:
-            conversation_id = existing[0]['id']
+            conversation_id = existing[0]["id"]
             self._query(
                 "UPDATE conversations SET messages = %s, updated_at = %s WHERE id = %s",
-                (messages_json, now, conversation_id)
+                (messages_json, now, conversation_id),
             )
         else:
             result = self._query(
                 "INSERT INTO conversations (user_id, messages, updated_at) VALUES (%s, %s, %s) RETURNING id",
-                (user_id, messages_json, now)
+                (user_id, messages_json, now),
             )
-            conversation_id = result[0]['id'] if result else 0
-        
+            conversation_id = result[0]["id"] if result else 0
+
         return conversation_id
 
     def load_conversation(self, user_id: str = "default") -> List[Dict]:
         """Load conversation history from database"""
         self._ensure_conversations_table()
-        
+
         result = self._query(
-            "SELECT messages FROM conversations WHERE user_id = %s ORDER BY updated_at DESC LIMIT 1",
-            (user_id,)
+            "SELECT messages FROM conversations WHERE user_id = %s ORDER BY updated_at DESC LIMIT 1", (user_id,)
         )
-        
-        if result and result[0]['messages']:
-            return result[0]['messages']
+
+        if result and result[0]["messages"]:
+            return result[0]["messages"]
         return []
 
     def close(self):

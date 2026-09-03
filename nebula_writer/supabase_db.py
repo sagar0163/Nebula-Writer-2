@@ -62,7 +62,7 @@ class SupabaseDB:
                 cursor.execute(sql + " RETURNING id", params)
                 self.conn.commit()
                 result = cursor.fetchone()
-                return str(result['id']) if result else "0"
+                return str(result["id"]) if result else "0"
         except psycopg2.Error:
             self.conn.rollback()
             raise
@@ -179,11 +179,11 @@ class SupabaseDB:
     def get_events(self, chapter: int = None, chapter_id: str = None) -> List[Dict]:
         # If chapter_id is a UUID, we need to get the chapter number first
         chapter_num = chapter
-        if chapter_id and isinstance(chapter_id, str) and len(chapter_id) > 10 and '-' in chapter_id:
+        if chapter_id and isinstance(chapter_id, str) and len(chapter_id) > 10 and "-" in chapter_id:
             chap = self.get_chapter(chapter_id=chapter_id)
             if chap:
                 chapter_num = chap.get("number")
-        
+
         if chapter_num is not None:
             return self._query("SELECT * FROM events WHERE chapter = %s ORDER BY timestamp", (chapter_num,))
         return self._query("SELECT * FROM events ORDER BY timestamp DESC")
@@ -202,7 +202,7 @@ class SupabaseDB:
     def get_chapter(self, chapter_id: str = None, number: int = None) -> Optional[Dict]:
         # If chapter_id looks like a UUID (contains hyphens and length > 10), query by id
         # Otherwise if number is provided, query by number
-        if chapter_id and isinstance(chapter_id, str) and len(chapter_id) > 10 and '-' in chapter_id:
+        if chapter_id and isinstance(chapter_id, str) and len(chapter_id) > 10 and "-" in chapter_id:
             result = self._query("SELECT * FROM chapters WHERE id = %s", (chapter_id,))
         elif number is not None:
             result = self._query("SELECT * FROM chapters WHERE number = %s", (number,))
@@ -261,8 +261,14 @@ class SupabaseDB:
             }
         except Exception as e:
             print(f"Stats error: {e}")
-            return {"total_entities": 0, "entities_by_type": {}, "total_chapters": 0,
-                    "total_relationships": 0, "total_events": 0, "total_words": 0}
+            return {
+                "total_entities": 0,
+                "entities_by_type": {},
+                "total_chapters": 0,
+                "total_relationships": 0,
+                "total_events": 0,
+                "total_words": 0,
+            }
 
     # ============ SEARCH ============
 
@@ -270,12 +276,13 @@ class SupabaseDB:
         q = f"%{query}%"
         return {
             "entities": self._query(
-                "SELECT * FROM entities WHERE name ILIKE %s OR description ILIKE %s LIMIT 10", (q, q)),
+                "SELECT * FROM entities WHERE name ILIKE %s OR description ILIKE %s LIMIT 10", (q, q)
+            ),
             "chapters": self._query(
                 "SELECT * FROM chapters WHERE title ILIKE %s OR content ILIKE %s OR summary ILIKE %s LIMIT 10",
-                (q, q, q)),
-            "events": self._query(
-                "SELECT * FROM events WHERE title ILIKE %s OR description ILIKE %s LIMIT 10", (q, q)),
+                (q, q, q),
+            ),
+            "events": self._query("SELECT * FROM events WHERE title ILIKE %s OR description ILIKE %s LIMIT 10", (q, q)),
         }
 
     def fulltext_search(self, query: str, user_id: str = None) -> Dict:
@@ -297,7 +304,8 @@ class SupabaseDB:
 
     def get_versions(self, chapter_id: str) -> List[Dict]:
         return self._query(
-            "SELECT * FROM chapter_versions WHERE chapter_id = %s ORDER BY created_at DESC", (chapter_id,))
+            "SELECT * FROM chapter_versions WHERE chapter_id = %s ORDER BY created_at DESC", (chapter_id,)
+        )
 
     def get_version(self, version_id: str) -> Optional[Dict]:
         result = self._query("SELECT * FROM chapter_versions WHERE id = %s", (version_id,))
@@ -311,9 +319,8 @@ class SupabaseDB:
             (entity_id, chapter_id),
         )
         if existing:
-            self._query("UPDATE character_knowledge SET knowledge = %s WHERE id = %s",
-                        (knowledge, existing[0]['id']))
-            return str(existing[0]['id'])
+            self._query("UPDATE character_knowledge SET knowledge = %s WHERE id = %s", (knowledge, existing[0]["id"]))
+            return str(existing[0]["id"])
         return self._execute_returning_id(
             "INSERT INTO character_knowledge (entity_id, chapter_id, knowledge) VALUES (%s, %s, %s)",
             (entity_id, chapter_id, knowledge),
@@ -326,7 +333,8 @@ class SupabaseDB:
                 (entity_id, chapter_id),
             )
         return self._query(
-            "SELECT * FROM character_knowledge WHERE entity_id = %s ORDER BY chapter_id DESC", (entity_id,))
+            "SELECT * FROM character_knowledge WHERE entity_id = %s ORDER BY chapter_id DESC", (entity_id,)
+        )
 
     def delete_character_knowledge(self, knowledge_id: str) -> bool:
         return self._rowcount("DELETE FROM character_knowledge WHERE id = %s", (knowledge_id,)) > 0
@@ -375,19 +383,30 @@ class SupabaseDB:
         for entity in entities.values():
             found = any(entity["name"].lower() in content_lower for content_lower in chapter_contents_lower)
             if not found and chapters:
-                issues.append({"type": "orphan_entity", "severity": "low",
-                               "description": f"Entity '{entity['name']}' may not appear in any chapter"})
+                issues.append(
+                    {
+                        "type": "orphan_entity",
+                        "severity": "low",
+                        "description": f"Entity '{entity['name']}' may not appear in any chapter",
+                    }
+                )
 
         events = self.get_events()
         for event in events:
             if event.get("chapter"):
                 if not any(c["number"] == event["chapter"] for c in chapters):
-                    issues.append({"type": "timeline_gap", "severity": "medium",
-                                   "description": f"Event '{event['title']}' references non-existent Chapter {event['chapter']}"})
+                    issues.append(
+                        {
+                            "type": "timeline_gap",
+                            "severity": "medium",
+                            "description": f"Event '{event['title']}' references non-existent Chapter {event['chapter']}",
+                        }
+                    )
 
         for issue in issues:
-            self.add_consistency_issue(issue_type=issue["type"], description=issue["description"],
-                                       severity=issue["severity"])
+            self.add_consistency_issue(
+                issue_type=issue["type"], description=issue["description"], severity=issue["severity"]
+            )
         return issues
 
     # ============ AUTO-EXTRACT ENTITIES ============
@@ -425,10 +444,13 @@ class SupabaseDB:
         return self._query("SELECT * FROM story_anchors")
 
     def update_story_anchor(self, anchor_id: str, description: str) -> bool:
-        return self._rowcount(
-            "UPDATE story_anchors SET description = %s, updated_at = NOW() WHERE id = %s",
-            (description, anchor_id),
-        ) > 0
+        return (
+            self._rowcount(
+                "UPDATE story_anchors SET description = %s, updated_at = NOW() WHERE id = %s",
+                (description, anchor_id),
+            )
+            > 0
+        )
 
     def add_open_tension(self, description: str, priority: str = "normal") -> str:
         return self._execute_returning_id(
@@ -437,27 +459,31 @@ class SupabaseDB:
         )
 
     def get_open_tensions(self, status: str = "open") -> List[Dict]:
-        return self._query(
-            "SELECT * FROM open_tensions WHERE status = %s ORDER BY created_at DESC", (status,))
+        return self._query("SELECT * FROM open_tensions WHERE status = %s ORDER BY created_at DESC", (status,))
 
     def resolve_tension(self, tension_id: str, resolved_chapter: int) -> bool:
-        return self._rowcount(
-            "UPDATE open_tensions SET status = 'resolved', resolved_chapter = %s WHERE id = %s",
-            (resolved_chapter, tension_id),
-        ) > 0
+        return (
+            self._rowcount(
+                "UPDATE open_tensions SET status = 'resolved', resolved_chapter = %s WHERE id = %s",
+                (resolved_chapter, tension_id),
+            )
+            > 0
+        )
 
     def update_narrative_momentum(self, score: float) -> bool:
         existing = self._query("SELECT id FROM story_compass LIMIT 1")
         if existing:
-            self._query("UPDATE story_compass SET momentum_score = %s, last_updated = NOW() WHERE id = %s",
-                        (score, existing[0]['id']))
+            self._query(
+                "UPDATE story_compass SET momentum_score = %s, last_updated = NOW() WHERE id = %s",
+                (score, existing[0]["id"]),
+            )
         else:
             self._query("INSERT INTO story_compass (momentum_score) VALUES (%s)", (score,))
         return True
 
     def get_narrative_momentum(self) -> float:
         result = self._query("SELECT momentum_score FROM story_compass ORDER BY last_updated DESC LIMIT 1")
-        return float(result[0]['momentum_score']) if result else 0.0
+        return float(result[0]["momentum_score"]) if result else 0.0
 
     def add_lookahead_card(
         self,
@@ -476,12 +502,10 @@ class SupabaseDB:
         )
 
     def get_lookahead_cards(self, status: str = "draft") -> List[Dict]:
-        return self._query(
-            "SELECT * FROM lookahead_cards WHERE status = %s ORDER BY chapter_number", (status,))
+        return self._query("SELECT * FROM lookahead_cards WHERE status = %s ORDER BY chapter_number", (status,))
 
     def update_lookahead_card_status(self, card_id: str, status: str) -> bool:
-        return self._rowcount(
-            "UPDATE lookahead_cards SET status = %s WHERE id = %s", (status, card_id)) > 0
+        return self._rowcount("UPDATE lookahead_cards SET status = %s WHERE id = %s", (status, card_id)) > 0
 
     def clear_lookahead_cards(self, status: str = "draft"):
         self._query("DELETE FROM lookahead_cards WHERE status = %s", (status,))
@@ -493,7 +517,7 @@ class SupabaseDB:
         messages_json = json.dumps(messages)
         now = datetime.now().isoformat()
         if existing:
-            conversation_id = existing[0]['id']
+            conversation_id = existing[0]["id"]
             self._query(
                 "UPDATE conversations SET messages = %s, updated_at = %s WHERE id = %s",
                 (messages_json, now, conversation_id),
@@ -510,7 +534,7 @@ class SupabaseDB:
             (user_id,),
         )
         if result:
-            messages = result[0]['messages']
+            messages = result[0]["messages"]
             if isinstance(messages, str):
                 return json.loads(messages)
             return messages
@@ -530,7 +554,7 @@ class SupabaseDB:
         existing = self._query("SELECT id FROM story_plan LIMIT 1")
         if existing:
             set_clause = ", ".join([f"{k} = %s" for k in filtered.keys()])
-            values = list(filtered.values()) + [existing[0]['id']]
+            values = list(filtered.values()) + [existing[0]["id"]]
             self._query(f"UPDATE story_plan SET {set_clause}, updated_at = NOW() WHERE id = %s", values)
         else:
             cols = ", ".join(filtered.keys())
@@ -554,26 +578,35 @@ class SupabaseDB:
         )
 
     def resolve_plot_thread(self, thread_id: str, resolved_chapter: int = None) -> bool:
-        return self._rowcount(
-            "UPDATE plot_threads SET status = 'resolved', resolved_chapter = %s WHERE id = %s",
-            (resolved_chapter, thread_id),
-        ) > 0
+        return (
+            self._rowcount(
+                "UPDATE plot_threads SET status = 'resolved', resolved_chapter = %s WHERE id = %s",
+                (resolved_chapter, thread_id),
+            )
+            > 0
+        )
 
     def get_foreshadowing(self, plot_thread_id: str = None, unfulfilled_only: bool = True) -> List[Dict]:
         if plot_thread_id:
             if unfulfilled_only:
                 return self._query(
                     "SELECT * FROM foreshadowing WHERE plot_thread_id = %s AND fulfilled = false ORDER BY created_at",
-                    (plot_thread_id,))
+                    (plot_thread_id,),
+                )
             return self._query(
-                "SELECT * FROM foreshadowing WHERE plot_thread_id = %s ORDER BY created_at", (plot_thread_id,))
+                "SELECT * FROM foreshadowing WHERE plot_thread_id = %s ORDER BY created_at", (plot_thread_id,)
+            )
         if unfulfilled_only:
             return self._query("SELECT * FROM foreshadowing WHERE fulfilled = false ORDER BY created_at")
         return self._query("SELECT * FROM foreshadowing ORDER BY created_at")
 
     def add_foreshadowing(
-        self, plot_thread_id: str, chapter_id: str, content: str,
-        hint_level: str = "subtle", payoff_chapter: int = None,
+        self,
+        plot_thread_id: str,
+        chapter_id: str,
+        content: str,
+        hint_level: str = "subtle",
+        payoff_chapter: int = None,
     ) -> str:
         return self._execute_returning_id(
             "INSERT INTO foreshadowing (plot_thread_id, chapter_id, content, hint_level, payoff_expected_chapter) VALUES (%s, %s, %s, %s, %s)",
@@ -586,8 +619,12 @@ class SupabaseDB:
         return self._query("SELECT * FROM world_rules ORDER BY category, created_at")
 
     def add_world_rule(
-        self, category: str, rule: str, description: str = None,
-        exceptions: str = None, applies_to: str = None,
+        self,
+        category: str,
+        rule: str,
+        description: str = None,
+        exceptions: str = None,
+        applies_to: str = None,
     ) -> str:
         return self._execute_returning_id(
             "INSERT INTO world_rules (category, rule, description, exceptions, applies_to_entities) VALUES (%s, %s, %s, %s, %s)",
@@ -618,13 +655,15 @@ class SupabaseDB:
         result = self._request("GET", "characters", filters={"project_id": project_id})
         return result if isinstance(result, list) else []
 
-    def add_character(self, project_id: str, name: str, role: str = "major", core_desire: str = "", arc_current_state: str = "") -> str:
+    def add_character(
+        self, project_id: str, name: str, role: str = "major", core_desire: str = "", arc_current_state: str = ""
+    ) -> str:
         data = {
             "project_id": project_id,
             "name": name,
             "role": role,
             "core_desire": core_desire,
-            "arc_current_state": arc_current_state
+            "arc_current_state": arc_current_state,
         }
         result = self._request("POST", "characters", data=data)
         return str(result.get("id", "0")) if isinstance(result, dict) else "0"
@@ -645,14 +684,22 @@ class SupabaseDB:
         result = self._request("GET", "research_nodes", filters={"project_id": project_id})
         return result if isinstance(result, list) else []
 
-    def add_research_node(self, project_id: str, topic: str, summary: str, queries_used: str = "[]", sources: str = "[]", confidence: str = "medium") -> str:
+    def add_research_node(
+        self,
+        project_id: str,
+        topic: str,
+        summary: str,
+        queries_used: str = "[]",
+        sources: str = "[]",
+        confidence: str = "medium",
+    ) -> str:
         data = {
             "project_id": project_id,
             "topic": topic,
             "summary": summary,
             "queries_used": queries_used,
             "sources": sources,
-            "confidence": confidence
+            "confidence": confidence,
         }
         result = self._request("POST", "research_nodes", data=data)
         return str(result.get("id", "0")) if isinstance(result, dict) else "0"
@@ -663,7 +710,17 @@ class SupabaseDB:
             return sorted(result, key=lambda x: x.get("card_index", 0))
         return []
 
-    def add_lookahead_card(self, project_id: str, card_index: int, chapter_number: int, title: str, scene_intention: str, opening_image: str, character_focus: str, tension_targeted: str) -> str:
+    def add_lookahead_card(
+        self,
+        project_id: str,
+        card_index: int,
+        chapter_number: int,
+        title: str,
+        scene_intention: str,
+        opening_image: str,
+        character_focus: str,
+        tension_targeted: str,
+    ) -> str:
         data = {
             "project_id": project_id,
             "card_index": card_index,
@@ -672,7 +729,7 @@ class SupabaseDB:
             "scene_intention": scene_intention,
             "opening_image": opening_image,
             "character_focus": character_focus,
-            "tension_targeted": tension_targeted
+            "tension_targeted": tension_targeted,
         }
         # Supabase upsert equivalent
         result = self._request("POST", "lookahead_cards", data=data)
@@ -682,18 +739,22 @@ class SupabaseDB:
         result = self._request("GET", "comments", filters={"chapter_id": chapter_id})
         return result if isinstance(result, list) else []
 
-    def add_comment(self, chapter_id: str, anchor_start: int, anchor_end: int, anchor_text: str, comment_text: str) -> str:
+    def add_comment(
+        self, chapter_id: str, anchor_start: int, anchor_end: int, anchor_text: str, comment_text: str
+    ) -> str:
         data = {
             "chapter_id": chapter_id,
             "anchor_start": anchor_start,
             "anchor_end": anchor_end,
             "anchor_text": anchor_text,
-            "comment_text": comment_text
+            "comment_text": comment_text,
         }
         result = self._request("POST", "comments", data=data)
         return str(result.get("id", "0")) if isinstance(result, dict) else "0"
 
-    def update_comment(self, comment_id: int, ai_response: str = None, revised_text: str = None, status: str = None) -> bool:
+    def update_comment(
+        self, comment_id: int, ai_response: str = None, revised_text: str = None, status: str = None
+    ) -> bool:
         data = {}
         if ai_response is not None:
             data["ai_response"] = ai_response

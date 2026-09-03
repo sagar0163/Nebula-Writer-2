@@ -49,7 +49,7 @@ class RippleChecker:
         """
         change_desc = f"Revised text from '{original_text[:50]}...' to '{revised_text[:50]}...'"
         report = await self.analyze_change(change_desc, context)
-        
+
         report["revision_valid"] = len(report.get("structural_contradictions", [])) == 0
         report["delta_analyzed"] = True
         return report

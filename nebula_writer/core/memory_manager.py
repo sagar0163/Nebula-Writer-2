@@ -6,8 +6,9 @@ Replaces character-count heuristics with model-aware token counting.
 from __future__ import annotations
 
 from langchain_core.language_models import BaseChatModel
+
 from nebula_writer.core.narrative_state_engine import NarrativeSnapshot
-from nebula_writer.models import create_chat_model, count_tokens
+from nebula_writer.models import count_tokens, create_chat_model
 
 
 class MemoryManager:

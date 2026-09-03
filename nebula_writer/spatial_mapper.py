@@ -10,7 +10,6 @@ import math
 import sqlite3
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from typing import Dict, List, Optional
 
 from nebula_writer.codex import CodexDatabase
@@ -185,7 +184,7 @@ class SpatialMapper:
                 """,
                 (point_id, entity_id, name, x, y, z, description, self.user_id),
             )
-            point_id = cursor.fetchone()['id']
+            point_id = cursor.fetchone()["id"]
         else:
             cursor.execute(
                 """

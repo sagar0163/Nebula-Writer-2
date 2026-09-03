@@ -3,8 +3,6 @@ Nebula-Writer Interactive REPL
 Interactive writing session
 """
 
-from pathlib import Path
-
 from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 
 
