@@ -518,10 +518,6 @@ class PostgresDB:
         self._query(f"UPDATE comments SET {', '.join(updates)} WHERE id = %s", tuple(params))
         return True
 
-    def close(self):
-        if self.conn:
-            self.conn.close()
-
     # ============ CONVERSATION PERSISTENCE ============
 
     def _ensure_conversations_table(self):
@@ -537,7 +533,7 @@ class PostgresDB:
         """)
         # Create index on user_id
         self._query("""
-            CREATE INDEX IF NOT EXISTS idx_conversations_user_id 
+            CREATE INDEX IF NOT EXISTS idx_conversations_user_id
             ON conversations(user_id)
         """)
 
@@ -577,7 +573,3 @@ class PostgresDB:
         if result and result[0]["messages"]:
             return result[0]["messages"]
         return []
-
-    def close(self):
-        if self.conn:
-            self.conn.close()

@@ -704,37 +704,6 @@ class SupabaseDB:
         result = self._request("POST", "research_nodes", data=data)
         return str(result.get("id", "0")) if isinstance(result, dict) else "0"
 
-    def get_lookahead_cards(self, project_id: str) -> List[Dict]:
-        result = self._request("GET", "lookahead_cards", filters={"project_id": project_id})
-        if isinstance(result, list):
-            return sorted(result, key=lambda x: x.get("card_index", 0))
-        return []
-
-    def add_lookahead_card(
-        self,
-        project_id: str,
-        card_index: int,
-        chapter_number: int,
-        title: str,
-        scene_intention: str,
-        opening_image: str,
-        character_focus: str,
-        tension_targeted: str,
-    ) -> str:
-        data = {
-            "project_id": project_id,
-            "card_index": card_index,
-            "chapter_number": chapter_number,
-            "title": title,
-            "scene_intention": scene_intention,
-            "opening_image": opening_image,
-            "character_focus": character_focus,
-            "tension_targeted": tension_targeted,
-        }
-        # Supabase upsert equivalent
-        result = self._request("POST", "lookahead_cards", data=data)
-        return str(result.get("id", "0")) if isinstance(result, dict) else "0"
-
     def get_comments(self, chapter_id: str) -> List[Dict]:
         result = self._request("GET", "comments", filters={"chapter_id": chapter_id})
         return result if isinstance(result, list) else []
