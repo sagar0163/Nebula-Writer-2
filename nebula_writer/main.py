@@ -1807,8 +1807,8 @@ def health_check():
 
 @app.get("/")
 async def read_index():
-    """Serve the frontend index.html"""
-    return FileResponse(Path(__file__).parent.parent / "frontend" / "index.html")
+    """Root endpoint"""
+    return {"message": "Nebula-Writer API Server is running", "docs": "/docs"}
 
 
 if __name__ == "__main__":
