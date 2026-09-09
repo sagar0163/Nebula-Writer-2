@@ -38,15 +38,12 @@ def _find_duplicate_methods(path):
             if len(items) <= 1:
                 continue
             decorators = [
-                getattr(d, "id", None) or getattr(d, "attr", None)
-                for item in items
-                for d in item.decorator_list
+                getattr(d, "id", None) or getattr(d, "attr", None) for item in items for d in item.decorator_list
             ]
             if _is_property_descriptor_pair(decorators):
                 continue
             problems.append(
-                f"{path.name}:{node.name}.{method} defined {len(items)}x at lines "
-                f"{[i.lineno for i in items]}"
+                f"{path.name}:{node.name}.{method} defined {len(items)}x at lines {[i.lineno for i in items]}"
             )
     return problems
 
