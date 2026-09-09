@@ -1,6 +1,6 @@
 # Nebula-Writer-2
 # Nebula-Writer-2
-> **AI-powered writing assistant with multi-model support, document analysis, and content generation**
+> **The AI co-author that never forgets your story.**
 [![CI](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/main.yml/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/main.yml)
 [![Release](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -10,145 +10,81 @@
 
 ## 🎯 Problem
 
-Writers, researchers, and content teams juggle multiple AI tools for drafting, editing, summarizing, and analyzing documents. Context switching kills productivity.
+Generic AI chat tools produce nice prose, but they cannot keep a novel consistent. Writers burn hundreds of hours manually maintaining story bibles and hunting contradictions after a direction change — new writers and seasoned novelists alike.
 
-## 💡 Solution
+## 💡 Solution — The Canon-Safe Co-Writing Loop
 
-A **unified writing workspace** that combines:
+Nebula-Writer's single core experience: from a one-line idea to a finished novel, every interaction flows through a living story canon (the **Codex**) that the AI maintains *for* you.
 
-- **Multi-model AI** — OpenAI, Anthropic, local (Ollama), NVIDIA NIM, together
-- **Document intelligence** — semantic search, Q&A, extraction, structure analysis
-- **Content generation** — articles, reports, code docs, emails, creative writing
-- **Workflow automation** — pipelines for research → outline → draft → polish
+```
+ Idea ─► Codex ─► Chapters ─► Comment ─► Ripple ─► Manuscript
+        (canon)    (write)     (rewrite)  (what breaks)
+```
+
+- **Idea → Codex** — describe a concept; Nebula-Writer builds persistent characters, relationships, plot threads, world rules, and timeline.
+- **Beat → Chapter** — chapters are generated grounded in the full canon; no invented facts, no contradictions.
+- **Comment → Rewrite** — highlight a span, leave a note, get a surgical rewrite that changes *only* what you asked.
+- **Pivot → Ripple** — "actually, the killer is the brother" shows you exactly what breaks and rewrites the affected scenes to keep the whole manuscript consistent.
+- **Manuscript** — a finished, internally-consistent novel you can export.
+
+> **Strategy:** see [docs/STRATEGY.md](docs/STRATEGY.md) — the ratified core-first roadmap and full noise inventory (Issue #146).
 
 ## 🏗️ Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                      Nebula-Writer Core                        │
-├─────────────┬─────────────┬─────────────┬──────────────────────┤
-│  Model      │  Document   │  Pipeline   │  Export              │
-│  Router     │  Store      │  Engine     │  (MD/PDF/DOCX/HTML)  │
-└─────────────┴─────────────┴─────────────┴──────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│                      Nebula-Writer Core                     │
+├──────────────┬──────────────┬──────────────┬───────────────┤
+│  Codex       │  AI Writer   │  Ripple      │  Quality      │
+│  (canon)     │  (pipeline)  │  Checker     │  Engine       │
+└──────────────┴──────────────┴──────────────┴───────────────┘
 ```
+
+Built on FastAPI + LangGraph (PLAN → WRITE → VALIDATE → EVALUATE) with a multi-provider LLM fallback chain (Mistral / Gemini / OpenAI / local) and SQLite/Supabase persistence.
 
 ## 🚀 Quick Start
 
 ```bash
 # Install
-pip install nebula-writer
+pip install -r requirements.txt
 
-# Or with poetry
-poetry add nebula-writer
+# Run the API server
+uvicorn nebula_writer.main:app --host 0.0.0.0 --port 8000 --reload
 
-# Initialize workspace
-nebula-writer init my-project
-cd my-project
-
-# Configure models
-nebula-writer config set openai.api_key $OPENAI_API_KEY
-nebula-writer config set anthropic.api_key $ANTHROPIC_API_KEY
+# Chat-driven writing (SSE streaming)
+curl -N -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Write Chapter 1", "stream": true}'
 ```
 
-## ⚙️ Configuration
+See [QUICK_START.md](QUICK_START.md) and [API.md](API.md) for full setup and endpoints.
 
-```yaml
-# nebula.yaml
-models:
-  default: gpt-4o-mini
-  available:
-    - name: gpt-4o
-      provider: openai
-      tier: premium
-    - name: claude-3-5-sonnet
-      provider: anthropic
-      tier: premium
-    - name: llama-3.1-70b
-      provider: ollama
-      tier: local
-    - name: nemotron-3-ultra
-      provider: nvidia
-      tier: free
+## 📖 Core Commands
 
-document_store:
-  type: sqlite  # or chromadb, pgvector
-  path: ./data/documents.db
-
-pipelines:
-  - name: research-to-article
-    steps:
-      - search_web
-      - extract_key_points
-      - generate_outline
-      - write_draft
-      - fact_check
-      - polish
-```
-
-## 📖 Usage
-
-### Interactive mode
 ```bash
-nebula-writer chat
-> Summarize the PDF in ./docs/research.pdf
-> Generate a blog outline from these notes
-> Rewrite this section for technical audience
-```
+# Seed a project from an idea
+nebula-writer idea "a mystery set in Mumbai" --project my-novel
 
-### Pipeline execution
-```bash
-nebula-writer run research-to-article --topic "AI agents in 2025"
-```
-
-### Document analysis
-```bash
-nebula-writer analyze ./docs/large-report.pdf \
-  --extract entities,key-points,citations \
-  --output analysis.json
-```
-
-## 🔌 Extending
-
-### Custom pipeline step
-```python
-# steps/my_step.py
-from nebula_writer.pipeline import Step
-
-
-class MyStep(Step):
-    name = "my_step"
-
-    async def run(self, context):
-        # Transform context
-        return context
-```
-
-### Custom model provider
-```python
-# providers/my_provider.py
-from nebula_writer.models import BaseProvider
-
-
-class MyProvider(BaseProvider):
-    async def complete(self, prompt, **kwargs):
-        # Your implementation
-        pass
+# Write a scene
+curl -X POST http://localhost:8000/api/ai/write \
+  -H "Content-Type: application/json" \
+  -d '{"beat": "The detective makes a discovery", "word_count": 500}'
 ```
 
 ## 🧪 Testing
 
 ```bash
 pytest tests/ -v
-pytest tests/ --cov=nebula_writer
+ruff check . && ruff format --check .
 ```
 
-## 📦 Release
+## 🗺️ Roadmap (core-first)
 
-```bash
-poetry version patch
-git push origin main --tags
-# GitHub Actions: test → build → release → PyPI
-```
+- **Phase 1 — The Loop Works:** canon-correct chapters, surgical comment rewrites, ripple analysis, idea→Codex, basic manuscript export.
+- **Phase 2 — The Loop Feels Like Magic:** streaming polish, Studio Mode, deeper ripple intelligence, style learning.
+- **Phase 3 — The Loop Ships Novels:** publication-grade EPUB/DOCX/PDF, research engine, collaboration.
+
+Everything not in service of the core loop is deferred. See [docs/STRATEGY.md](docs/STRATEGY.md) for the full inventory and decision guardrails.
 
 ## 📄 License
 
@@ -156,4 +92,4 @@ MIT License
 
 ---
 
-**Transform your writing workflow with AI that understands your context**
+**Someday, every serious novelist will have a co-author that never loses the thread. That co-author is this one.**
