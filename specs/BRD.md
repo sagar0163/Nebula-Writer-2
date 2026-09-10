@@ -23,7 +23,7 @@
 - **Chapters:** Write and organize story chapters with word count tracking
 - **Scenes:** Split chapters into scenes with beat markers
 - **Version History:** Full version history with rollback capability
-- **Rich Text Editor:** Built-in text editor in Vue.js frontend
+- **Rich Text Editor:** Built-in text editor (planned for future web UI)
 
 ### 2.3 Story Templates
 - **Three-Act Structure:** Classic setup/confrontation/resolution
@@ -58,10 +58,9 @@
 - **JSON:** Full Codex export
 
 ### 2.8 User Interface
-- **Vue.js SPA:** Single-page application
-- **TailwindCSS:** Dark space-themed UI
-- **Responsive:** Works on desktop browsers
-- **Multiple Views:** Dashboard, Entities, Chapters, Templates, Consistency, AI, Export
+- **REST API:** Full-featured API for entities, chapters, AI writing, export
+- **CLI & REPL:** Text-based interface for core management tasks
+- **Web UI (planned):** Dashboard, Entities, Chapters, Templates, Consistency, AI, Export views
 
 ### 2.9 Developer Features
 - **FastAPI Backend:** RESTful API
@@ -79,7 +78,7 @@
 | **Database** | SQLite |
 | **AI Models** | Google Gemini, OpenAI GPT-4, Anthropic Claude |
 | **Memory** | ChromaDB (RAG) |
-| **Frontend** | Vue.js 3, TailwindCSS |
+| **Interface** | REST API + CLI (future: Vue.js web UI) |
 | **DevOps** | Docker |
 
 ---
@@ -110,7 +109,7 @@
 | FR3 | Multi-model AI integration (Gemini, OpenAI, Claude) | ✅ Implemented |
 | FR4 | ChromaDB semantic search | ✅ Implemented |
 | FR5 | Story audit and consistency checking | ✅ Implemented |
-| FR6 | Web UI (Vue.js) and API interfaces | ✅ Implemented |
+| FR6 | REST API and CLI interfaces | ✅ Implemented |
 | FR7 | Version history for chapters | ✅ Implemented |
 | FR8 | Character knowledge tracking | ✅ Implemented |
 | FR9 | Story structure templates | ✅ Implemented |

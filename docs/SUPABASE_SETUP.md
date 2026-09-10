@@ -17,7 +17,7 @@
 ## Step 3: Run Schema
 
 1. In Supabase dashboard, go to **SQL Editor**
-2. Copy the contents of `backend/schema.sql`
+2. Copy the contents of `nebula_writer/schema.sql`
 3. Run the SQL
 
 ## Step 4: Set Environment Variables
@@ -37,8 +37,7 @@ Or copy `.env.example` to `.env` and fill in your values.
 ## Step 5: Start the Server
 
 ```bash
-cd backend
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
+python -m uvicorn nebula_writer.main:app --host 0.0.0.0 --port 8000
 ```
 
 ## Database Comparison

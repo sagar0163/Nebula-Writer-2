@@ -13,7 +13,7 @@ E:\my project folder\Nebula-Writer-2\
 
 ### Architecture
 ```
-Vue.js Frontend (5173) → FastAPI Backend (8000) → PostgreSQL (Supabase) + ChromaDB (Vector) + LangChain (LLM Router)
+FastAPI Backend (8000) → PostgreSQL (Supabase) + ChromaDB (Vector) + LangChain (LLM Router)
 ```
 
 ### Core Stack
@@ -23,7 +23,7 @@ Vue.js Frontend (5173) → FastAPI Backend (8000) → PostgreSQL (Supabase) + Ch
 | **Vector Memory** | ChromaDB via `langchain-chroma` — semantic search over prose |
 | **LLM Orchestration** | LangChain + LangGraph — pipeline: PLAN → WRITE → VALIDATE → EVALUATE |
 | **Models** | Mistral (primary), Gemini, OpenAI, Anthropic (fallback chain) |
-| **Frontend** | Vue.js + Tailwind (port 5173) |
+| **Interface** | REST API + CLI (`nebula-writer`) |
 
 ### Key Features (Implemented)
 - ✅ **Codex CRUD** — entities, attributes, relationships (`/api/entities`, `/api/relationships`)
@@ -158,7 +158,7 @@ Installed via `pip install langchain-chroma sentence-transformers`
 
 ## 🚀 How to Run
 
-### Backend
+### API Server
 ```bash
 cd E:\my project folder\Nebula-Writer-2
 # .env must exist with:
@@ -168,12 +168,11 @@ cd E:\my project folder\Nebula-Writer-2
 python -m uvicorn nebula_writer.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Frontend (separate terminal)
+### CLI
 ```bash
-cd E:\my project folder\Nebula-Writer-2\frontend
-npm install
-npm run dev
-# Opens http://localhost:5173
+cd E:\my project folder\Nebula-Writer-2
+python nebula-writer entity list
+python nebula-writer chapter list
 ```
 
 ### Test Direct (Python)
@@ -233,7 +232,7 @@ print(result)
 
 8. **Add real API keys** — Only Mistral is real; Gemini/OpenAI/Anthropic are placeholders
 
-9. **Frontend integration** — Test Vue app against backend
+9. **Frontend integration** — Removed (CLI-first; see #140/#142)
 
 ---
 
@@ -276,10 +275,10 @@ NEBULA_DEFAULT_WORD_COUNT=500
 
 ### To Resume on Another Machine
 1. Copy `E:\my project folder\Nebula-Writer-2` to new machine
-2. Ensure Python 3.11+ and Node.js 18+
+2. Ensure Python 3.11+
 3. `pip install -r nebula_writer/requirements.txt` (plus `langchain-chroma sentence-transformers`)
 4. Copy `.env` with valid API keys
-5. Run backend + frontend as shown above
+5. Run the API server / CLI as shown above
 6. Use gstack skills: `/skill investigate` for bugs, `/skill qa` for testing, `/skill review` for PRs
 
 ---

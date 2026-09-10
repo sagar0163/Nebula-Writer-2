@@ -6,17 +6,16 @@ Nebula-Writer is a FastAPI-based fiction writing assistant with SQLite persisten
 
 ```
 nebula-writer/
-├── backend/
+├── nebula_writer/
 │   ├── main.py          # FastAPI application
 │   ├── codex.py        # SQLite database layer
 │   ├── ai_writer.py    # AI writing assistant
-│   ├── ai_client.py    # Multi-provider AI client
+│   ├── models.py       # Multi-provider AI client
 │   ├── memory.py       # ChromaDB RAG system
 │   ├── exporter.py     # Export formats
 │   ├── config.py      # Configuration
 │   └── prompts.py   # Prompt templates
-├── frontend/
-│   └── index.html    # Vue.js SPA
+├── nebula-writer       # CLI entry point
 ├── data/              # SQLite database
 └── docs/             # Documentation
 ```
@@ -49,10 +48,10 @@ db.run_consistency_check()
 
 ### AIWriter (`ai_writer.py`)
 
-Gemini-powered writing with Codex context:
+AI-powered writing with Codex context:
 
 ```python
-from ai_writer import AIWriter
+from nebula_writer.ai_writer import AIWriter
 
 ai = AIWriter()
 
@@ -60,12 +59,12 @@ ai = AIWriter()
 result = ai.write_scene(db=db, beat="The detective finds a clue", word_count=500, entity_ids=[1, 2])
 ```
 
-### AIClient (`ai_client.py`)
+### Models (`models.py`)
 
 Multi-provider AI interface:
 
 ```python
-from ai_client import AIClient
+from nebula_writer.models import AIClient
 
 # Use any provider
 client = AIClient(provider="gemini", api_key=key)
@@ -77,7 +76,7 @@ result = client.generate(prompt, system_prompt)
 ChromaDB vector store for semantic search:
 
 ```python
-from memory import MemorySystem
+from nebula_writer.memory import MemorySystem
 
 mem = MemorySystem()
 
@@ -183,38 +182,22 @@ chapter["scenes"] = db.get_scenes(chapter_id)
 return chapter
 ```
 
-## Frontend
+## CLI
 
-Vue 3 SPA with TailwindCSS:
+The root `nebula-writer` script provides a command-line interface:
 
-```javascript
-const { createApp } = Vue;
-createApp({
-    data() {
-        return {
-            currentView: 'dashboard',
-            entities: [],
-            chapters: [],
-            stats: {}
-        }
-    },
-    async mounted() {
-        await this.loadData();
-    },
-    methods: {
-        async loadData() {
-            const res = await fetch('/api/entities');
-            this.entities = await res.json();
-        }
-    }
-}).mount('#app');
+```bash
+python nebula-writer entity list              # List entities
+python nebula-writer entity add NAME --type TYPE
+python nebula-writer chapter list             # List chapters
+python nebula-writer visualize               # Export Mermaid relationship graph
 ```
 
 ## Data Flow
 
 ```
-User Input -> Vue.js -> Fetch API -> FastAPI -> CodexDatabase -> SQLite
-                <- JSON Response <------- Response <----------
+User Input -> CLI / HTTP -> FastAPI -> CodexDatabase -> SQLite
+                <- JSON Response <------ Response <----------
 ```
 
 ## AI Flow

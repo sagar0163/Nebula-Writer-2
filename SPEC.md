@@ -70,5 +70,5 @@ An AI-powered fiction writing assistant that takes a user from initial idea to f
 Use existing Nebula-Writer architecture:
 - FastAPI + LangGraph pipeline (extend nodes)
 - Supabase PostgreSQL + pgvector (migrate from ChromaDB)
-- Vue.js frontend (extend comment UI, alternative picker)
+- Vue.js frontend (future; CLI-first for now — see #140)
 - Mistral/Gemini/OpenAI via LangChain fallback chain
