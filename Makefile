@@ -7,7 +7,7 @@ install:
 
 # Run the API server
 run:
-	cd backend && uvicorn main:app --reload --port 8000
+	uvicorn nebula_writer.main:app --reload --port 8000
 
 # Run the interactive REPL
 repl:
@@ -48,6 +48,6 @@ docker-stop:
 clean:
 	rm -rf data/
 	rm -rf __pycache__/
-	rm -rf backend/__pycache__/
+	rm -rf nebula_writer/__pycache__/
 	rm -rf tests/__pycache__/
 	find . -name "*.pyc" -delete

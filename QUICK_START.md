@@ -5,14 +5,17 @@
 
 ## 🚀 One-Command Start
 ```bash
-# Terminal 1: Backend
-cd E:\my project folder\Nebula-Writer-2
+# Start the API server
+cd /path/to/Nebula-Writer-2
 python -m uvicorn nebula_writer.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Terminal 2: Frontend
-cd E:\my project folder\Nebula-Writer-2\frontend
-npm run dev
 ```
+
+> The CLI can be used directly without the server:
+> ```bash
+> python nebula-writer entity list
+> python nebula-writer chapter list
+> python nebula-writer visualize
+> ```
 
 ---
 
