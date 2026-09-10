@@ -78,7 +78,7 @@
 | **Database** | SQLite |
 | **AI Models** | Google Gemini, OpenAI GPT-4, Anthropic Claude |
 | **Memory** | ChromaDB (RAG) |
-| **Interface** | REST API + CLI (future: Vue.js web UI) |
+| **Interface** | REST API + CLI (future: web UI) |
 | **DevOps** | Docker |
 
 ---

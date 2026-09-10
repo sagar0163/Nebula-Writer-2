@@ -12,8 +12,8 @@ The project references a non-existent `backend/` directory and `frontend/` in mu
 
 - [x] Fix root `nebula-writer` CLI script - change `backend` import to `nebula_writer`
 - [x] Fix Makefile `run` target to use correct uvicorn path
-- [ ] Update ARCHITECTURE.md to reflect actual project structure
-- [ ] Clean up specs/BRD.md frontend references (remove Vue.js references, mark as future)
-- [ ] Verify CLI and Makefile work correctly
-- [ ] Run tests to ensure nothing is broken
-- [ ] Final commit and push
+- [x] Update ARCHITECTURE.md to reflect actual project structure
+- [x] Clean up specs/BRD.md frontend references (remove Vue.js references, mark as future)
+- [x] Verify CLI and Makefile work correctly
+- [x] Run tests to ensure nothing is broken
+- [x] Final commit and push
