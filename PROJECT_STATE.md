@@ -95,6 +95,20 @@ A collection of **80+ specialized SKILL.md files** that give AI agents structure
 
 ---
 
+### ✅ FIXED: Entity `type` vs `entity_type` column mismatch (Issue #141)
+**Location:** `nebula_writer/supabase_db.py` → `get_entities`, `get_entity`, `add_entity`, `get_relationships`, `get_stats`, `search`
+
+**Problem:** The DB layer was never actually exercised — the 6 Supabase integration tests were unconditionally `@pytest.mark.skip`'d. Once enabled against a real PostgreSQL, every entity read failed: `supabase_db.py` queried/inserted/grouped by a `type` column, but the repo's own `schema.sql` and `add_entity()` use `entity_type`. Consumers across `exporter.py`, `lookahead_engine.py`, `memory.py`, `ai_writer.py`, `context_window.py`, `orchestrator.py`, and `search.py` read `e["type"]`.
+
+**Fix Applied:**
+1. `supabase_db.py` — all entity `SELECT`s now project `entity_type AS type` (so the whole codebase's `e["type"]` reads keep working); `WHERE`/`ORDER BY`/`GROUP BY` and the `INSERT` now use the `entity_type` column.
+2. `tests/conftest.py` — new `codex_db` fixture wipes all tables per test (integration tests plant fixed seed data, e.g. unique chapter numbers, and previously would collide when sharing one database).
+3. `tests/test_codex.py`, `tests/test_exporter.py`, `tests/test_core.py` — hard `@pytest.mark.skip` replaced with env-gated skip (`POSTGRES_CONNECTION_STRING`). CI/databaseless runs still skip; when the var is set the full integration suite runs.
+
+**Verification:** `18 passed, 0 failed` with a local PostgreSQL 16 (`POSTGRES_CONNECTION_STRING` set); `12 passed, 6 skipped, 0 failed` without it.
+
+---
+
 ### ✅ FIXED: Missing Dependencies
 | Package | Purpose |
 |---------|---------|

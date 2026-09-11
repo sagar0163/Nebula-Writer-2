@@ -1,16 +1,22 @@
 """Nebula-Writer Tests"""
 
+import os
+
 import pytest
 
 from nebula_writer.audit import StoryAuditor
 from nebula_writer.exporter import StoryExporter
 from nebula_writer.search import SearchEngine
-from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("POSTGRES_CONNECTION_STRING") is None,
+    reason="Requires POSTGRES_CONNECTION_STRING (Supabase/PostgreSQL test project)",
+)
 
 
 @pytest.fixture
-def db():
-    database = CodexDatabase()
+def db(codex_db):
+    database = codex_db
 
     ravi_id = database.add_entity("Ravi", "character", "Protagonist detective")
     priya_id = database.add_entity("Priya", "character", "Love interest")
@@ -28,7 +34,6 @@ def db():
     return database
 
 
-@pytest.mark.skip(reason="Requires Supabase test project connection")
 def test_codex(db):
     stats = db.get_stats()
     assert stats["total_entities"] == 3
@@ -36,7 +41,6 @@ def test_codex(db):
     assert stats["total_words"] == 7
 
 
-@pytest.mark.skip(reason="Requires Supabase test project connection")
 def test_audit(db):
     auditor = StoryAuditor(db)
     results = auditor.audit_all_chapters()
@@ -44,7 +48,6 @@ def test_audit(db):
     assert results["total_issues"] >= 0
 
 
-@pytest.mark.skip(reason="Requires Supabase test project connection")
 def test_search(db):
     search = SearchEngine(db)
 
@@ -57,7 +60,6 @@ def test_search(db):
     assert stats["writing_progress"]["total_words"] == 7
 
 
-@pytest.mark.skip(reason="Requires Supabase test project connection")
 def test_export(db):
     exporter = StoryExporter(db)
 

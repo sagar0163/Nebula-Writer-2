@@ -82,11 +82,13 @@ class SupabaseDB:
 
     def get_entities(self, entity_type: str = None) -> List[Dict]:
         if entity_type:
-            return self._query("SELECT * FROM entities WHERE type = %s ORDER BY name", (entity_type,))
-        return self._query("SELECT * FROM entities ORDER BY type, name")
+            return self._query(
+                "SELECT *, entity_type AS type FROM entities WHERE entity_type = %s ORDER BY name", (entity_type,)
+            )
+        return self._query("SELECT *, entity_type AS type FROM entities ORDER BY entity_type, name")
 
     def get_entity(self, entity_id: str) -> Optional[Dict]:
-        result = self._query("SELECT * FROM entities WHERE id = %s", (entity_id,))
+        result = self._query("SELECT *, entity_type AS type FROM entities WHERE id = %s", (entity_id,))
         return result[0] if result else None
 
     def add_entity(
@@ -99,7 +101,7 @@ class SupabaseDB:
         image_url: str = None,
     ) -> str:
         return self._execute_returning_id(
-            """INSERT INTO entities (name, type, description, current_location, is_alive, image_url)
+            """INSERT INTO entities (name, entity_type, description, current_location, is_alive, image_url)
                VALUES (%s, %s, %s, %s, %s, %s)""",
             (name, entity_type, description, current_location, is_alive, image_url),
         )
@@ -144,8 +146,8 @@ class SupabaseDB:
     def get_relationships(self, entity_id: str = None) -> List[Dict]:
         if entity_id:
             return self._query(
-                """SELECT r.*, e1.name as from_name, e1.type as from_type,
-                          e2.name as to_name, e2.type as to_type
+                """SELECT r.*, e1.name as from_name, e1.entity_type as from_type,
+                          e2.name as to_name, e2.entity_type as to_type
                    FROM relationships r
                    JOIN entities e1 ON r.from_entity_id = e1.id
                    JOIN entities e2 ON r.to_entity_id = e2.id
@@ -154,8 +156,8 @@ class SupabaseDB:
                 (entity_id, entity_id),
             )
         return self._query(
-            """SELECT r.*, e1.name as from_name, e1.type as from_type,
-                      e2.name as to_name, e2.type as to_type
+            """SELECT r.*, e1.name as from_name, e1.entity_type as from_type,
+                      e2.name as to_name, e2.entity_type as to_type
                FROM relationships r
                JOIN entities e1 ON r.from_entity_id = e1.id
                JOIN entities e2 ON r.to_entity_id = e2.id
@@ -246,7 +248,7 @@ class SupabaseDB:
 
     def get_stats(self) -> Dict:
         try:
-            entities = self._query("SELECT type, COUNT(*) as count FROM entities GROUP BY type")
+            entities = self._query("SELECT entity_type AS type, COUNT(*) as count FROM entities GROUP BY entity_type")
             chapters = self._query("SELECT COUNT(*) as count FROM chapters")
             relationships = self._query("SELECT COUNT(*) as count FROM relationships")
             events = self._query("SELECT COUNT(*) as count FROM events")
@@ -276,7 +278,8 @@ class SupabaseDB:
         q = f"%{query}%"
         return {
             "entities": self._query(
-                "SELECT * FROM entities WHERE name ILIKE %s OR description ILIKE %s LIMIT 10", (q, q)
+                "SELECT *, entity_type AS type FROM entities WHERE name ILIKE %s OR description ILIKE %s LIMIT 10",
+                (q, q),
             ),
             "chapters": self._query(
                 "SELECT * FROM chapters WHERE title ILIKE %s OR content ILIKE %s OR summary ILIKE %s LIMIT 10",

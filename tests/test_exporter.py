@@ -1,14 +1,20 @@
 """Tests for StoryExporter"""
 
+import os
+
 import pytest
 
 from nebula_writer.exporter import StoryExporter
-from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("POSTGRES_CONNECTION_STRING") is None,
+    reason="Requires POSTGRES_CONNECTION_STRING (Supabase/PostgreSQL test project)",
+)
 
 
 @pytest.fixture
-def db():
-    database = CodexDatabase()
+def db(codex_db):
+    database = codex_db
 
     database.add_entity("Ravi", "character", "Protagonist detective")
     database.add_chapter(1, "The Beginning", "It was a dark night in Mumbai...")
@@ -16,7 +22,6 @@ def db():
     return database
 
 
-@pytest.mark.skip(reason="Requires Supabase test project connection")
 def test_export(db):
     exporter = StoryExporter(db)
     md = exporter.to_markdown()

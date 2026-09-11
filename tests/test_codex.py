@@ -1,17 +1,20 @@
 """Tests for CodexDatabase"""
 
+import os
+
 import pytest
 
-from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
+pytestmark = pytest.mark.skipif(
+    os.environ.get("POSTGRES_CONNECTION_STRING") is None,
+    reason="Requires POSTGRES_CONNECTION_STRING (Supabase/PostgreSQL test project)",
+)
 
 
 @pytest.fixture
-def db():
-    database = CodexDatabase()
-    return database
+def db(codex_db):
+    return codex_db
 
 
-@pytest.mark.skip(reason="Requires Supabase test project connection")
 def test_add_get_entity(db):
     entity_id = db.add_entity("Test Character", "character", "A test description")
     assert entity_id is not None
