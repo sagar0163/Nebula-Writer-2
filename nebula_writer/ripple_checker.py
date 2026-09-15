@@ -4,7 +4,13 @@ Detects narrative inconsistencies and cascading effects of story changes.
 """
 
 import json
+import uuid
 from typing import Any, Dict, List
+
+from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from nebula_writer.models import create_chat_model_with_fallbacks
 
 from nebula_writer.audit import StoryAuditor
 
@@ -55,18 +61,20 @@ class RippleChecker:
         return report
 
     async def _predict_ripples(self, change: str, context: Dict = None) -> Dict:
-        """Use AI to predict narrative ripple effects"""
-        system_prompt = """You are a Narrative Consistency Expert.
+        """Use AI to predict narrative ripple effects including plot and timeline logic"""
+        system_prompt = """You are a Narrative Consistency Expert and Plot Auditor.
         Analyze the proposed story change and predict how it will ripple through the existing world, character arcs, and plot threads.
+        
+        Focus deeply on PLOT LOGIC and TIMELINE contradictions, not just entity existence.
 
         Identify:
         1. Cascading changes (What else MUST change?).
-        2. Potential contradictions (What does this break?).
+        2. Potential contradictions (What does this break in the timeline or plot logic?).
         3. Narrative Debt (What needs to be fixed later?).
 
         Output format: JSON only.
         {
-            "ripples": [{"target": "Entity/Chapter/Plot", "effect": "...", "severity": "low|medium|high"}],
+            "ripples": [{"target": "Entity/Chapter/Plot/Timeline", "effect": "...", "severity": "low|medium|high"}],
             "debt": ["..."]
         }
         """
@@ -76,17 +84,25 @@ class RippleChecker:
             "entities": self.db.get_entities()[:5],  # Sample for tokens
             "plot_threads": self.pm.get_plot_threads()[:5] if self.pm else [],
         }
-
-        prompt = f"CHANGE: {change}\nCONTEXT: {json.dumps(context or {})}\nSTORY STATE: {json.dumps(story_state)}"
+        
+        model = create_chat_model_with_fallbacks(temperature=0.2)
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"CHANGE: {change}\nCONTEXT: {json.dumps(context or {})}\nSTORY STATE: {json.dumps(story_state)}")
+        ]
 
         try:
-            response = await self.ai.generate(prompt, system_prompt=system_prompt)
-            # Find JSON
-            start = response.find("{")
-            end = response.rfind("}") + 1
-            return json.loads(response[start:end])
-        except:
-            return {"ripples": [], "debt": ["AI prediction failed - manual review needed"]}
+            result = await model.ainvoke(messages)
+            # Find JSON block
+            content = result.content
+            start = content.find("{")
+            end = content.rfind("}") + 1
+            if start != -1 and end != -1:
+                return json.loads(content[start:end])
+            else:
+                return {"ripples": [], "debt": ["AI returned invalid format - manual review needed"]}
+        except Exception as e:
+            return {"ripples": [], "debt": [f"AI prediction failed ({str(e)}) - manual review needed"]}
 
     def _audit_for_change(self, change: str) -> List[Dict]:
         """Perform a structural audit based on the change"""

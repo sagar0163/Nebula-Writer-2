@@ -103,6 +103,26 @@ Include sensory details and emotional vulnerability.""",
 Original text:
 {text}""",
     },
+    "mythos_lore_injection": {
+        "name": "Mythos Lore Injection",
+        "description": "Inject deep world-building and lore naturally",
+        "template": """Reveal a piece of the world's mythos regarding **{lore_topic}**.
+- Current situation: {situation}
+- Factions involved: {factions}
+- Mechanics/Rules: {rules}
+
+Ensure the lore is woven naturally into the scene's action or dialogue without feeling like an info-dump. Apply the Mythos Thinking Pattern to show how this lore affects the broader world.""",
+    },
+    "epic_confrontation": {
+        "name": "Epic Confrontation",
+        "description": "Write a high-stakes battle relying on mythos mechanics",
+        "template": """Write an epic confrontation between **{char1}** and **{char2}**.
+- Setting: {setting}
+- Power Mechanics at play: {mechanics}
+- Stakes: {stakes}
+
+Respect the strict rules of the power system. Show the mechanics of their abilities, auras, or skills accurately. The scale of the conflict should reflect its impact on the surrounding world.""",
+    },
 }
 
 

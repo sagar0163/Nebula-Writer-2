@@ -518,6 +518,15 @@ class AIWriteAsyncRequest(BaseModel):
     pov: Optional[str] = Field(default=None, pattern="^(first_person|third_person_limited|third_person_omniscient)$")
     tone: Optional[str] = Field(default=None, pattern="^(dark|hopeful|suspenseful|melancholic|neutral)$")
 
+class AIWhatIfRequest(BaseModel):
+    current_beat: str = Field(..., min_length=1, max_length=5000)
+    what_if: str = Field(..., min_length=1, max_length=1000)
+    word_count: int = Field(default=500, ge=50, le=5000)
+    chapter: Optional[int] = Field(default=None, ge=1, le=1000)
+    pacing: Optional[str] = None
+    pov: Optional[str] = None
+    tone: Optional[str] = None
+
 
 class AIWriteStatusResponse(BaseModel):
     """Response for async write status polling"""
@@ -628,6 +637,62 @@ async def ai_write_status(task_id: str):
     if task_id not in _ai_write_tasks:
         raise HTTPException(status_code=404, detail="Task not found")
     return _ai_write_tasks[task_id]
+
+from fastapi.responses import StreamingResponse
+
+@app.post("/api/ai/write/stream")
+async def ai_write_scene_stream(req: AIWriteAsyncRequest):
+    """
+    Stream scene writing using Server-Sent Events (SSE) to prevent timeouts.
+    """
+    try:
+        from nebula_writer.ai_writer import AIWriter
+        ai = AIWriter()
+        
+        async def event_generator():
+            try:
+                async for chunk in ai.stream_scene(
+                    db=db,
+                    beat=req.beat,
+                    word_count=req.word_count,
+                    entity_ids=req.entity_ids,
+                    chapter=req.chapter,
+                    pacing=req.pacing,
+                    pov=req.pov,
+                    tone=req.tone,
+                ):
+                    # SSE format
+                    yield f"data: {chunk}\n\n"
+                yield "data: [DONE]\n\n"
+            except Exception as e:
+                logger.error(f"Streaming error: {e}")
+                yield f"data: [ERROR] {str(e)}\n\n"
+                
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except Exception as e:
+        logger.error(f"Stream setup failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/what-if")
+async def ai_what_if_scenario(req: AIWhatIfRequest):
+    """Generate a What-If alternative scenario based on current state"""
+    try:
+        from nebula_writer.ai_writer import AIWriter
+        ai = AIWriter()
+        result = await ai.what_if_scenario(
+            db=db,
+            current_beat=req.current_beat,
+            what_if=req.what_if,
+            word_count=req.word_count,
+            chapter=req.chapter,
+            pacing=req.pacing,
+            pov=req.pov,
+            tone=req.tone,
+        )
+        return {"text": result}
+    except Exception as e:
+        logger.error(f"What-If generation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # DEPRECATED: Synchronous endpoint kept for backward compatibility

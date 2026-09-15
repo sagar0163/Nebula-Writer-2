@@ -148,6 +148,15 @@ class AIWriter:
         prompt_parts.append("Write in third person, past tense. Immerse readers with sensory details.")
         prompt_parts.append("Never contradict established facts from the Codex.")
 
+        prompt_parts.append("")
+        prompt_parts.append("## MYTHOS THINKING PATTERN")
+        prompt_parts.append("You are an expert in deep world-building and mythos-style narratives.")
+        prompt_parts.append("Apply the Mythos Thinking Pattern:")
+        prompt_parts.append("1. **Interconnected Lore**: Weave established world rules, factions, and history naturally into the narrative without info-dumping.")
+        prompt_parts.append("2. **Power Scaling & Mechanics**: Respect the strict rules of the magic/power system. Show the mechanics of powers, auras, and skills accurately during conflicts.")
+        prompt_parts.append("3. **Grand Scope**: Maintain a sense of a larger world moving around the characters. Actions should have ripple effects on factions and the world's ecosystem.")
+        prompt_parts.append("4. **Thematic Consistency**: Ensure that character motivations align with the established mythology and societal structures of the world.")
+
         if self.style_learner and self.style_learner_db:
             try:
                 style_addition = self.style_learner.get_style_prompt_addition()
@@ -174,10 +183,22 @@ class AIWriter:
         context: Dict[str, Any] = {"entities": [], "relationships": [], "recent_events": [], "chapters": []}
 
         all_entities = db.get_entities()
+        
+        # Prioritize mythos entities (lore, faction, rule, magic system)
+        mythos_types = ["lore", "faction", "rule", "magic", "world"]
+        mythos_entities = [e for e in all_entities if e.get("type", "").lower() in mythos_types]
+        
         if entity_ids:
             entities = [e for e in all_entities if e["id"] in entity_ids][:max_entities]
         else:
             entities = all_entities[:max_entities]
+            
+        # Merge mythos entities into context to ensure world-building is always present
+        for me in mythos_entities:
+            if me not in entities:
+                entities.append(me)
+                if len(entities) >= max_entities + 3: # allow a few extra for mythos
+                    break
 
         for e in entities:
             e["attributes"] = db.get_attributes(e["id"])[:3]
@@ -248,6 +269,36 @@ class AIWriter:
         ]
         response = await self.model.ainvoke(messages, {"temperature": 0.8, "max_tokens": 2000})
         return response.content
+
+    async def stream_scene(
+        self,
+        db,
+        beat: str,
+        word_count: int = 500,
+        entity_ids: Optional[List[int]] = None,
+        chapter: Optional[int] = None,
+        pacing: Optional[str] = None,
+        pov: Optional[str] = None,
+        tone: Optional[str] = None,
+    ):
+        """Stream the scene generation token by token"""
+        context = self.get_context(db, entity_ids, chapter)
+        system_prompt = self._build_system_prompt(context)
+        style_guidance = self._build_style_guidance(pacing, pov, tone)
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(
+                content=f"Write a scene based on this beat:\n\"{beat}\"\n\n"
+                f"Target length: ~{word_count} words.\n\n"
+                f"STYLE AND PACING GUIDANCE:\n{style_guidance}\n\n"
+                f"Write the scene now:"
+            ),
+        ]
+        
+        async for chunk in self.model.astream(messages, {"temperature": 0.8, "max_tokens": 2000}):
+            if chunk.content:
+                yield chunk.content
 
     async def rewrite_style(self, text: str, style: str) -> str:
         style_prompts = {
