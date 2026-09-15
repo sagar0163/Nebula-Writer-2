@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from langchain_core.language_models import BaseChatModel
 
-from nebula_writer.models import create_chat_model, count_tokens
+from nebula_writer.models import count_tokens, create_chat_model
 
 
 class ContextWindow:

@@ -21,14 +21,13 @@ export GEMINI_API_KEY=your_api_key
 export OPENAI_API_KEY=your_api_key
 
 # Run
-cd backend
-python -m uvicorn main:app --reload --port 8000
+python -m uvicorn nebula_writer.main:app --reload --port 8000
 ```
 
 ## Project Structure
 
 ```
-backend/
+nebula_writer/
 ├── main.py          # FastAPI app entry point
 ├── codex.py         # Database layer (600+ lines)
 ├── ai_writer.py    # AI writing logic
@@ -39,8 +38,7 @@ backend/
 ├── config.py     # Configuration
 └── prompts.py   # Prompt templates
 
-frontend/
-└── index.html   # Vue 3 SPA
+nebula-writer   # CLI entry point (entity/chapter management, visualize)
 ```
 
 ## Running Tests
@@ -75,14 +73,14 @@ def new_endpoint():
     return db.get_new_data()
 ```
 
-### 3. Add Frontend View
+### 3. Add CLI View
 
-Edit `frontend/index.html`:
+Edit `nebula-writer` (root CLI script):
 
-```html
-<div v-if="currentView === 'new-view'" class="space-y-6">
-    <!-- UI content -->
-</div>
+```python
+def cmd_new_view(args):
+    db = CodexDatabase(str(DB_PATH))
+    # CLI output goes here
 ```
 
 ## Database Migrations
@@ -110,7 +108,7 @@ Edit `ai_client.py`:
 ```python
 def _init_provider(self):
     """Initialize provider"""
-    if self.provider == 'new_provider':
+    if self.provider == "new_provider":
         # Initialize new provider
         pass
 ```
@@ -134,14 +132,15 @@ docker run -p 8000:8000 -e GEMINI_API_KEY=key nebula-writer
 ```python
 # Enable debug logging
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 ```
 
 ## Common Issues
 
 ### Import Error
-- Run from `backend/` directory
 - Check `sys.path` includes correct paths
+- Run from repository root
 
 ### CORS Error
 - Already configured in `main.py`

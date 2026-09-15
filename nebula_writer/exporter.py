@@ -109,38 +109,40 @@ class StoryExporter:
     def to_epub(self, title: str = "My Novel", author: str = "Author", description: str = "") -> bytes:
         """Export story as proper EPUB 3.0 using ebooklib (with fallback to zipfile)"""
         try:
-            import ebooklib
-            from ebooklib import epub
             import uuid
-            
+
+            import ebooklib  # noqa: F401 - import used to detect availability before falling back
+            from ebooklib import epub
+
             book = epub.EpubBook()
             book.set_identifier("nebula_writer_epub_" + str(uuid.uuid4()))
             book.set_title(title)
             book.set_language("en")
             book.add_author(author)
-            
+
             chapters = self.db.get_chapters()
-            spine = ['nav']
+            spine = ["nav"]
             toc = []
-            
+
             for i, ch in enumerate(sorted(chapters, key=lambda x: x["number"])):
                 ch_title = ch.get("title", f"Chapter {ch['number']}")
-                c = epub.EpubHtml(title=ch_title, file_name=f"chapter_{i+1}.xhtml", lang="en")
-                
+                c = epub.EpubHtml(title=ch_title, file_name=f"chapter_{i + 1}.xhtml", lang="en")
+
                 content = ch.get("content", "")
                 para_html = "".join([f"<p>{self._escape_xml(p)}</p>" for p in content.split("\n\n") if p.strip()])
                 c.content = f"<h2>{self._escape_xml(ch_title)}</h2>{para_html}"
-                
+
                 book.add_item(c)
                 spine.append(c)
                 toc.append(c)
-                
+
             book.toc = tuple(toc)
             book.add_item(epub.EpubNcx())
             book.add_item(epub.EpubNav())
             book.spine = spine
-            
+
             from io import BytesIO
+
             buffer = BytesIO()
             epub.write_epub(buffer, book)
             return buffer.getvalue()
@@ -301,13 +303,14 @@ p.first { text-indent: 0; }
         """Export print-ready PDF using weasyprint (with fallback to reportlab)"""
         try:
             import weasyprint
+
             html_content = self.to_pdf_html()
             return weasyprint.HTML(string=html_content).write_pdf()
         except ImportError:
             try:
                 return self._to_pdf_reportlab()
             except ImportError:
-                return (b"%PDF-1.4\n" + self.to_pdf_html().encode("utf-8"))
+                return b"%PDF-1.4\n" + self.to_pdf_html().encode("utf-8")
 
     def _to_pdf_reportlab(self) -> bytes:
         """Generate actual PDF using reportlab"""
@@ -456,20 +459,21 @@ p.first { text-indent: 0; }
     def to_docx(self) -> bytes:
         """Export story as DOCX using python-docx (with fallback to RTF)"""
         try:
-            import docx
             from io import BytesIO
-            
+
+            import docx
+
             doc = docx.Document()
             doc.add_heading("My Novel", 0)
             doc.add_heading("Characters", 1)
-            
+
             for e in self.db.get_entities():
                 if e.get("type") == "character":
                     p = doc.add_paragraph()
                     p.add_run(e["name"]).bold = True
                     if e.get("description"):
                         p.add_run(f": {e['description']}")
-                        
+
             chapters = self.db.get_chapters()
             for ch in sorted(chapters, key=lambda x: x["number"]):
                 doc.add_heading(f"Chapter {ch['number']}: {ch.get('title', 'Untitled')}", 1)
@@ -477,7 +481,7 @@ p.first { text-indent: 0; }
                 for para in content.split("\n\n"):
                     if para.strip():
                         doc.add_paragraph(para.strip())
-                        
+
             buffer = BytesIO()
             doc.save(buffer)
             return buffer.getvalue()

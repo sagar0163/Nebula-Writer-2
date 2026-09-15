@@ -6,16 +6,17 @@ with automatic provider detection and comprehensive fallback chain including
 all free providers from cheahjs/free-llm-api-resources and nherx/free-llm-api-resources.
 """
 
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field
-from datetime import datetime
-from uuid import UUID
 import os
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+from uuid import UUID
 
+from pydantic import BaseModel, Field
 
 # =============================================================================
 # PYDANTIC MODELS (API schemas)
 # =============================================================================
+
 
 class ProjectModel(BaseModel):
     id: str
@@ -138,7 +139,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "google/gemma-4-26b-a4b-it:free",
         "rate_limit": "20 req/min, 50/day",
     },
-
     # --- Google AI Studio (Gemini) ---
     "gemini": {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -160,7 +160,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "gemini-2.5-flash",
         "rate_limit": "5 req/min (flash), 30 req/min (gemma)",
     },
-
     # --- NVIDIA NIM ---
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
@@ -176,7 +175,6 @@ FREE_PROVIDER_CONFIGS = {
         "rate_limit": "40 req/min",
         "requires_phone_verification": True,
     },
-
     # --- Mistral (La Plateforme) ---
     "mistral": {
         "base_url": "https://api.mistral.ai/v1",
@@ -193,7 +191,6 @@ FREE_PROVIDER_CONFIGS = {
         "requires_phone_verification": True,
         "requires_data_training_opt_in": True,
     },
-
     # --- Mistral Codestral ---
     "codestral": {
         "base_url": "https://codestral.mistral.ai/v1",
@@ -203,7 +200,6 @@ FREE_PROVIDER_CONFIGS = {
         "rate_limit": "30 req/min, 2000 req/day",
         "requires_phone_verification": True,
     },
-
     # --- HuggingFace Inference Providers ---
     "huggingface": {
         "base_url": "https://api-inference.huggingface.co/v1",
@@ -218,7 +214,6 @@ FREE_PROVIDER_CONFIGS = {
         "rate_limit": "$0.10/month credits",
         "max_model_size_gb": 10,
     },
-
     # --- Vercel AI Gateway ---
     "vercel": {
         "base_url": "https://ai-gateway.vercel.sh/v1",
@@ -227,7 +222,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "auto",
         "rate_limit": "$5/month free tier",
     },
-
     # --- Kilo Gateway ---
     "kilo": {
         "base_url": "https://api.kilo.ai/v1",
@@ -251,7 +245,6 @@ FREE_PROVIDER_CONFIGS = {
         "rate_limit": "200 req/hour per IP shared",
         "uses_data_for_training": True,
     },
-
     # --- OpenCode Zen ---
     "opencode": {
         "base_url": "https://opencode.ai/api/v1",
@@ -268,7 +261,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "deepseek-v4-flash-free",
         "uses_data_for_improvement": True,
     },
-
     # --- Cerebras ---
     "cerebras": {
         "base_url": "https://api.cerebras.ai/v1",
@@ -281,7 +273,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "gpt-oss-120b",
         "rate_limit": "5 req/min, 30K tokens/min, 1M tokens/hour/day",
     },
-
     # --- Groq ---
     "groq": {
         "base_url": "https://api.groq.com/openai/v1",
@@ -302,7 +293,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "llama-3.3-70b-versatile",
         "rate_limit": "14,400 req/day (8B), 1,000 req/day (70B)",
     },
-
     # --- Cohere ---
     "cohere": {
         "base_url": "https://api.cohere.ai/v1",
@@ -323,7 +313,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "command-r-plus-08-2024",
         "rate_limit": "20 req/min, 1000 req/month shared",
     },
-
     # --- Cloudflare Workers AI ---
     "cloudflare": {
         "base_url": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
@@ -361,7 +350,6 @@ FREE_PROVIDER_CONFIGS = {
         "rate_limit": "10,000 neurons/day",
         "requires_account_id": True,
     },
-
     # --- Fireworks (trial credits) ---
     "fireworks": {
         "base_url": "https://api.fireworks.ai/inference/v1",
@@ -370,7 +358,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "auto",
         "trial_credits": "$1",
     },
-
     # --- Baseten (trial credits) ---
     "baseten": {
         "base_url": "https://app.baseten.co/v1",
@@ -379,7 +366,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "auto",
         "trial_credits": "$30",
     },
-
     # --- Nebius (trial credits) ---
     "nebius": {
         "base_url": "https://api.studio.nebius.com/v1",
@@ -388,7 +374,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "auto",
         "trial_credits": "$1",
     },
-
     # --- Novita (trial credits) ---
     "novita": {
         "base_url": "https://api.novita.ai/v3/openai",
@@ -397,7 +382,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "auto",
         "trial_credits": "$0.50 for 1 year",
     },
-
     # --- AI21 (trial credits) ---
     "ai21": {
         "base_url": "https://api.ai21.com/studio/v1",
@@ -406,7 +390,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "jamba-large",
         "trial_credits": "$10 for 3 months",
     },
-
     # --- Upstage (trial credits) ---
     "upstage": {
         "base_url": "https://api.upstage.ai/v1",
@@ -415,7 +398,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "solar-pro",
         "trial_credits": "$10 for 3 months",
     },
-
     # --- NLP Cloud (trial credits) ---
     "nlpcloud": {
         "base_url": "https://api.nlpcloud.io",
@@ -425,7 +407,6 @@ FREE_PROVIDER_CONFIGS = {
         "trial_credits": "$15",
         "requires_phone_verification": True,
     },
-
     # --- Alibaba Cloud Model Studio (trial credits) ---
     "alibaba": {
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -434,7 +415,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "qwen-max",
         "trial_credits": "1M tokens/model for 90 days (Singapore endpoint)",
     },
-
     # --- Modal (trial credits) ---
     "modal": {
         "base_url": "https://api.modal.com/v1",
@@ -443,7 +423,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "auto",
         "trial_credits": "$30/month on Starter plan",
     },
-
     # --- Inference.net (trial credits) ---
     "inferencenet": {
         "base_url": "https://api.inference.net/v1",
@@ -452,7 +431,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "auto",
         "trial_credits": "$1 + $25 on survey",
     },
-
     # --- Hyperbolic (trial credits) ---
     "hyperbolic": {
         "base_url": "https://api.hyperbolic.xyz/v1",
@@ -466,7 +444,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "deepseek-v3-0324",
         "trial_credits": "$1",
     },
-
     # --- SambaNova Cloud (trial credits) ---
     "sambanova": {
         "base_url": "https://api.sambanova.ai/v1",
@@ -482,7 +459,6 @@ FREE_PROVIDER_CONFIGS = {
         "default_model": "deepseek-v3.1",
         "trial_credits": "$5 for 3 months",
     },
-
     # --- Scaleway (trial credits) ---
     "scaleway": {
         "base_url": "https://api.scaleway.ai/v1",
@@ -514,39 +490,39 @@ FREE_PROVIDER_CONFIGS = {
 
 # Fallback order: primary working providers first, then free tier, then trial credits
 FALLBACK_PROVIDER_ORDER = [
-    "mistral",       # Working (has key in .env)
-    "openrouter",    # Free tier, many models
-    "gemini",        # Free tier, high limits on Gemma
-    "groq",          # Free tier, fast
-    "cerebras",      # Free tier, very fast
-    "nvidia",        # Free tier, good models
-    "kilo",          # No auth needed for free models
-    "opencode",      # Free tier
-    "huggingface",   # Small free credits
-    "vercel",        # $5/month free tier
-    "cloudflare",    # Free neurons/day
-    "cohere",        # Free tier
-    "codestral",     # Free while in beta
-    "fireworks",     # Trial credits
-    "baseten",       # Trial credits
-    "nebius",        # Trial credits
-    "novita",        # Trial credits
-    "ai21",          # Trial credits
-    "upstage",       # Trial credits
-    "nlpcloud",      # Trial credits
-    "alibaba",       # Trial credits
-    "modal",         # Trial credits
+    "mistral",  # Working (has key in .env)
+    "openrouter",  # Free tier, many models
+    "gemini",  # Free tier, high limits on Gemma
+    "groq",  # Free tier, fast
+    "cerebras",  # Free tier, very fast
+    "nvidia",  # Free tier, good models
+    "kilo",  # No auth needed for free models
+    "opencode",  # Free tier
+    "huggingface",  # Small free credits
+    "vercel",  # $5/month free tier
+    "cloudflare",  # Free neurons/day
+    "cohere",  # Free tier
+    "codestral",  # Free while in beta
+    "fireworks",  # Trial credits
+    "baseten",  # Trial credits
+    "nebius",  # Trial credits
+    "novita",  # Trial credits
+    "ai21",  # Trial credits
+    "upstage",  # Trial credits
+    "nlpcloud",  # Trial credits
+    "alibaba",  # Trial credits
+    "modal",  # Trial credits
     "inferencenet",  # Trial credits
-    "hyperbolic",    # Trial credits
-    "sambanova",     # Trial credits
-    "scaleway",      # Trial credits
+    "hyperbolic",  # Trial credits
+    "sambanova",  # Trial credits
+    "scaleway",  # Trial credits
 ]
 
 # Providers that need special handling (multiple API keys, account IDs, etc.)
 SPECIAL_HANDLING_PROVIDERS = {
     "cloudflare": ["CLOUDFLARE_ACCOUNT_ID"],
     "vercel": [],  # Uses Vercel project env
-    "kilo": [],    # No auth for free models
+    "kilo": [],  # No auth for free models
     "opencode": [],  # Uses OpenCode CLI
 }
 
@@ -592,24 +568,22 @@ def create_chat_model_with_fallbacks(
 ) -> Any:
     """
     Create a LangChain ChatModel with comprehensive fallback chain.
-    
+
     Falls back through all available providers in FALLBACK_PROVIDER_ORDER.
     Only includes providers that have API keys configured (or don't need them).
-    
+
     Args:
         primary_provider: Override auto-detection
         temperature: Sampling temperature
         max_tokens: Maximum tokens per response
         allowed_providers: Limit to specific providers (None = all available)
-        
+
     Returns:
         LangChain BaseChatModel with fallback chain
-        
+
     Raises:
         ValueError: If no providers are available
     """
-    from langchain_core.language_models import BaseChatModel
-    from langchain_core.runnables import RunnableWithFallbacks
 
     # Auto-detect primary if not specified
     if primary_provider is None:
@@ -659,17 +633,17 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
     config = _get_provider_config(provider)
     api_key_env = config.get("api_key_env")
     api_key = os.environ.get(api_key_env) if api_key_env else None
-    
+
     # Skip if API key required but not available
     if api_key_env and not api_key:
         return None
 
     base_url = config.get("base_url")
-    default_model = config.get("default_model")
 
     try:
         if provider == "mistral":
             from langchain_mistralai import ChatMistralAI
+
             return ChatMistralAI(
                 model="mistral-large-latest",
                 mistral_api_key=api_key,
@@ -679,6 +653,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "openrouter":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "google/gemma-4-26b-a4b-it:free"),
                 openai_api_key=api_key,
@@ -693,6 +668,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "gemini":
             from langchain_google_genai import ChatGoogleGenerativeAI
+
             return ChatGoogleGenerativeAI(
                 model=config.get("default_model", "gemini-2.5-flash"),
                 google_api_key=api_key,
@@ -702,6 +678,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "groq":
             from langchain_groq import ChatGroq
+
             return ChatGroq(
                 model=config.get("default_model", "llama-3.3-70b-versatile"),
                 groq_api_key=api_key,
@@ -711,6 +688,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "cerebras":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "gpt-oss-120b"),
                 openai_api_key=api_key,
@@ -721,6 +699,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "nvidia":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "nvidia/nemotron-3-ultra-550b-a55b"),
                 openai_api_key=api_key,
@@ -731,6 +710,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "kilo":
             from langchain_openai import ChatOpenAI
+
             # Kilo free models don't need API key
             return ChatOpenAI(
                 model=config.get("default_model", "kilo/auto-free"),
@@ -742,6 +722,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "opencode":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "deepseek-v4-flash-free"),
                 openai_api_key=api_key or "dummy",
@@ -752,6 +733,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "huggingface":
             from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
+
             endpoint = HuggingFaceEndpoint(
                 repo_id=config.get("default_model", "meta-llama/Meta-Llama-3-8B-Instruct"),
                 huggingfacehub_api_token=api_key,
@@ -762,6 +744,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "vercel":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "auto"),
                 openai_api_key=api_key,
@@ -772,6 +755,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "cloudflare":
             from langchain_openai import ChatOpenAI
+
             account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
             cf_base_url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1"
             return ChatOpenAI(
@@ -784,6 +768,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "cohere":
             from langchain_cohere import ChatCohere
+
             return ChatCohere(
                 model=config.get("default_model", "command-r-plus-08-2024"),
                 cohere_api_key=api_key,
@@ -793,6 +778,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "codestral":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "codestral"),
                 openai_api_key=api_key,
@@ -803,6 +789,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "fireworks":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "accounts/fireworks/models/llama-v3p1-70b-instruct"),
                 openai_api_key=api_key,
@@ -813,6 +800,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "baseten":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "auto"),
                 openai_api_key=api_key,
@@ -823,6 +811,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "nebius":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "auto"),
                 openai_api_key=api_key,
@@ -833,6 +822,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "novita":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "auto"),
                 openai_api_key=api_key,
@@ -843,6 +833,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "ai21":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "jamba-large"),
                 openai_api_key=api_key,
@@ -853,6 +844,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "upstage":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "solar-pro"),
                 openai_api_key=api_key,
@@ -863,6 +855,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "nlpcloud":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "auto"),
                 openai_api_key=api_key,
@@ -873,6 +866,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "alibaba":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "qwen-max"),
                 openai_api_key=api_key,
@@ -883,6 +877,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "modal":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "auto"),
                 openai_api_key=api_key,
@@ -893,6 +888,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "inferencenet":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "auto"),
                 openai_api_key=api_key,
@@ -903,6 +899,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "hyperbolic":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "deepseek-v3-0324"),
                 openai_api_key=api_key,
@@ -913,6 +910,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "sambanova":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "deepseek-v3.1"),
                 openai_api_key=api_key,
@@ -923,6 +921,7 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 
         elif provider == "scaleway":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI(
                 model=config.get("default_model", "llama-3.3-70b-instruct"),
                 openai_api_key=api_key,
@@ -944,23 +943,24 @@ def _create_model(provider: str, temperature: float, max_tokens: int):
 def get_available_providers() -> List[Dict]:
     """Check which providers have API keys configured."""
     providers = []
-    
+
     for provider in FALLBACK_PROVIDER_ORDER:
         config = _get_provider_config(provider)
         api_key_env = config.get("api_key_env")
         has_key = bool(os.environ.get(api_key_env)) if api_key_env else True
-        
-        providers.append({
-            "id": provider,
-            "name": config.get("name", provider.title()),
-            "available": has_key,
-            "models": config.get("models", []),
-            "default_model": config.get("default_model"),
-            "rate_limit": config.get("rate_limit", "unknown"),
-            "trial_credits": config.get("trial_credits"),
-            "rate_limit": config.get("rate_limit"),
-        })
-    
+
+        providers.append(
+            {
+                "id": provider,
+                "name": config.get("name", provider.title()),
+                "available": has_key,
+                "models": config.get("models", []),
+                "default_model": config.get("default_model"),
+                "rate_limit": config.get("rate_limit", "unknown"),
+                "trial_credits": config.get("trial_credits"),
+            }
+        )
+
     return providers
 
 
@@ -974,14 +974,11 @@ def get_provider_models(provider: str) -> List[str]:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
+
 # Backwards compatibility wrappers
 def create_chat_model(provider: str = None, temperature: float = 0.7, max_tokens: int = 4096):
     """Backwards compatible wrapper for create_chat_model_with_fallbacks"""
-    return create_chat_model_with_fallbacks(
-        primary_provider=provider,
-        temperature=temperature,
-        max_tokens=max_tokens
-    )
+    return create_chat_model_with_fallbacks(primary_provider=provider, temperature=temperature, max_tokens=max_tokens)
 
 
 def count_tokens(text: str, model_name: str = "mistral-large-latest") -> int:

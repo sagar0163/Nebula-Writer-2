@@ -1,14 +1,14 @@
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
 import logging
 import os
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
+
+from dotenv import load_dotenv
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 load_dotenv()
 
@@ -20,10 +20,7 @@ except importlib.metadata.PackageNotFoundError:
     __version__ = "3.0.0"
 
 # Configure structured logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
 logger = logging.getLogger("nebula_writer")
 
 # Initialize app
@@ -57,15 +54,14 @@ app.add_middleware(
 
 import logging
 import time
-from fastapi.responses import JSONResponse
+
 from fastapi import Request
+from fastapi.responses import JSONResponse
 
 # Configure structured logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
 logger = logging.getLogger("nebula_writer.api")
+
 
 @app.middleware("http")
 async def structured_logging_and_error_middleware(request: Request, call_next):
@@ -88,6 +84,7 @@ async def structured_logging_and_error_middleware(request: Request, call_next):
             content={"detail": "Internal Server Error", "error": str(exc)},
         )
 
+
 # Database - SQLite or Supabase
 db_type = os.environ.get("NEBULA_DB", "sqlite")
 
@@ -108,6 +105,7 @@ from nebula_writer.services.orchestrator import NarrativeOrchestrator
 if db_type == "supabase":
     # Create orchestrator with PostgresDB
     from nebula_writer.postgres_db import PostgresDB
+
     orchestrator = NarrativeOrchestrator(PostgresDB())
 else:
     orchestrator = NarrativeOrchestrator()
@@ -483,6 +481,7 @@ def export_json():
 
 # ============ AI WRITING ENDPOINTS ============
 
+
 # Input validation models with proper constraints
 class AIWriteRequest(BaseModel):
     beat: str = Field(..., min_length=1, max_length=5000, description="Scene beat/instruction")
@@ -510,6 +509,7 @@ class AIShowNotTellRequest(BaseModel):
 
 class AIWriteAsyncRequest(BaseModel):
     """Request to start async scene writing"""
+
     beat: str = Field(..., min_length=1, max_length=5000)
     word_count: int = Field(default=500, ge=50, le=5000)
     entity_ids: Optional[List[int]] = Field(default=None, max_length=20)
@@ -530,6 +530,7 @@ class AIWhatIfRequest(BaseModel):
 
 class AIWriteStatusResponse(BaseModel):
     """Response for async write status polling"""
+
     task_id: str
     status: str  # "pending", "running", "completed", "failed"
     result: Optional[str] = None
@@ -541,14 +542,12 @@ class AIWriteStatusResponse(BaseModel):
 # In-memory task store with cleanup (use Redis in production)
 _ai_write_tasks: Dict[str, Dict] = {}
 
+
 # Cleanup old tasks periodically
 async def _cleanup_old_tasks():
     """Remove tasks older than 1 hour"""
     cutoff = datetime.now() - timedelta(hours=1)
-    to_remove = [
-        tid for tid, task in _ai_write_tasks.items()
-        if task.get("created_at", datetime.now()) < cutoff
-    ]
+    to_remove = [tid for tid, task in _ai_write_tasks.items() if task.get("created_at", datetime.now()) < cutoff]
     for tid in to_remove:
         del _ai_write_tasks[tid]
 
@@ -567,6 +566,7 @@ async def _run_ai_write_scene(
     _ai_write_tasks[task_id]["status"] = "running"
     try:
         from nebula_writer.ai_writer import AIWriter
+
         ai = AIWriter()
         result = await ai.write_scene(
             db=db,
@@ -588,26 +588,22 @@ async def _run_ai_write_scene(
 
 
 @app.post("/api/ai/write")
-async def ai_write_scene_async(
-    req: AIWriteAsyncRequest,
-    background_tasks: BackgroundTasks
-):
+async def ai_write_scene_async(req: AIWriteAsyncRequest, background_tasks: BackgroundTasks):
     """
     Start async scene writing - returns task_id for polling.
-    
+
     This is the RECOMMENDED endpoint for scene generation.
     Returns immediately with a task_id; poll /api/ai/write/{task_id} for completion.
     """
     # Cleanup old tasks
     await _cleanup_old_tasks()
-    
+
     # Validate word_count limits
     if req.word_count > 3000:
         raise HTTPException(
-            status_code=400, 
-            detail="word_count too large for async endpoint. Use sync endpoint for longer generations."
+            status_code=400, detail="word_count too large for async endpoint. Use sync endpoint for longer generations."
         )
-    
+
     task_id = str(uuid.uuid4())
     _ai_write_tasks[task_id] = {
         "status": "pending",
@@ -707,6 +703,7 @@ async def ai_write_scene_sync(req: AIWriteRequest):
     logger.warning("Using deprecated synchronous /api/ai/write-sync endpoint")
     try:
         from nebula_writer.ai_writer import AIWriter
+
         ai = AIWriter()
         result = await ai.write_scene(
             db=db,
@@ -731,10 +728,11 @@ async def ai_write_scene_async_legacy(req: AIWriteRequest, background_tasks: Bac
     logger.warning("Using deprecated /api/ai/write-async endpoint")
     job_id = str(uuid.uuid4())
     _ai_write_jobs[job_id] = {"status": "pending", "result": None, "error": None}
-    
+
     async def run_write():
         try:
             from nebula_writer.ai_writer import AIWriter
+
             ai = AIWriter()
             result = await ai.write_scene(
                 db=db,
@@ -749,7 +747,7 @@ async def ai_write_scene_async_legacy(req: AIWriteRequest, background_tasks: Bac
             _ai_write_jobs[job_id] = {"status": "completed", "result": result, "error": None}
         except Exception as e:
             _ai_write_jobs[job_id] = {"status": "failed", "result": None, "error": str(e)}
-    
+
     background_tasks.add_task(run_write)
     return {"job_id": job_id, "status": "pending"}
 
@@ -993,7 +991,11 @@ def get_ai_providers():
     """Get available AI providers in the fallback chain"""
     from nebula_writer.models import get_available_providers
 
-    return {"providers": get_available_providers(), "primary": "mistral", "fallback_chain": ["mistral", "gemini", "openai", "anthropic", "huggingface"]}
+    return {
+        "providers": get_available_providers(),
+        "primary": "mistral",
+        "fallback_chain": ["mistral", "gemini", "openai", "anthropic", "huggingface"],
+    }
 
 
 # ============ NEW EXPORT FORMATS ============
@@ -1700,10 +1702,13 @@ def can_approve_chapter(chapter_id: int):
 # ============ CHAT MODE (v2.1) ============
 
 
-from fastapi.responses import StreamingResponse
 import asyncio
-from nebula_writer.quality_engine import QualityEngine
+
+from fastapi.responses import StreamingResponse
+
 from nebula_writer.anti_slop import AntiSlopFilter
+from nebula_writer.quality_engine import QualityEngine
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -1711,6 +1716,7 @@ class ChatRequest(BaseModel):
     chapter_id: Optional[str] = None
     stream: bool = True
     project_state: Optional[Dict] = None
+
 
 @app.post("/api/chat")
 async def chat_with_ai(req: ChatRequest):
@@ -1720,11 +1726,12 @@ async def chat_with_ai(req: ChatRequest):
     """
     try:
         if req.stream:
+
             async def sse_generator():
                 raw_response = await orchestrator.handle_chat(req.message)
                 full_text = raw_response.get("message", "Here is your generated chapter content.")
                 intent = raw_response.get("intent", "general_chat")
-                
+
                 if intent in ("write_chapter", "revise_chapter"):
                     qe = QualityEngine()
                     slop = AntiSlopFilter()
@@ -1738,14 +1745,14 @@ async def chat_with_ai(req: ChatRequest):
                     for word in words:
                         yield f"data: {word} \n\n"
                         await asyncio.sleep(0.01)
-                    yield f"data: [DONE]\n\n"
-            
+                    yield "data: [DONE]\n\n"
+
             return StreamingResponse(sse_generator(), media_type="text/event-stream")
         else:
             raw_response = await orchestrator.handle_chat(req.message)
             full_text = raw_response.get("message", "")
             intent = raw_response.get("intent", "general_chat")
-            
+
             if intent in ("write_chapter", "revise_chapter"):
                 qe = QualityEngine()
                 slop = AntiSlopFilter()
@@ -1758,6 +1765,7 @@ async def chat_with_ai(req: ChatRequest):
                 return {"response": cleaned_text, "score": 5.0, "passes": 0}
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1782,6 +1790,7 @@ def clear_chat_history():
 
 
 from fastapi import WebSocket, WebSocketDisconnect
+
 
 class CodexSyncManager:
     def __init__(self):
@@ -1808,7 +1817,9 @@ class CodexSyncManager:
                 except Exception:
                     pass
 
+
 sync_manager = CodexSyncManager()
+
 
 @app.websocket("/ws/sync/{project_id}")
 async def websocket_endpoint(websocket: WebSocket, project_id: str):
@@ -1821,6 +1832,7 @@ async def websocket_endpoint(websocket: WebSocket, project_id: str):
             else:
                 try:
                     import json
+
                     parsed = json.loads(data)
                     await sync_manager.broadcast({"type": "sync_update", "data": parsed}, project_id)
                 except Exception:
@@ -1859,8 +1871,8 @@ def health_check():
 
 @app.get("/")
 async def read_index():
-    """Serve the frontend index.html"""
-    return FileResponse(Path(__file__).parent.parent / "frontend" / "index.html")
+    """Root endpoint"""
+    return {"message": "Nebula-Writer API Server is running", "docs": "/docs"}
 
 
 if __name__ == "__main__":

@@ -4,10 +4,10 @@ Supabase pgvector integration for semantic search and RAG
 Replaces ChromaDB with native PostgreSQL vector support
 """
 
-from pathlib import Path
-from typing import Dict, List, Optional
 import json
 import os
+from typing import Dict, List
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,13 +20,14 @@ class MemorySystem:
         self.conn_str = os.environ.get("POSTGRES_CONNECTION_STRING")
         if not self.conn_str:
             raise ValueError("POSTGRES_CONNECTION_STRING environment variable is required")
-        
+
         # Import here to avoid circular imports
         import psycopg2
         from psycopg2.extras import RealDictCursor
+
         self._psycopg2 = psycopg2
         self._RealDictCursor = RealDictCursor
-        
+
         # Initialize embedding model (lazy load)
         self._embedding_model = None
         self.embedding_dim = 384  # all-MiniLM-L6-v2 dimension
@@ -36,17 +37,21 @@ class MemorySystem:
         if self._embedding_model is None:
             try:
                 from sentence_transformers import SentenceTransformer
-                self._embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+                self._embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
             except ImportError:
                 # Fallback: use random embeddings for testing
                 import random
+
                 class MockEmbedding:
                     def encode(self, text):
                         import hashlib
+
                         # Deterministic pseudo-random based on text hash
                         seed = int(hashlib.md5(text.encode()).hexdigest()[:8], 16)
                         random.seed(seed)
                         return [random.random() for _ in range(384)]
+
                 self._embedding_model = MockEmbedding()
         return self._embedding_model
 
@@ -55,7 +60,7 @@ class MemorySystem:
         model = self._get_embedding_model()
         embedding = model.encode(text)
         # Convert numpy array to list if needed
-        if hasattr(embedding, 'tolist'):
+        if hasattr(embedding, "tolist"):
             return embedding.tolist()
         return list(embedding)
 
@@ -74,7 +79,8 @@ class MemorySystem:
         conn = self._get_conn()
         try:
             cur = conn.cursor()
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO chapter_vectors (chapter_id, content, embedding, metadata)
                 VALUES (%s, %s, %s, %s)
                 ON CONFLICT (chapter_id) DO UPDATE SET
@@ -82,7 +88,9 @@ class MemorySystem:
                     embedding = EXCLUDED.embedding,
                     metadata = EXCLUDED.metadata,
                     created_at = NOW()
-            """, (chapter_id, doc, embedding, json.dumps({"chapter_id": chapter_id})))
+            """,
+                (chapter_id, doc, embedding, json.dumps({"chapter_id": chapter_id})),
+            )
             conn.commit()
             cur.close()
         finally:
@@ -95,23 +103,26 @@ class MemorySystem:
         conn = self._get_conn()
         try:
             cur = conn.cursor()
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT cv.chapter_id, cv.content, cv.metadata,
                        1 - (cv.embedding <=> %s::vector) as similarity
                 FROM chapter_vectors cv
                 ORDER BY cv.embedding <=> %s::vector
                 LIMIT %s
-            """, (query_embedding, query_embedding, n_results))
-            
+            """,
+                (query_embedding, query_embedding, n_results),
+            )
+
             results = cur.fetchall()
             cur.close()
-            
+
             return [
                 {
                     "id": str(row["chapter_id"]),
                     "summary": row["content"][:200] + "..." if len(row["content"]) > 200 else row["content"],
                     "distance": 1 - row["similarity"],
-                    "metadata": row["metadata"]
+                    "metadata": row["metadata"],
                 }
                 for row in results
             ]
@@ -130,7 +141,8 @@ class MemorySystem:
         conn = self._get_conn()
         try:
             cur = conn.cursor()
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO entity_vectors (entity_id, content, embedding, metadata)
                 VALUES (%s, %s, %s, %s)
                 ON CONFLICT (entity_id) DO UPDATE SET
@@ -138,7 +150,9 @@ class MemorySystem:
                     embedding = EXCLUDED.embedding,
                     metadata = EXCLUDED.metadata,
                     created_at = NOW()
-            """, (entity_id, doc, embedding, json.dumps({"entity_id": entity_id, "name": name})))
+            """,
+                (entity_id, doc, embedding, json.dumps({"entity_id": entity_id, "name": name})),
+            )
             conn.commit()
             cur.close()
         finally:
@@ -151,24 +165,27 @@ class MemorySystem:
         conn = self._get_conn()
         try:
             cur = conn.cursor()
-            cur.execute("""
+            cur.execute(
+                """
                 SELECT ev.entity_id, ev.content, ev.metadata,
                        1 - (ev.embedding <=> %s::vector) as similarity
                 FROM entity_vectors ev
                 ORDER BY ev.embedding <=> %s::vector
                 LIMIT %s
-            """, (query_embedding, query_embedding, n_results))
-            
+            """,
+                (query_embedding, query_embedding, n_results),
+            )
+
             results = cur.fetchall()
             cur.close()
-            
+
             return [
                 {
                     "id": str(row["entity_id"]),
                     "name": row["metadata"].get("name") if row["metadata"] else None,
                     "document": row["content"],
                     "distance": 1 - row["similarity"],
-                    "metadata": row["metadata"]
+                    "metadata": row["metadata"],
                 }
                 for row in results
             ]
@@ -233,8 +250,9 @@ class MemorySystem:
                     content = ch.get("content", "")
                     doc = f"{summary}\n\n{content[:1000]}" if content else summary
                     embedding = self._get_embedding(doc)
-                    
-                    cur.execute("""
+
+                    cur.execute(
+                        """
                         INSERT INTO chapter_vectors (chapter_id, content, embedding, metadata)
                         VALUES (%s, %s, %s, %s)
                         ON CONFLICT (chapter_id) DO UPDATE SET
@@ -242,7 +260,9 @@ class MemorySystem:
                             embedding = EXCLUDED.embedding,
                             metadata = EXCLUDED.metadata,
                             created_at = NOW()
-                    """, (str(ch["id"]), doc, embedding, json.dumps({"chapter_id": ch["id"]})))
+                    """,
+                        (str(ch["id"]), doc, embedding, json.dumps({"chapter_id": ch["id"]})),
+                    )
                 conn.commit()
                 cur.close()
             finally:
@@ -261,8 +281,9 @@ class MemorySystem:
                     if attr_str:
                         doc += f" | {attr_str}"
                     embedding = self._get_embedding(doc)
-                    
-                    cur.execute("""
+
+                    cur.execute(
+                        """
                         INSERT INTO entity_vectors (entity_id, content, embedding, metadata)
                         VALUES (%s, %s, %s, %s)
                         ON CONFLICT (entity_id) DO UPDATE SET
@@ -270,7 +291,9 @@ class MemorySystem:
                             embedding = EXCLUDED.embedding,
                             metadata = EXCLUDED.metadata,
                             created_at = NOW()
-                    """, (str(e["id"]), doc, embedding, json.dumps({"entity_id": e["id"], "name": e["name"]})))
+                    """,
+                        (str(e["id"]), doc, embedding, json.dumps({"entity_id": e["id"], "name": e["name"]})),
+                    )
                 conn.commit()
                 cur.close()
             finally:

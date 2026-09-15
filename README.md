@@ -1,96 +1,95 @@
-# Nebula-Writer v2.0
-
-<p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.0-blue.svg" alt="Version">
-  <img src="https://img.shields.io/badge/python-3.10+-green.svg" alt="Python">
-  <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
-</p>
-
-> AI-Powered Fiction Writing Assistant with Persistent Memory
-
-Nebula-Writer is a "System of Record" for fiction that stores every character, location, and plot point so your AI never forgets. It uses RAG (Retrieval-Augmented Generation) to provide accurate context to AI writing, with support for multiple AI providers.
-
-## Features
-
-- **The Codex** - SQLite database for Characters, Locations, Items, Relationships
-- **Chapter Management** - Write chapters with version history
-- **Story Templates** - Three-Act, Hero's Journey, Save the Cat, Snowflake
-- **Multi-AI** - Gemini, OpenAI GPT-4, Anthropic Claude
-- **Consistency Check** - Auto-detect story contradictions
-- **Character Knowledge** - Track what each character knows
-- **Auto-Extract** - Extract entities from prose text
-- **Semantic Search** - ChromaDB-powered RAG memory
-- **Version History** - Full chapter version tracking
-- **Visualization** - Mermaid.js relationship graphs
-- **Web UI** - Beautiful Vue.js interface
-- **Export** - Markdown, HTML, Plain Text, DOCX
-
-## Quick Start
-
-```bash
-# Clone and install
-git clone https://github.com/sagar0163/Nebula-Writer.git
-cd Nebula-Writer
-pip install -r requirements.txt
-
-# Run the server
-cd backend
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-Open `http://localhost:8000` in your browser.
-
-## Environment Variables
-
-```bash
-# Required for AI features
-export GEMINI_API_KEY=your_gemini_key
-
-# Optional - additional AI providers
-export OPENAI_API_KEY=your_openai_key
-export ANTHROPIC_API_KEY=your_claude_key
-```
-
-## Documentation
-
-See the `docs/` folder for full documentation:
-- [API Reference](docs/API.md)
-- [Features Guide](docs/FEATURES.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Development](docs/DEVELOPMENT.md)
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Backend | FastAPI, Python 3.10+, SQLite |
-| AI | Gemini, OpenAI GPT-4, Claude |
-| Memory | ChromaDB (RAG) |
-| Frontend | Vue.js 3, TailwindCSS |
-| DevOps | Docker |
-
-## Project Structure
-
-```
-nebula-writer/
-├── backend/          # FastAPI server
-│   ├── main.py      # API entry point
-│   ├── codex.py    # SQLite database layer
-│   ├── ai_writer.py    # AI writing
-│   ├── ai_client.py  # Multi-AI client (NEW)
-│   ├── memory.py    # ChromaDB RAG
-│   └── exporter.py  # Export formats
-├── frontend/         # Vue.js SPA
-│   └── index.html
-├── docs/            # Documentation (NEW)
-├── tests/           # Test suite
-└── specs/          # BRD and architecture
-```
-
-## License
-
-MIT License - feel free to use!
+# Nebula-Writer-2
+# Nebula-Writer-2
+> **The AI co-author that never forgets your story.**
+[![CI](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/main.yml/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/main.yml)
+[![Release](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml/badge.svg)](https://github.com/sagar0163/Nebula-Writer-2/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://python.org/)
 
 ---
 
-<p align="center">Made with love by Sagar</p>
+## 🎯 Problem
+
+Generic AI chat tools produce nice prose, but they cannot keep a novel consistent. Writers burn hundreds of hours manually maintaining story bibles and hunting contradictions after a direction change — new writers and seasoned novelists alike.
+
+## 💡 Solution — The Canon-Safe Co-Writing Loop
+
+Nebula-Writer's single core experience: from a one-line idea to a finished novel, every interaction flows through a living story canon (the **Codex**) that the AI maintains *for* you.
+
+```
+ Idea ─► Codex ─► Chapters ─► Comment ─► Ripple ─► Manuscript
+        (canon)    (write)     (rewrite)  (what breaks)
+```
+
+- **Idea → Codex** — describe a concept; Nebula-Writer builds persistent characters, relationships, plot threads, world rules, and timeline.
+- **Beat → Chapter** — chapters are generated grounded in the full canon; no invented facts, no contradictions.
+- **Comment → Rewrite** — highlight a span, leave a note, get a surgical rewrite that changes *only* what you asked.
+- **Pivot → Ripple** — "actually, the killer is the brother" shows you exactly what breaks and rewrites the affected scenes to keep the whole manuscript consistent.
+- **Manuscript** — a finished, internally-consistent novel you can export.
+
+> **Strategy:** see [docs/STRATEGY.md](docs/STRATEGY.md) — the ratified core-first roadmap and full noise inventory (Issue #146).
+
+## 🏗️ Architecture
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                      Nebula-Writer Core                     │
+├──────────────┬──────────────┬──────────────┬───────────────┤
+│  Codex       │  AI Writer   │  Ripple      │  Quality      │
+│  (canon)     │  (pipeline)  │  Checker     │  Engine       │
+└──────────────┴──────────────┴──────────────┴───────────────┘
+```
+
+Built on FastAPI + LangGraph (PLAN → WRITE → VALIDATE → EVALUATE) with a multi-provider LLM fallback chain (Mistral / Gemini / OpenAI / local) and SQLite/Supabase persistence.
+
+## 🚀 Quick Start
+
+```bash
+# Install
+pip install -r requirements.txt
+
+# Run the API server
+uvicorn nebula_writer.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Chat-driven writing (SSE streaming)
+curl -N -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Write Chapter 1", "stream": true}'
+```
+
+See [QUICK_START.md](QUICK_START.md) and [API.md](API.md) for full setup and endpoints.
+
+## 📖 Core Commands
+
+```bash
+# Seed a project from an idea
+nebula-writer idea "a mystery set in Mumbai" --project my-novel
+
+# Write a scene
+curl -X POST http://localhost:8000/api/ai/write \
+  -H "Content-Type: application/json" \
+  -d '{"beat": "The detective makes a discovery", "word_count": 500}'
+```
+
+## 🧪 Testing
+
+```bash
+pytest tests/ -v
+ruff check . && ruff format --check .
+```
+
+## 🗺️ Roadmap (core-first)
+
+- **Phase 1 — The Loop Works:** canon-correct chapters, surgical comment rewrites, ripple analysis, idea→Codex, basic manuscript export.
+- **Phase 2 — The Loop Feels Like Magic:** streaming polish, Studio Mode, deeper ripple intelligence, style learning.
+- **Phase 3 — The Loop Ships Novels:** publication-grade EPUB/DOCX/PDF, research engine, collaboration.
+
+Everything not in service of the core loop is deferred. See [docs/STRATEGY.md](docs/STRATEGY.md) for the full inventory and decision guardrails.
+
+## 📄 License
+
+MIT License
+
+---
+
+**Someday, every serious novelist will have a co-author that never loses the thread. That co-author is this one.**

@@ -2,8 +2,8 @@
 
 import pytest
 
-from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 from nebula_writer.exporter import StoryExporter
+from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 
 
 @pytest.fixture

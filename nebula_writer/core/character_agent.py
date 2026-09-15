@@ -31,10 +31,12 @@ class ActionPrediction(BaseModel):
     voice_directive: str
 
 
-PREDICTION_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", "You are a character psychology simulator. Predict how this character would react."),
-    ("human", "Character: {persona}\nScene context: {scene_context}\nPredict their actions and emotional state."),
-])
+PREDICTION_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", "You are a character psychology simulator. Predict how this character would react."),
+        ("human", "Character: {persona}\nScene context: {scene_context}\nPredict their actions and emotional state."),
+    ]
+)
 
 
 class CharacterAgent:
@@ -93,10 +95,12 @@ class CharacterAgent:
         model = create_chat_model(temperature=0.3).with_structured_output(ActionPrediction)
 
         chain = PREDICTION_PROMPT | model
-        result = await chain.ainvoke({
-            "persona": persona.model_dump_json(),
-            "scene_context": scene_context,
-        })
+        result = await chain.ainvoke(
+            {
+                "persona": persona.model_dump_json(),
+                "scene_context": scene_context,
+            }
+        )
         return result
 
     def simulate_action(self, scenario: str) -> str:

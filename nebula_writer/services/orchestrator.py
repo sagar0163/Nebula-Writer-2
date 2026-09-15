@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict
 
 from nebula_writer.ai_writer import AIWriter
 from nebula_writer.codex import CodexDatabase
@@ -18,7 +18,6 @@ from nebula_writer.plot_manager import create_plot_manager
 from nebula_writer.ripple_checker import create_ripple_checker
 from nebula_writer.spatial_mapper import create_spatial_mapper
 from nebula_writer.style_learner import create_style_learner
-from nebula_writer.postgres_db import PostgresDB
 
 
 class NarrativeOrchestrator:
@@ -80,8 +79,8 @@ class NarrativeOrchestrator:
         """
         Coordinates the multi-pass quality engine revision loop and anti-slop filtering.
         """
-        from nebula_writer.quality_engine import QualityEngine
         from nebula_writer.anti_slop import AntiSlopFilter
+        from nebula_writer.quality_engine import QualityEngine
 
         qe = QualityEngine()
         slop = AntiSlopFilter()
@@ -94,7 +93,7 @@ class NarrativeOrchestrator:
             "revised_text": cleaned_text,
             "quality_score": score,
             "passes_used": passes,
-            "is_approved": score >= target_score
+            "is_approved": score >= target_score,
         }
 
     async def handle_write_scene(self, beat: str) -> Dict:
@@ -177,6 +176,7 @@ class NarrativeOrchestrator:
         """Broadcast story graph events to connected WebSocket clients."""
         try:
             from nebula_writer.main import sync_manager
+
             await sync_manager.broadcast({"type": event_type, "data": data}, project_id)
         except Exception:
             pass

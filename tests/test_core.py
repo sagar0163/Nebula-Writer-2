@@ -3,9 +3,9 @@
 import pytest
 
 from nebula_writer.audit import StoryAuditor
-from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 from nebula_writer.exporter import StoryExporter
 from nebula_writer.search import SearchEngine
+from nebula_writer.supabase_db import SupabaseDB as CodexDatabase
 
 
 @pytest.fixture

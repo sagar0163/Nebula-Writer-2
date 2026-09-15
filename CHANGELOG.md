@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- **Core-Differentiated Strategy (Issue #146)**: Ratified the Canon-Safe Co-Writing Loop as the single core experience; documented all non-core features as phase-later in `docs/STRATEGY.md`; re-positioned README around the core experience and added a core-first roadmap.
+
 ## [2.1.0] - 2026-04-25
 ### Added
 - **Stateful Narrative Engine**: Introduced `NarrativeStateEngine` to derive story state and momentum.

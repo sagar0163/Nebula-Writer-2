@@ -193,12 +193,14 @@ curl http://localhost:8000/api/export/mermaid
 
 Copy the output to [Mermaid Live Editor](https://mermaid.live) to visualize.
 
-## Keyboard Shortcuts (Frontend)
+## CLI Usage
 
-- `+` button - Open add modal
-- Click entity - View/edit
-- Click chapter - Open editor
-- Click template - View structure
+The `nebula-writer` CLI provides a text interface to the same features:
+
+- `nebula-writer entity list` - List characters/locations/items
+- `nebula-writer entity add NAME --type TYPE`
+- `nebula-writer chapter list` - List chapters
+- `nebula-writer visualize` - Print a Mermaid relationship graph
 
 ## Tips
 

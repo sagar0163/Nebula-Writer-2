@@ -2,13 +2,13 @@
 
 ## 1. System Overview
 
-Nebula-Writer is a full-stack application with a FastAPI backend, Vue.js frontend, SQLite database, and ChromaDB for semantic search. It uses RAG architecture to provide AI-powered writing assistance.
+Nebula-Writer is a backend-first application with a FastAPI API server, a command-line interface (CLI), SQLite database, and ChromaDB for semantic search. It uses RAG architecture to provide AI-powered writing assistance. There is no separate frontend application; interaction happens through the REST API, the CLI, or the REPL.
 
 ## 2. Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Frontend (Vue.js)                      │
+│                Client (API / CLI / REPL)                    │
 │              http://localhost:8000                          │
 └─────────────────────────┬───────────────────────────────────┘
                           │
@@ -17,7 +17,7 @@ Nebula-Writer is a full-stack application with a FastAPI backend, Vue.js fronten
 │                    FastAPI Backend                          │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐  │
 │  │ Codex       │ │ AI Writer   │ │ Memory (RAG)        │  │
-│  │ (SQLite)    │ │ (Gemini)    │ │ (ChromaDB)          │  │
+│  │ (SQLite)    │ │ (Multi-prov)│ │ (ChromaDB)          │  │
 │  └─────────────┘ └─────────────┘ └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -25,25 +25,29 @@ Nebula-Writer is a full-stack application with a FastAPI backend, Vue.js fronten
 ## 3. Components
 
 ### Backend (FastAPI)
-- **codex.py:** SQLite database for entities
-- **ai_writer.py:** Gemini AI integration
-- **memory.py:** ChromaDB RAG implementation
-- **audit.py:** Story consistency checking
+- **nebula_writer/main.py:** FastAPI application and API server entry point
+- **nebula_writer/codex.py:** SQLite database for entities, chapters, and events
+- **nebula_writer/ai_writer.py:** Multi-provider AI writing integration
+- **nebula_writer/memory.py:** ChromaDB RAG implementation
+- **nebula_writer/audit.py:** Story consistency checking
+- **nebula_writer/exporter.py:** Story export (Markdown, HTML, PDF, EPUB, DOCX)
 
-### Frontend (Vue.js)
-- Entity management UI
-- Chapter editor
-- Visualization (Mermaid.js)
+### CLI
+- **nebula-writer:** Command-line interface for entity/chapter management and relationship visualization
+
+### REPL
+- **repl.py:** Interactive Python REPL for story management
 
 ## 4. File Structure
 
 ```
 Nebula-Writer/
-├── backend/          # FastAPI server
+├── nebula_writer/    # FastAPI server + all subsystems
+│   ├── main.py      # API entry point
 │   ├── codex.py     # SQLite
-│   ├── ai_writer.py # Gemini
+│   ├── ai_writer.py # Multi-model AI
 │   └── memory.py    # ChromaDB
-├── frontend/         # Vue.js UI
+├── nebula-writer    # CLI entry point
 ├── repl.py          # Interactive REPL
 ├── specs/           # Documentation
 └── README.md

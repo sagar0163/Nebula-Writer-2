@@ -1,8 +1,9 @@
 import json
-from typing import Dict
 
 # Use conditional import based on DB mode
 import os
+from typing import Dict
+
 db_type = os.environ.get("NEBULA_DB", "sqlite")
 
 if db_type == "supabase":
@@ -31,7 +32,7 @@ class VersioningService:
             "INSERT INTO codex_snapshots (snapshot_type, data) VALUES (%s, %s) RETURNING id",
             (snapshot_type, json.dumps(snapshot_data)),
         )
-        return int(result[0]['id']) if result else 0
+        return int(result[0]["id"]) if result else 0
 
     def rollback_to_snapshot(self, snapshot_id: str):
         pass
@@ -39,8 +40,8 @@ class VersioningService:
     def get_narrative_diff(self, snapshot_id_a: str, snapshot_id_b: str) -> Dict:
         result_a = self.db._query("SELECT data FROM codex_snapshots WHERE id = %s", (snapshot_id_a,))
         result_b = self.db._query("SELECT data FROM codex_snapshots WHERE id = %s", (snapshot_id_b,))
-        data_a = json.loads(result_a[0]['data']) if result_a else {"entities": [], "relationships": []}
-        data_b = json.loads(result_b[0]['data']) if result_b else {"entities": [], "relationships": []}
+        data_a = json.loads(result_a[0]["data"]) if result_a else {"entities": [], "relationships": []}
+        data_b = json.loads(result_b[0]["data"]) if result_b else {"entities": [], "relationships": []}
 
         diff = {"entity_changes": [], "relationship_changes": [], "narrative_drift_detected": False}
 
